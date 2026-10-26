@@ -31,7 +31,7 @@
     <li><span class="prices__badge prices__badge--historical">Researched</span> the record prices this good itself</li>
     <li><span class="prices__badge prices__badge--extrapolated">Extrapolated</span> carried over from a researched price for a close relative (another size, place or country)</li>
     <li><span class="prices__badge prices__badge--estimated">Estimated</span> reasoned from materials, labor and neighboring prices, with no research of its own kind yet</li>
-    <li><strong>Days</strong>: an unskilled laborer's days of pay, at 13 sen a day</li>
+    <li><strong>Days</strong>: an unskilled laborer's days of pay, at {{ '%.1f' % day_sen }} sen a day ({{ term('wage', 'why') }})</li>
     <li><span class="money-nowrap">{{ term('goods', 'Goods dollars') }}:</span> what it buys today; <span class="money-nowrap">{{ term('wage', 'wage dollars') }}:</span> how much it matters (<a href="/money/koku">the koku playground</a>)</li>
   </ul>
 

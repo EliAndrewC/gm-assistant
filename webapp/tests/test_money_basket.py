@@ -536,4 +536,4 @@ def test_cli_mean_and_weights(capsys: pytest.CaptureFixture[str]) -> None:
     out = run(capsys, '--mean', 'arithmetic', '--equal-weights', 'convert', '1 koku')
     assert '(equal-weighted arithmetic mean over goods)' in out
     out = run(capsys, '--reference-only', 'baskets')
-    assert "$961.66 for the whole basket (Kyoto laborer's year, with a room)" in out
+    assert '$961.66 for the whole basket (Bassino & Ma + salt, fuel and a room)' in out

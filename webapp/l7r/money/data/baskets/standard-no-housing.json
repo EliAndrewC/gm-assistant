@@ -1,6 +1,6 @@
 {
-  "name": "Kyoto laborer's year, without a room",
-  "description": "The default basket less its share of a room. A room was cheap beside rice in old Kyoto and is dear in modern America, so housing pulls the average up more than any other good; this shows the koku on food, cloth, light and fuel alone. Its soybeans are split into miso, soy sauce and whole beans as the default basket's are.",
+  "name": "Bassino & Ma + salt and fuel",
+  "description": "Bassino & Ma's basket plus salt and fuel, without the room. A room was cheap beside rice in old Kyoto and is dear in modern America, so housing pulls the average up more than any other good; this shows the koku on food, cloth, light and fuel alone. Its soybeans are split into miso, soy sauce and whole beans as the default basket's are.",
   "goods": {
     "rice": 114,
     "soybeans": 34.4,

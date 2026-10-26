@@ -49,6 +49,8 @@ from l7r.money import ledger as money_ledger
 from l7r.money import prices as money_prices
 from l7r.money import web as money_web
 from l7r.money.readings import (
+    DAY_RICE_KG,
+    LABORER_DAY_SEN,
     LABORER_KOKU_YEAR,
     load_wages,
     resolve_koku_kg,
@@ -514,6 +516,10 @@ class Root:
                 source_link=money_prices.source_link,
                 plain=money_prices.plain,
                 research_url=money_prices.research_url,
+                day_sen=LABORER_DAY_SEN,
+                laborer_koku_year=LABORER_KOKU_YEAR,
+                day_rice_kg=DAY_RICE_KG,
+                koku_kg=koku_kg,
             )
         if tool != 'koku':
             return self._render_404()
@@ -547,6 +553,8 @@ class Root:
             wage=wage,
             wage_per_koku=wage_dollars_per_koku(wage),
             laborer_koku_year=LABORER_KOKU_YEAR,
+            day_rice_kg=DAY_RICE_KG,
+            koku_kg=koku_kg,
         )
 
     # GET /terms - public (linked from Discord OAuth consent screen)

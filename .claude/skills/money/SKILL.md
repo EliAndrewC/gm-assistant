@@ -79,11 +79,11 @@ firewood need a note.
   Which modern goods match and which mean historians use is open: [diagram#17](https://github.com/EliAndrewC/diagram/issues/17).
   Miso and soy sauce for the basket's soybeans (GM 2026-10-25) and which goods the opening changed in Edo 1860 and
   Beijing 1900: [diagram#18](https://github.com/EliAndrewC/diagram/issues/18).
-- **Wage dollars** (~$9,400 at $15/hour; "big deal" dollars until feature 222): how much a windfall, a debt or a loss
-  MATTERS. One koku is 1/3.32 of an
-  unskilled laborer's year, applied to a US unskilled full-time year. (The GM's table feel is ~$10,000.)
+- **Wage dollars** (~$10,000 at $15/hour; "big deal" dollars until feature 222): how much a windfall, a debt or a loss
+  MATTERS. One koku is 1/3.12 of an unskilled laborer's year (derived: Kyoto 1745-54's recorded 1.89 kg of rice a day x
+  250 days / 151.5 kg), applied to a US unskilled full-time year.
 - **Laborer-days** is the yardstick for consistency: a new price that takes an implausible number of days of unskilled
-  work (about 13.3 sen a day) is wrong, whatever its dollar reading says.
+  work (about 12.5 sen a day) is wrong, whatever its dollar reading says.
 
 ## Answering "what does X cost?"
 
@@ -123,8 +123,8 @@ cross-check on a derivation that rests on Japanese or Chinese evidence; never as
   the Money section, which will show them beside each narrow range, is still to build.
 
 - **The pound-to-koku rate** for the English comparative rows: 145 sen per pound (the Austen sheet: 1 GBP = $80 at
-  $550/koku). Anchoring on wages instead (an English laborer's GBP 15-20 a year = a Rokugani laborer's 3.32 koku) gives
-  ~190 sen per pound, about 30% higher.
+  $550/koku). Anchoring on wages instead (an English laborer's GBP 15-20 a year = a Rokugani laborer's 3.12 koku) gives
+  ~180 sen per pound, about 25% higher.
 - **The "big deal" wage**: $15/hour default; the federal minimum or a median unskilled wage are the alternatives.
 
 ## Index

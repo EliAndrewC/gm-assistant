@@ -1,6 +1,6 @@
 {
-  "name": "Bassino & Ma basket A, as published",
-  "description": "Bassino & Ma's published Japanese basket exactly: food, cloth and lamp oil, with none of the salt, fuel or room the default basket adds. Priced at today's prices like the others.",
+  "name": "Bassino & Ma alone, as published",
+  "description": "Bassino & Ma's published Japanese basket exactly: food, cloth and lamp oil, with no salt, fuel or room, and its soybeans counted whole as the paper counts them. Priced at today's prices like the others.",
   "goods": {
     "beans": 4,
     "soybeans": 52,

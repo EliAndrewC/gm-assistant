@@ -255,7 +255,7 @@ def test_cli_estimate_link_finding_calibration(
         'basket': 'standard',
         'koku_kg': 'sheet-2017',
         'wage': '2026-10-18',
-        'laborer_koku_year': '3.32',
+        'laborer_koku_year': '3.12',
     }
     assert saved.date == '2026-10-19'
     assert saved.rows == ('wage-skilled-day',)

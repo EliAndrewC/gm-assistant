@@ -11,8 +11,12 @@ per zeni is 1.49 g/kg x 151.515 kg / 100) therefore stands. Declined: hard-codin
 would hide the mass inside a constant.
 
 WAGE DOLLARS (how much a sum MATTERS; "big deal" dollars until feature 222 renamed them, GM
-2026-10-24): one koku is 1/3.32 of an unskilled laborer's year (the 2017 sheet, from Bassino &
-Ma's ~2 kg rice/day), applied to a dated US unskilled full-time year. Declined: asserting the
+2026-10-24): one koku is 1/LABORER_KOKU_YEAR of an unskilled laborer's year, applied to a dated US
+unskilled full-time year. The laborer's year is DERIVED, not typed in (GM 2026-10-26: "everything
+that we are doing [should] be explained"): the reference era's recorded day wage in rice (Kyoto
+1745-54, 1.89 kg) x 250 days / the koku's 151.5 kg = 3.12. Declined: the 2017 sheet's 3.32, which
+rounds the wage up to Bassino & Ma's "about 2 kg" and divides by their 1.425 kg sho; it disagreed
+with this page's own koku by 6%. Declined: asserting the
 GM's table figure of ~$10,000 - derived, it moves with the wage. Updating = re-taking the wage.
 """
 
@@ -25,6 +29,8 @@ from pathlib import Path
 __all__ = [
     'DATA',
     'KOKU_KG',
+    'DAY_RICE_KG',
+    'LABORER_DAY_SEN',
     'LABORER_KOKU_YEAR',
     'WORKING_DAYS',
     'Wage',
@@ -50,15 +56,29 @@ KOKU_KG = {
 # https://github.com/EliAndrewC/diagram/blob/main/research/questions/0248-how-much-rice-was-a-koku.html  # noqa: E501
 DEFAULT_KOKU = 'sheet-2017'
 
-# diagram 0250: ~1.9-2 kg of rice a day (Kyoto 1745-54) is ATTESTED; the 250-day year is a
-# modern economists' convention, NOT ATTESTED. 3.32 = 2 kg x 250 days / ~150 kg.
-LABORER_KOKU_YEAR = 3.32
-WORKING_DAYS = 250  # the 2017 sheet's working year
+# diagram 0250: the 250-day year is a modern economists' convention, NOT ATTESTED (no count of a
+# laborer's working days survives); it is the one assumption in the laborer's year.
+WORKING_DAYS = 250
+REFERENCE_ERA = DATA / 'eras' / 'kyoto-1745.json'
+
+
+def _day_rice_kg(path: Path = REFERENCE_ERA) -> float:
+    """Kg of rice an unskilled day's pay bought in the reference era (diagram 0250: Kyoto 1745-54,
+    the Mitsui books' 0.91 monme a day against their rice price; ATTESTED)."""
+    era = json.loads(path.read_text())
+    return float(era['wage']['silver_g_per_day']) / float(era['goods']['rice']['silver_g'])
+
+
+DAY_RICE_KG = _day_rice_kg()
+# 1.89 kg x 250 days / 151.5 kg = 3.12 koku. At the default koku mass: a reading taken at another
+# mass (resolve_koku_kg) keeps this year, as the 2017 sheet's 3.32 did.
+LABORER_KOKU_YEAR = DAY_RICE_KG * WORKING_DAYS / KOKU_KG[DEFAULT_KOKU]
+LABORER_DAY_SEN = LABORER_KOKU_YEAR * 1000 / WORKING_DAYS  # ~12.5 sen
 
 
 def laborer_days(sen: int) -> float:
     """The internal-consistency yardstick: how many days an unskilled laborer works for this."""
-    return sen / (LABORER_KOKU_YEAR * 1000 / WORKING_DAYS)
+    return sen / LABORER_DAY_SEN
 
 
 @dataclass(frozen=True, slots=True)

@@ -64,7 +64,11 @@ def test_items_read_in_coins_days_and_the_sheets_dollars(
 ) -> None:
     wages = {it.row.id: it for it in views['wages'].items}
     day = wages['wage-unskilled-day']
-    assert (day.price, day.days, day.solidity) == ('1 zeni 3 sen', '1.0', 'researched')
+    assert (day.price, day.days, day.solidity) == (
+        '1 zeni 2 sen to 1 zeni 3 sen',
+        '1.0',
+        'researched',
+    )
     fuel = {it.row.id: it for it in views['fuel'].items}
     assert fuel['charcoal-white-bag'].solidity == 'extrapolated'  # the GM's example (227)
     assert {it.solidity for v in views.values() for it in v.items} <= {
@@ -72,7 +76,7 @@ def test_items_read_in_coins_days_and_the_sheets_dollars(
         'extrapolated',
         'estimated',
     }
-    assert day.dollars == '$122'  # wage dollars: 13 sen of a $9,398 koku
+    assert day.dollars == '$113 to $122'  # wage dollars: 12-13 sen of a $9,398 koku
     assert views['wages'].sheet.wage
     assert [it.row.id for it in views['wages'].items[:2]] == list(prices.FIRST)
     food = views['food'].items

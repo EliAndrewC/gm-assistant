@@ -11,12 +11,12 @@ their reasons, but what the skill answers with satisfies every rule; a note neve
 
 Every first answer below is an **estimate** derived from named rows, until the research marked "requested" comes back
 ([diagram#3](https://github.com/EliAndrewC/diagram/issues/3), [diagram#4](https://github.com/EliAndrewC/diagram/issues/4)).
-The yardstick throughout is the unskilled laborer's day, ~13 sen.
+The yardstick throughout is the unskilled laborer's day, ~12.5 sen (12-13).
 
 ## Wages
 
 **Recipe.** One wage sets a floor on another (the GM: *"if you can earn more money doing a different thing that is
-unskilled labor ... people will tend to move to the more lucrative profession"*). Unskilled ~13 sen a day is the floor;
+unskilled labor ... people will tend to move to the more lucrative profession"*). Unskilled ~12.5 sen a day is the floor;
 a skilled craftsman 17-34 sen (1.3-2.6x the unskilled day: Osaka carpenters ~1.8x their helpers, a village carpenter 2.6x the farm rate, Beijing ~2x; diagram 0275); a household servant is paid less in coin because board and lodging come with the
 post. A price made by labor is at least the labor-days in it times the wage. Live-in posts by the year, with board (diagram 0307): a
 servant ~3 koku (a samurai house's 1828 contract, 3 ryo 2 bu), a rice-cooking manservant 2.3-2.6, a merchant clerk 2.6-4.7 by

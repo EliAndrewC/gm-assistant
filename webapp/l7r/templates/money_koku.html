@@ -46,24 +46,24 @@
 
     <div class="koku-readings">
       <div class="koku-reading koku-reading--goods">
-        <p class="koku-reading__label">{{ term('goods', 'Goods dollars') }}: what a koku buys</p>
-        <div class="koku-range">
-          <div class="koku-range__end">
-            <p class="koku-reading__value" data-out="per-koku" aria-live="polite">{{ dollars(reading.per_koku) }}</p>
-            <p class="koku-range__name">Averaged over goods <span class="koku-range__tag">central</span> <span class="koku-range__how" data-out="mean-name">({{ 'equal weights, ' if state.equal }}{{ mean_name[state.mean] }})</span></p>
-          </div>
-          <div class="koku-range__end">
-            <p class="koku-reading__value"><span class="koku-range__to">to </span><span data-out="whole">{{ dollars(whole.arithmetic) }}</span></p>
-            <p class="koku-range__name">A year of necessities <span class="koku-range__tag">high</span></p>
-            <p class="koku-range__how koku-range__sub" data-out="whole-sub">cost {{ '%.2f' % whole.koku_cost }} koku then, {{ dollars(whole.dollars) }} now</p>
-          </div>
-        </div>
-        <p class="koku-reading__gloss">A laborer's year of necessities priced then and now: goods that grew dear, above all a room, pull it up. The central figure averages what a koku buys of each good so that no one good can dominate. For a sum spent on one kind of good, use that good's row below.</p>
+        <p class="koku-reading__label">{{ term('goods', 'Goods dollars') }}: central</p>
+        <p class="koku-reading__value" data-out="per-koku" aria-live="polite">{{ dollars(reading.per_koku) }}</p>
+        <p class="koku-range__name">Averaged over goods <span class="koku-range__how" data-out="mean-name">({{ 'equal weights, ' if state.equal }}{{ mean_name[state.mean] }})</span></p>
+        <p class="koku-reading__gloss">What a koku buys of each good, averaged so that no one good can dominate. Use it for a sum spent on a mix of things; for one kind of good, use that good's row below.</p>
+      </div>
+      <div class="koku-reading koku-reading--goods">
+        <p class="koku-reading__label">{{ term('goods', 'Goods dollars') }}: high</p>
+        <p class="koku-reading__value" data-out="whole">{{ dollars(whole.arithmetic) }}</p>
+        <p class="koku-range__name">A year of necessities</p>
+        <p class="koku-range__how koku-range__sub" data-out="whole-sub">costs {{ '%.2f' % whole.koku_cost }} koku then, {{ dollars(whole.dollars) }} now</p>
+        <p class="koku-reading__gloss">A laborer's whole year of necessities priced then and now. Goods that grew dear, above all a room, pull it up. Use it for a household's cost of living.</p>
       </div>
       <div class="koku-reading">
-        <p class="koku-reading__label">{{ term('wage', 'Wage dollars') }}: how much a koku matters</p>
+        <p class="koku-reading__label">{{ term('wage', 'Wage dollars') }}: how much it matters</p>
         <p class="koku-reading__value">{{ dollars(wage_per_koku) }}</p>
-        <p class="koku-reading__gloss">An unskilled laborer earns {{ laborer_koku_year }} koku a year, set against a US full-time year at ${{ '%.2f' % wage.hourly }} an hour (the {{ wage.date[:7] }} wage). The goods do not move it.</p>
+        <p class="koku-range__name">A laborer earns {{ '%.2f' % laborer_koku_year }} koku a year</p>
+        <p class="koku-range__how koku-range__sub">${{ '%.2f' % wage.hourly }} an hour &times; {{ '{:,.0f}'.format(wage.hours_per_year) }} hours = {{ dollars(wage.year) }} a year, &divide; {{ '%.2f' % laborer_koku_year }}</p>
+        <p class="koku-reading__gloss">The wage recorded in Kyoto in 1745-54 bought {{ '%.2f' % day_rice_kg }} kg of rice a day; over a 250-day year that is {{ '%.2f' % laborer_koku_year }} koku. That is more than a year of necessities costs (the middle card): the difference is the laborer's margin. Set against today's {{ wage.date[:7] }} unskilled wage; the goods do not move it.</p>
       </div>
     </div>
 
@@ -213,7 +213,7 @@
       <p>The default basket is Bassino &amp; Ma's published Japanese basket (food, cloth, lamp oil), with salt, fuel and a share of a room added because a household cannot live without them. Some of Kyoto 1745's prices are Bassino &amp; Ma's reconstructions from Meiji price ratios, so they are not counted again beside Tokyo 1882; the room's price is still a guess.</p>
     </section>
     {{ explainers(['goods', 'wage', 'means', 'basket']) }}
-    <div class="koku-sticky" aria-hidden="true">A koku buys <strong data-out="per-koku-sticky">{{ dollars(reading.per_koku) }}</strong> to <strong data-out="whole-sticky">{{ dollars(whole.arithmetic) }}</strong> today</div>
+    <div class="koku-sticky" aria-hidden="true">A koku buys <strong data-out="per-koku-sticky">{{ dollars(reading.per_koku) }}</strong> to <strong data-out="whole-sticky">{{ dollars(whole.arithmetic) }}</strong> of goods today; in wages, <strong>{{ dollars(wage_per_koku) }}</strong></div>
   </form>
 </section>
 {% endblock %}

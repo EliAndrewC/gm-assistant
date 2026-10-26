@@ -11,7 +11,9 @@ from l7r.money import basket as bk
 from l7r.money import coins, ledger, rules
 from l7r.money.__main__ import main
 from l7r.money.readings import (
+    DAY_RICE_KG,
     KOKU_KG,
+    LABORER_KOKU_YEAR,
     Wage,
     load_wages,
     resolve_koku_kg,
@@ -123,10 +125,13 @@ def test_resolve_koku_kg_takes_a_number() -> None:
 
 
 def test_wage_dollars_default_is_the_handoff_derivation() -> None:
-    """219 SC-002: ~$9,400 at $15/hour full time over 3.32 koku per unskilled year."""
+    """~$10,000 at $15/hour full time over 3.12 koku per unskilled year (GM 2026-10-26: the year is
+    derived from the recorded Kyoto wage, 1.89 kg of rice a day x 250 days / 151.5 kg)."""
     wage = load_wages()[-1]
     assert wage.hourly == 15.0
-    assert abs(wage_dollars_per_koku(wage) - 9400) / 9400 < 0.01
+    assert abs(wage_dollars_per_koku(wage) - 9991) / 9991 < 0.001
+    assert round(LABORER_KOKU_YEAR, 2) == 3.12
+    assert round(DAY_RICE_KG, 2) == 1.89
     assert wage_dollars_per_koku(Wage('x', 10.0, 2000, '', ''), 2.0) == 10_000
     assert wage.day == 124.8
 
@@ -219,12 +224,12 @@ SHEET = ('--reference-only', '--mean', 'arithmetic', '--snapshot', '2017-04')
 def test_cli_convert(capsys: pytest.CaptureFixture[str]) -> None:
     out = run(capsys, *SHEET, '--basket', 'bassino-ma-a', 'convert', '1', 'koku')
     assert '1 koku = 1.000 koku = 1,000 sen' in out
-    assert 'goods $552.39 (whole basket $552.39); wage $9,398; 75.3 laborer-days' in out
+    assert 'goods $552.39 (whole basket $552.39); wage $9,991; 80.1 laborer-days' in out
     assert 'Rokugan priced by Kyoto 1745-54 alone' in out
-    assert 'Bassino & Ma basket A, as published basket at the 2017-04 snapshot' in out
+    assert 'Bassino & Ma alone, as published basket at the 2017-04 snapshot' in out
     assert '[sheet-2017]' in out
     out = run(capsys, 'convert', '1', 'koku')
-    assert "Kyoto laborer's year, with a room basket at the " in out
+    assert 'Bassino & Ma + salt, fuel and a room basket at the ' in out
     assert '(geometric mean over goods), up to $' in out
     assert 'Rokugan priced by the eras at their weights' in out
     assert 'left out' not in out
@@ -253,14 +258,14 @@ def test_cli_dollars(capsys: pytest.CaptureFixture[str]) -> None:
         capsys, *sheet, 'dollars', '500'
     )
     out = run(capsys, 'dollars', '10000', '--wage-dollars')
-    assert '(wage dollars) = 1 koku 6 zeni 4 sen' in out
+    assert '(wage dollars) = 1 koku 1 sen (about 1 koku)' in out
 
 
 def test_cli_price(capsys: pytest.CaptureFixture[str]) -> None:
     out = run(capsys, *SHEET, '--basket', 'bassino-ma-a', 'price', 'sword')
     assert 'a common sword (medieval Lucca and Marseille): 7 sen to 5 zeni 3 sen per item' in out
     assert '[comparative (unverified lead): a yardstick from another society' in out
-    assert 'goods $3.87 to $29.28 (whole basket $3.87 to $29.28); wage $66 to $498;' in out
+    assert 'goods $3.87 to $29.28 (whole basket $3.87 to $29.28); wage $70 to $530;' in out
     assert "a samurai's wakizashi: 1 koku 5 bu per item" in out
     out = run(capsys, 'price', 'land', 'tax')
     assert '[estimated]' in out

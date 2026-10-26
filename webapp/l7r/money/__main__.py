@@ -85,7 +85,7 @@ class _Basis:
             f'${self.whole.dollars:,.0f} today)',
             f'  Wage-dollar basis: ${self.wage.hourly:.2f}/hour '
             f'x {self.wage.hours_per_year:g} hours '
-            f'({self.wage.date}) / {LABORER_KOKU_YEAR} koku per unskilled year '
+            f'({self.wage.date}) / {LABORER_KOKU_YEAR:.2f} koku per unskilled year '
             f'-> ${self.big:,.0f} per koku',
         ]
 
@@ -293,7 +293,7 @@ def _estimate(args: argparse.Namespace, basis: _Basis) -> None:
             'basket': basis.basket.id,
             'koku_kg': basis.koku_label,
             'wage': basis.wage.date,
-            'laborer_koku_year': f'{LABORER_KOKU_YEAR:g}',
+            'laborer_koku_year': f'{LABORER_KOKU_YEAR:.2f}',
         },
     )
     if est.low > est.high:

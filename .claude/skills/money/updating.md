@@ -44,9 +44,10 @@ newest is the default; `--wage-date` reaches older ones.
 
 ## The laborer's year
 
-`LABORER_KOKU_YEAR` (3.32) and `WORKING_DAYS` (250) in `webapp/l7r/money/readings.py` are the 2017 sheet's figures.
-Diagram 0250: ~2 kg of rice a day is attested; the 250-day year is a modern convention. A future count of working days
-would change them; the two wage rows cite 0250. Every wage-dollar figure and every laborer-days count moves with them.
+`LABORER_KOKU_YEAR` (3.12) in `webapp/l7r/money/readings.py` is DERIVED: the reference era's recorded day wage in rice
+(Kyoto 1745-54, `data/eras/kyoto-1745.json`: 1.89 kg) x `WORKING_DAYS` (250) / the default koku (151.5 kg). It replaced the
+2017 sheet's 3.32 on 2026-10-26 (GM: everything we use is explained). Diagram 0250: the day wage is attested; the 250-day
+year is a modern convention. A future count of working days, or a re-read of Kyoto's wage, changes it by itself; the two wage rows cite 0250. Every wage-dollar figure and every laborer-days count moves with them.
 
 ## The basket against its source
 

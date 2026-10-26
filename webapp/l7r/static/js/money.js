@@ -223,7 +223,7 @@
       out('legend-central').textContent = money(r.per_koku);
       out('legend-high').textContent = money(whole.arithmetic);
       out('mean-name').textContent = '(' + (st.equal ? 'equal weights, ' : '') + st.mean + ' mean)';
-      out('whole-sub').textContent = 'cost ' + whole.koku_cost.toFixed(2) + ' koku then, ' + money(whole.dollars) + ' now';
+      out('whole-sub').textContent = 'costs ' + whole.koku_cost.toFixed(2) + ' koku then, ' + money(whole.dollars) + ' now';
       out('drivers').textContent = drivers(r);
       out('description').textContent = data.baskets[st.basket].description;
       var left = out('left-out');

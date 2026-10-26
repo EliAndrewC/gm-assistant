@@ -36,8 +36,15 @@
 {% endcall %}{% endif %}
 {% if 'wage' in ids %}{% call _pop('wage', 'Wage dollars') %}
   <p><strong>The question it answers:</strong> how big a deal is this sum to the person holding it? Not what it buys, but how long they would have to work for it.</p>
-  <p>A koku is set against an unskilled laborer's year: in Rokugan a laborer earns about {{ laborer_koku_year if laborer_koku_year is defined else '3.3' }} koku a year, so a koku is that share of a year's work. The same share of a full-time US year at today's unskilled wage is the koku's wage-dollar value. Economic historians call this a <em>labor value</em>: a sum measured in the hours of common work it stands for. The goods and their prices do not enter it.</p>
-  <p><strong>Why it is so much larger than goods dollars.</strong> A modern worker produces and earns far more than a Tokugawa laborer did, while the necessities they buy have grown comparatively cheap. So a koku that buys a few hundred dollars of goods today was still a third of a year of a poor laborer's life. Both are true at once: goods dollars tell you what it buys, wage dollars tell you what it means.</p>
+  <p>A koku is set against an unskilled laborer's year: a laborer earns {{ '%.2f' % laborer_koku_year }} koku a year, so a koku is that share of a year's work. The same share of a full-time US year at today's unskilled wage is the koku's wage-dollar value. Economic historians call this a <em>labor value</em>: a sum measured in the hours of common work it stands for. The goods and their prices do not enter it.</p>
+  <p><strong>Where the {{ '%.2f' % laborer_koku_year }} comes from.</strong></p>
+  <ul>
+    <li><strong>A day's pay, recorded:</strong> in Kyoto in 1745-54 an unskilled laborer was paid about 0.91 monme of silver a day, by the account books of the Mitsui merchant house (Bassino &amp; Ma 2005, Table 3). At that decade's rice price it bought {{ '%.2f' % day_rice_kg }} kg of polished rice. Kyoto 1745-54 is the period that anchors Rokugan's coin, so its wage sets the laborer's.</li>
+    <li><strong>Days a year, assumed:</strong> no count of a laborer's working days survives from the time. Modern wage comparisons assume 250, roughly full-time less holidays, illness and slack, and we follow them. This is the one assumption in the figure.</li>
+    <li><strong>The arithmetic:</strong> {{ '%.2f' % day_rice_kg }} kg &times; 250 days = {{ '{:,.0f}'.format(day_rice_kg * 250) }} kg of rice a year; at {{ '%.1f' % koku_kg }} kg to the koku, the koku used everywhere on these pages, that is {{ '%.2f' % laborer_koku_year }} koku, or {{ '%.1f' % (laborer_koku_year * 4) }} sen a day.</li>
+  </ul>
+  <p>Bassino &amp; Ma themselves round the day to "about 2 kg", which would give 3.3 koku; the recorded wage gives the figure above.</p>
+  <p><strong>Why it is so much larger than goods dollars.</strong> A modern worker produces and earns far more than a Tokugawa laborer did, while the necessities they buy have grown comparatively cheap. So a koku that buys a few hundred dollars of goods today was still about a third of a year of a poor laborer's life. Both are true at once: goods dollars tell you what it buys, wage dollars tell you what it means.</p>
   <p><strong>When to use it.</strong> A bribe, a fine, a debt, a reward, a dowry: anywhere the weight of the sum on a person matters more than the shopping it would do. "Ten koku" to a farmer is several years of their life, and wage dollars say so.</p>
 {% endcall %}{% endif %}
 {% if 'means' in ids %}{% call _pop('means', 'Which average, and why there is a choice') %}
@@ -60,13 +67,14 @@
   <p>A <em>basket</em> is a list of goods and how much of each one person consumes in a year. Economic historians build them to compare what a laborer's wage could buy across countries and centuries; the method is Robert Allen's, and the Japanese basket here is from Jean-Pascal Bassino and Debin Ma, "Japanese unskilled wages in international perspective, 1741-1913" (2005), reconstructed for Kyoto in the 1740s.</p>
   <p>None of these is a government price index. Their goods and quantities are what the Rokugani side is priced in; today's side is always today's prices, whichever basket you choose.</p>
   <dl class="money-pop__list">
-    <dt>Kyoto laborer's year, with a room (the default)</dt>
-    <dd>Bassino &amp; Ma's published basket (rice, soybeans, other grains, beans, fish, oil, cloth, lamp oil), plus three things we added because a household cannot live without them: salt, fuel (Allen and colleagues' 2011 basket carries it) and a third of a back-tenement room. The fullest picture of a year of necessities, and the only basket the high figure uses.</dd>
-    <dt>Kyoto laborer's year, without a room</dt>
+    <dt>Bassino &amp; Ma + salt, fuel and a room (the default)</dt>
+    <dd>Their published basket (rice, soybeans, other grains, beans, fish, oil, cloth, lamp oil), plus three things we added because a household cannot live without them: salt, fuel (Allen and colleagues' 2011 basket carries it) and a third of a back-tenement room. The fullest picture of a year of necessities, and the only basket the high figure uses.</dd>
+    <dt>Bassino &amp; Ma + salt and fuel</dt>
     <dd>The same, less the room. A room was cheap beside rice in old Kyoto and is dear in modern America, so housing pulls the average up more than any other good. Use it for someone who does not pay for shelter (a retainer lodged by their lord, a monk, a traveler), or to see how much the room alone moves the answer.</dd>
-    <dt>Bassino &amp; Ma basket A, as published</dt>
+    <dt>Bassino &amp; Ma alone, as published</dt>
     <dd>The scholars' basket exactly as they published it: food, cloth and lamp oil, with none of our additions. Useful for comparing with their work. Like the others, it is priced at today's prices.</dd>
   </dl>
+  <p>One more difference: the two baskets with additions count soybeans the way the Kyoto records do, as miso, soy sauce and whole beans; the published basket counts them all as whole beans, as the paper does.</p>
   <p>The choice moves only the central figure; the high figure always counts the full year with a room.</p>
 {% endcall %}{% endif %}
 {% endmacro %}
