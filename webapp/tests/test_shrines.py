@@ -11,29 +11,26 @@ from urllib.parse import parse_qsl
 import pytest
 
 from l7r.shrines import (
-    DEFAULT_BASELINE,
     TEXT_FIELDS,
     Catalog,
     CatalogError,
     Clause,
-    Negotiation,
-    default_budget,
+    LedgerSettings,
+    build_ledger,
     format_koku,
     format_number,
     gm_query,
     load_catalog,
     load_raw,
     moot_note,
-    negotiate,
     option_effects,
     option_offered,
     parse_catalog,
     parse_design,
-    parse_negotiation,
+    parse_settings,
     price_design,
     reference_design,
     rules_json,
-    saving_percent,
     share_query,
 )
 
@@ -66,7 +63,6 @@ def _option_raw(data: dict[str, Any], category: str, option: str) -> dict[str, A
 
 MEMORIAL_STEPS = {'heart', 'preparation', 'sharing', 'resting', 'display'}
 REFERENCE_TOTAL = 62.682
-SUGGESTED_BUDGET = 80.0
 
 
 # --- catalog content (FR-002, FR-002a, FR-003, FR-004, FR-017 to FR-036) -------------------------
@@ -502,13 +498,12 @@ def test_share_query_round_trips_and_carries_no_gm_figure(catalog: Catalog) -> N
 # --- pricing --------------------------------------------------------------------------------------
 
 
-def test_reference_design_and_default_budget(catalog: Catalog) -> None:
+def test_reference_design(catalog: Catalog) -> None:
     design = reference_design(catalog)
     assert design.choices['kind'] == 'memorial'
     pricing = price_design(catalog, design, catalog.default_remoteness)
     assert pricing.total == pytest.approx(REFERENCE_TOTAL)
     assert pricing.heavy == pytest.approx(36)
-    assert default_budget(catalog) == SUGGESTED_BUDGET
 
 
 def test_porterage_is_heavy_times_rate(catalog: Catalog) -> None:
@@ -540,91 +535,50 @@ def test_per_step_that_is_unchosen_counts_as_one(catalog: Catalog) -> None:
     assert [i.koku for i in items] == [4.9]
 
 
-# --- negotiation ----------------------------------------------------------------------------------
+# --- the ledger ---------------------------------------------------------------------------------
 
 
-def test_parse_negotiation_defaults(catalog: Catalog) -> None:
-    assert parse_negotiation(catalog, {}) == Negotiation(SUGGESTED_BUDGET, 'trail', {}, {})
-
-
-@pytest.mark.parametrize(
-    ('raw_budget', 'expected'),
-    [
-        ('80', 80.0),
-        (' 99.5 ', 99.5),
-        ('-4', 0.0),
-        ('1e9', 100_000.0),
-        ('lots', SUGGESTED_BUDGET),
-        ('inf', SUGGESTED_BUDGET),
-    ],
-)
-def test_parse_budget(catalog: Catalog, raw_budget: str, expected: float) -> None:
-    assert parse_negotiation(catalog, {'gm_budget': raw_budget}).budget == expected
-
-
-def test_parse_rolls_and_baselines(catalog: Catalog) -> None:
-    negotiation = parse_negotiation(
-        catalog,
-        {
-            'gm_remote': 'deep',
-            'gm_roll_carpentry': '42',
-            'gm_roll_roofing': 'high',
-            'gm_roll_stonework': '999',
-            'gm_base_stonework': '31',
-            'gm_base_rites': '-3',
-        },
-    )
-    assert negotiation.remoteness == 'deep'
-    assert negotiation.rolls == {'carpentry': 42, 'stonework': 200}
-    assert negotiation.baselines == {'stonework': 31, 'rites': 0}
-    assert parse_negotiation(catalog, {'gm_remote': 'moon'}).remoteness == 'trail'
+def test_parse_settings(catalog: Catalog) -> None:
+    assert parse_settings(catalog, {}) == LedgerSettings('trail', {})
+    assert parse_settings(catalog, {'gm_remote': 'moon'}).remoteness == 'trail'
+    # links from before 2026-10-26 carry negotiation figures; they are simply ignored
+    old = {'gm_remote': 'deep', 'gm_budget': '80', 'gm_roll_carpentry': '42', 'gm_base_rites': '3'}
+    assert parse_settings(catalog, old) == LedgerSettings('deep', {})
 
 
 @pytest.mark.parametrize(
-    ('roll', 'baseline', 'pct'),
-    [(None, 25, 0), (20, 25, 0), (25, 25, 0), (43, 25, 18), (300, 25, 100)],
+    ('raw', 'expected'),
+    [('2', 2.0), (' 9.5 ', 9.5), ('-4', 0.0), ('1e9', 100_000.0), ('lots', None), ('inf', None)],
 )
-def test_saving_percent(roll: int | None, baseline: int, pct: int) -> None:
-    assert saving_percent(roll, baseline) == pct
+def test_parse_other_prices(catalog: Catalog, raw: str, expected: float | None) -> None:
+    assert parse_settings(catalog, {'gm_other_bell': raw}).others.get('bell') == expected
 
 
-def test_negotiate_reference(catalog: Catalog) -> None:
+def test_ledger_is_a_breakdown_by_contract(catalog: Catalog) -> None:
     design = reference_design(catalog)
-    negotiation = Negotiation(
-        SUGGESTED_BUDGET, 'trail', {'carpentry': 45, 'stonework': 40}, {'stonework': 30}
-    )
-    ledger = negotiate(catalog, design, negotiation)
+    ledger = build_ledger(catalog, design, LedgerSettings('trail'))
     by_key = {c.key: c for c in ledger.contracts}
-    assert by_key['carpentry'].saving_pct == 20
-    assert by_key['carpentry'].paid == pytest.approx(by_key['carpentry'].fair * 0.8)
-    assert by_key['stonework'].baseline == 30
-    assert by_key['stonework'].saving_pct == 10
-    assert by_key['roofing'].roll is None
-    assert by_key['roofing'].baseline == DEFAULT_BASELINE
-    assert ledger.fair_total == pytest.approx(REFERENCE_TOTAL)
-    assert ledger.remainder == pytest.approx(SUGGESTED_BUDGET - ledger.paid_total)
+    assert ledger.total == pytest.approx(REFERENCE_TOTAL)
     assert all(i.contract == 'carpentry' for i in by_key['carpentry'].items)
+    assert by_key['carpentry'].fair == pytest.approx(sum(i.koku for i in by_key['carpentry'].items))
+    assert all(c.unpriced == 0 for c in ledger.contracts)
 
 
-def test_negotiate_skips_empty_contracts_and_reports_shortfall(catalog: Catalog) -> None:
+def test_ledger_skips_empty_contracts(catalog: Catalog) -> None:
     design = parse_design(
         catalog,
         {'form': 'himorogi', 'guardians': 'none', 'lanterns': 'none', 'bell': 'clap',
          'box': 'bamboo', 'sacred': 'stone'},
     )  # fmt: skip
-    ledger = negotiate(catalog, design, Negotiation(0.0, 'road'))
+    ledger = build_ledger(catalog, design, LedgerSettings('road'))
     assert 'metalwork' not in {c.key for c in ledger.contracts}
-    assert ledger.remainder < 0
 
 
-def test_gm_query_has_design_and_figures(catalog: Catalog) -> None:
-    design = parse_design(catalog, {'roof': 'thatch'})
-    negotiation = Negotiation(120.0, 'deep', {'roofing': 33}, {'roofing': 28})
-    query = gm_query(catalog, design, negotiation)
+def test_gm_query_has_design_and_settings(catalog: Catalog) -> None:
+    design = parse_design(catalog, {'roof': 'thatch', 'other_bell': 'a conch'})
+    query = gm_query(catalog, design, LedgerSettings('deep', {'bell': 2.5, 'path': 1.0}))
     assert query.startswith(share_query(catalog, design))
-    for part in ('gm_budget=120', 'gm_remote=deep', 'gm_roll_roofing=33', 'gm_base_roofing=28'):
-        assert part in query
-    assert 'gm_roll_carpentry' not in query
+    assert query.endswith('gm_remote=deep&gm_other_bell=2.5')  # no price for an Other not there
 
 
 # --- display --------------------------------------------------------------------------------------
@@ -636,6 +590,7 @@ def test_gm_query_has_design_and_figures(catalog: Catalog) -> None:
         (12.43, '12 koku 4 bu'),
         (0.3, '3 bu'),
         (0.0, '0 bu'),
+        (0.02, 'under 1 bu'),
         (5.0, '5 koku'),
         (-2.5, '-2 koku 5 bu'),
         (1234.0, '1,234 koku'),

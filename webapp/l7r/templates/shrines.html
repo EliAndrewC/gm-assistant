@@ -108,80 +108,50 @@
       <aside class="shrine-ledger" aria-labelledby="shrine-ledger-title">
         <h2 class="shrine-ledger__title" id="shrine-ledger-title">{{ 'GM ledger' if is_gm else 'Ledger' }}</h2>
         <p class="shrine-ledger__subject">Pricing <strong>{{ design.text.get('shrine_name', 'this shrine') }}</strong>{% if missing %}, {{ missing }} choice{{ 's' if missing != 1 }} still open{% endif %}.</p>
-        <p class="shrine-ledger__pin" aria-hidden="true">{% if ledger.remainder >= 0 %}Tadashi keeps{{ ' so far' if missing }} <strong>{{ format_koku(ledger.remainder) }}</strong>{% if ledger.pricing.unpriced %}, less {{ ledger.pricing.unpriced }} unpriced{% endif %}{% else %}Shortfall <strong>{{ format_koku(-ledger.remainder) }}</strong>{% endif %}</p>
-        {% if ledger.pricing.unpriced %}
-          {% set n = ledger.pricing.unpriced %}
-          <p class="shrine-ledger__unpriced" role="note">{{ 'One addition' if n == 1 else n ~ ' additions' }} the player wrote in {{ 'has' if n == 1 else 'have' }} no price yet, and the totals leave {{ 'it' if n == 1 else 'them' }} out.{% if is_gm %} Price {{ 'it' if n == 1 else 'them' }} under Other work, at the bottom of the ledger.{% endif %}</p>
+        {% set unpriced = ledger.pricing.unpriced %}
+        <p class="shrine-ledger__pin" aria-hidden="true">Total{{ ' so far' if missing }} <strong>{{ format_koku(ledger.total) }}</strong>{% if unpriced %}, plus {{ unpriced }} unpriced{% endif %}</p>
+        {% if unpriced %}
+          <p class="shrine-ledger__unpriced" role="note">{{ 'One addition' if unpriced == 1 else unpriced ~ ' additions' }} the player wrote in {{ 'has' if unpriced == 1 else 'have' }} no price yet, and the total leaves {{ 'it' if unpriced == 1 else 'them' }} out.{% if is_gm %} Price {{ 'it' if unpriced == 1 else 'them' }} under Other work, at the bottom of the ledger.{% endif %}</p>
         {% endif %}
         {% if is_gm %}
-          <p class="shrine-ledger__lede">Players whose characters have Commerce see these figures too; only you can change them. Enter Tadashi's Commerce roll for each contract; each point over the baseline takes one percent off that contract. Totals update when you leave a field or press Enter.</p>
+          <p class="shrine-ledger__lede">The fair price of every choice, by the contract that would do the work. Players whose characters have Commerce see these figures too; only you can change the remoteness and the prices of the player's own additions.</p>
         {% else %}
-          <p class="shrine-ledger__lede">Your character's Commerce lets you see what this shrine costs. Only your GM can change these figures: the GM enters Tadashi's Commerce roll for each contract; each point over the baseline takes one percent off that contract.</p>
+          <p class="shrine-ledger__lede">Your character's Commerce lets you see what this shrine costs: the fair price of every choice, by the contract that would do the work.</p>
         {% endif %}
 
         <dl class="shrine-totals">
-          {% set unpriced = ledger.pricing.unpriced %}
-          {% set plus = ('<small class="shrine-totals__open">+ ' ~ unpriced ~ ' unpriced</small>')|safe if unpriced else '' %}
-          <div><dt>Fair price</dt><dd>{{ format_koku(ledger.fair_total) }}{{ plus }}</dd></div>
-          <div><dt>Paid after haggling</dt><dd>{{ format_koku(ledger.paid_total) }}{{ plus }}</dd></div>
-          <div><dt>Budget</dt><dd>{{ format_koku(ledger.budget) }}</dd></div>
-          {% if ledger.remainder >= 0 %}
-            <div class="shrine-totals__keep"><dt>Tadashi keeps{{ ' so far' if missing }}</dt><dd>{{ format_koku(ledger.remainder) }}{% if unpriced %}<small class="shrine-totals__open">less {{ unpriced }} unpriced</small>{% endif %}</dd></div>
-          {% else %}
-            <div class="shrine-totals__short"><dt>Shortfall</dt><dd>{{ format_koku(-ledger.remainder) }}</dd></div>
-          {% endif %}
+          <div class="shrine-totals__keep"><dt>Fair price{{ ' so far' if missing }}</dt><dd>{{ format_koku(ledger.total) }}{% if unpriced %}<small class="shrine-totals__open">+ {{ unpriced }} unpriced</small>{% endif %}</dd></div>
         </dl>
 
         {% if is_gm %}
         <div class="shrine-ledger__settings">
           <label class="shrine-field">
-            <span>Budget (koku)</span>
-            <input type="number" name="gm_budget" min="0" step="1" value="{{ format_number(negotiation.budget) }}" />
-            <small>Suggested {{ format_koku(suggested_budget) }}: the reference shrine plus a fifth, for a budget negotiation won by more than 10.</small>
-          </label>
-          <label class="shrine-field">
             <span>Remoteness</span>
             <select name="gm_remote">
               {% for r in catalog.remoteness %}
-                <option value="{{ r.key }}" {% if r.key == negotiation.remoteness %}selected{% endif %}>{{ r.label }}</option>
+                <option value="{{ r.key }}" {% if r.key == settings.remoteness %}selected{% endif %}>{{ r.label }}</option>
               {% endfor %}
             </select>
-            <small>Porters charge {{ format_koku(ledger.pricing.rate) }} per load{% if ledger.pricing.heavy %}; this design needs {{ format_number(ledger.pricing.heavy) }} loads carried in{% else %}; nothing chosen so far needs carrying in{% endif %}.</small>
+            <small>Porters charge {{ format_number(ledger.pricing.rate * 10) }} bu per load{% if ledger.pricing.heavy %}; this design needs {{ format_number(ledger.pricing.heavy) }} loads carried in{% else %}; nothing chosen so far needs carrying in{% endif %}.</small>
           </label>
         </div>
         {% else %}
         <div class="shrine-ledger__settings shrine-ledger__settings--read">
-          <input type="hidden" name="gm_budget" value="{{ format_number(negotiation.budget) }}" />
-          <input type="hidden" name="gm_remote" value="{{ negotiation.remoteness }}" />
-          {% for r in catalog.remoteness if r.key == negotiation.remoteness %}
-            <p><span>Remoteness</span> {{ r.label }}. Porters charge {{ format_koku(ledger.pricing.rate) }} per load{% if ledger.pricing.heavy %}; this design needs {{ format_number(ledger.pricing.heavy) }} loads carried in{% else %}; nothing chosen so far needs carrying in{% endif %}.</p>
+          <input type="hidden" name="gm_remote" value="{{ settings.remoteness }}" />
+          {% for r in catalog.remoteness if r.key == settings.remoteness %}
+            <p><span>Remoteness</span> {{ r.label }}. Porters charge {{ format_number(ledger.pricing.rate * 10) }} bu per load{% if ledger.pricing.heavy %}; this design needs {{ format_number(ledger.pricing.heavy) }} loads carried in{% else %}; nothing chosen so far needs carrying in{% endif %}.</p>
           {% endfor %}
         </div>
         {% endif %}
 
         <ol class="shrine-contracts">
           {% for c in ledger.contracts %}
-            <li class="shrine-contract{% if c.roll is not none %} is-negotiated{% endif %}">
+            <li class="shrine-contract">
               <div class="shrine-contract__head">
                 <span class="shrine-contract__label">{{ c.label }}</span>
-                {% set open_lines = c.items|rejectattr('priced')|list|length %}
-                <span class="shrine-contract__fair">{% if open_lines and not c.fair %}{{ open_lines }} unpriced{% else %}{{ format_koku(c.fair) }}{% if open_lines %} + {{ open_lines }} unpriced{% endif %}{% endif %}</span>
+                <span class="shrine-contract__fair">{% if c.unpriced and not c.fair %}{{ c.unpriced }} unpriced{% else %}{{ format_koku(c.fair) }}{% if c.unpriced %} + {{ c.unpriced }} unpriced{% endif %}{% endif %}</span>
               </div>
-              <div class="shrine-contract__rolls">
-                {% if is_gm %}
-                  <label>Roll <input type="number" name="gm_roll_{{ c.key }}" min="0" max="200" value="{{ c.roll if c.roll is not none else '' }}" inputmode="numeric" /></label>
-                  <label>Baseline <input type="number" name="gm_base_{{ c.key }}" min="0" max="200" value="{{ c.baseline }}" inputmode="numeric" /></label>
-                {% else %}
-                  {% if c.roll is not none %}<input type="hidden" name="gm_roll_{{ c.key }}" value="{{ c.roll }}" />{% endif %}
-                  <input type="hidden" name="gm_base_{{ c.key }}" value="{{ c.baseline }}" />
-                  {% if c.roll is not none %}<span class="shrine-contract__figure">Roll {{ c.roll }} against baseline {{ c.baseline }}</span>{% endif %}
-                {% endif %}
-                <span class="shrine-contract__paid">
-                  {% if c.roll is none %}not yet negotiated{% else %}{{ c.saving_pct }}% off = <strong>{{ format_koku(c.paid) }}</strong>{% endif %}
-                </span>
-              </div>
-              <details class="shrine-contract__items">
-                <summary>{% if c.key == 'porterage' %}Show the heavy loads{% elif c.key == 'other' and is_gm %}Price {{ c.items|length }} item{{ 's' if c.items|length != 1 }}{% else %}Show {{ c.items|length }} item{{ 's' if c.items|length != 1 }}{% endif %}</summary>
+              <div class="shrine-contract__items">
                 <ul>
                   {% if c.key == 'porterage' %}
                     {% for item in ledger.pricing.items if item.heavy %}
@@ -205,7 +175,7 @@
                     {% endfor %}
                   {% endif %}
                 </ul>
-              </details>
+              </div>
             </li>
           {% endfor %}
         </ol>

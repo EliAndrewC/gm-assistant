@@ -1,5 +1,5 @@
 """Shrine builder (feature 216): a wizard where a player designs a shrine with no prices shown,
-and a ledger that prices it and lets Tadashi haggle per contract - shown to the GM, and read-only
+and a ledger that prices it, contract by contract - shown to the GM, and read-only
 to a player whose grouped character has Commerce (FR-048).
 
 The design lives in the page's query string (the link IS the save). Secrecy is structural: the
@@ -7,7 +7,7 @@ catalog data sits outside `static/` and the template receives a ledger only for 
 
     catalog.py  - the catalog data model, the one `when` rule grammar, loading and validation
     design.py   - resolving a design (one forward pass), links, the rules JSON for the browser
-    pricing.py  - fair prices, porterage, negotiation, number formatting (ledger viewers only)
+    pricing.py  - fair prices by contract, porterage, number formatting (ledger viewers only)
     access.py   - who besides the GM sees the ledger: Commerce, read from the character-sheet app
 
 Index, rules and the historical grounding of the prices: `CLAUDE.md` next to this file.

@@ -15,8 +15,7 @@ A player designs a small, remote, unstaffed shrine in a step-by-step wizard, one
 (the name first, a summary and the share link last; steps that do not apply are skipped). The
 design lives entirely in the link; the current step rides in the `#step-...` hash, which the share
 link never carries. The GM opens the same link while signed in as GM and sees the fair price
-of every choice, grouped into contracts, and a ledger where Tadashi's Commerce rolls bring each
-contract down. What is left of the budget is what he keeps. A signed-in player who owns a
+of every choice, grouped into contracts with each contract's items listed - a breakdown, no more. A signed-in player who owns a
 character on the character-sheet app that is in a gaming group and has Commerce sees the same
 ledger read-only (FR-048); its inputs stay the GM's.
 
@@ -26,7 +25,7 @@ ledger read-only (FR-048); its inputs stay the GM's.
 | `data/groups/<key>.yaml` | one wizard section each: its steps, options, player text, GM-only price `lines`, and `when` rules |
 | `catalog.py` | the data model, the one `when` grammar (`Clause`), loading (`load_raw` merges the files) and validation |
 | `design.py` | resolving a design in one forward pass, links, moot notes, `enables`, and `rules_json` for the browser |
-| `pricing.py` | fair prices, porterage, Tadashi's per-contract haggling, number formatting (ledger viewers only) |
+| `pricing.py` | fair prices by contract, porterage, the GM's prices for Something else, number formatting (ledger viewers only) |
 | `data/looks.yaml` | feature 228: what each option LOOKS like, one phrase each, for the image prompt (missing or stray = CatalogError) |
 | `data/art.yaml`, `art.py` | the art styles; the deterministic image prompt; the Gemini image call (REST) |
 | `describe.py` | the description's short brief and the design as the model reads it |
@@ -179,13 +178,14 @@ did, in `test_shoda_only_appears_as_an_example`).
   deep forest: two days a trip (0.33). Remoteness changes porterage and nothing else.
 - **Rites**: a pacification festival is its own option because enshrining someone who died a hard,
   disputed death is the *goryo* pattern (Michizane as Tenjin): the shrine exists to calm the dead.
-- **Negotiation**: Commerce has no pricing formula in the rules, so each contract borrows the
-  Culture gift rule's shape: max(0, roll - baseline) percent off, baseline 25 by default. The GM can
-  type a contractor's contested roll into the baseline instead.
-- **Suggested budget**: the reference design (`reference:` in each category - a "fairly nice small
-  memorial in the forest", ~62.7 koku at the default remoteness) x 1.2, rounded up to 5 =
-  **80 koku** (165 before the money-skill re-price, 65 before diagram 0255 re-priced the sanctuary, 75 before 0268/0269 re-priced the pavilion, the lanterns and the site). The
-  1.2 is Tadashi's budget negotiation won by more than 10. Computed, so it moves with the prices.
+- **The ledger is a breakdown, not a negotiation** (GM 2026-10-26). It once held a budget,
+  per-contract Commerce rolls with baselines, a haggled price and "what Tadashi keeps"; the GM took
+  them out to keep the tool general - contested Commerce rolls are settled at the table, from the
+  per-contract breakdown. Don't re-add a budget, rolls or a remainder. Old GM links still carry
+  `gm_budget`, `gm_roll_*` and `gm_base_*`; they are ignored and the design opens unchanged.
+- **The reference shrine** (`reference:` in each category) is the "fairly nice small memorial in
+  the forest", ~62.7 koku at the default remoteness - the yardstick the prices were checked
+  against.
 
 ## Testing it
 
@@ -199,7 +199,7 @@ did, in `test_shoda_only_appears_as_an_example`).
   sacred object are skipped). The last step lists every pick (each line jumps back to its step) and
   holds the link. View source: no `koku` anywhere.
 - Signed in as GM, open the same link: the GM ledger appears on the right (below on narrow screens).
-  Type a roll into a contract; the page recalculates and the "Tadashi keeps" line moves.
+  Change the remoteness; the page recalculates, and the porters' line and the total move.
 - Old links: `python3 -m pytest -q tests/test_shrines_other.py -k frozen` (Shizu's link first).
 - Something else: on any step, check "Something else", type, pick "Instead of these": the cards dim,
   Next unlocks, the link gains `other_<step>` and `instead_<step>=1`, and the summary shows it. As

@@ -162,3 +162,9 @@ On every choice step a player can pick "Something else", type their own idea, an
   - now required. Non-blocking: record "Instead" on a step others depend on, what "matches" compares, the 300-character
   cap, and the reading of "manually editing the prompt" as decisions - done.
 - **2026-10-26, spec-fidelity round 2: FAITHFUL.** Deploying to fly.io belongs in the plan (it is there).
+
+## Amendment 2026-10-26
+
+The ledger no longer negotiates (see feature 216's amendment of the same date), so a priced Other is simply
+added to the Other work contract and the total; "haggled with the Other work contract" (US3.2) and "what
+Tadashi keeps" (US3.4) no longer apply. Unpriced Others are still named beside the total.

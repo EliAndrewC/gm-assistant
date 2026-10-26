@@ -97,7 +97,6 @@ wordings:
   - name: fortune
     when: {kind: [fortune]}
 
-budget_padding: 1.2   # Tadashi won the budget negotiation by 10+ (research.md R6)
 
 # The wizard's sections, in order; each is data/groups/<key>.yaml. Order matters: a `when`
 # condition may only refer to a category in an EARLIER group (or earlier in the same group).

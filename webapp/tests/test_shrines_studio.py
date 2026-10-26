@@ -628,7 +628,7 @@ def test_gm_ledger_prices_other_work(root: Root) -> None:
     assert 'name="gm_other_bell"' in page
     assert 'placeholder="unpriced"' in page
     assert '+ 1 unpriced' in page
-    assert 'less 1 unpriced' in page
+    assert ', plus 1 unpriced' in page  # the pinned total
     priced = root.shrines(**parse_qs(QUERY + '&gm_other_bell=2')).decode()
     assert '+ 1 unpriced' not in priced
     assert 'value="2"' in priced

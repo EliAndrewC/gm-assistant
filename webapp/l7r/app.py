@@ -84,17 +84,16 @@ from l7r.shrines import (
     TEXT_FIELDS,
     Catalog,
     answered,
-    default_budget,
+    build_ledger,
     format_koku,
     format_number,
     gm_query,
     load_catalog,
     moot_note,
-    negotiate,
     option_effects,
     option_offered,
     parse_design,
-    parse_negotiation,
+    parse_settings,
     rules_json,
     share_query,
     upgrade_params,
@@ -475,12 +474,11 @@ class Root:
         priced = is_gm or (user is not None and self._cost_access.allows(user.discord_id))
         context: dict[str, Any] = {}
         if priced:
-            negotiation = parse_negotiation(catalog, params)
+            settings = parse_settings(catalog, params)
             context = {
-                'ledger': negotiate(catalog, design, negotiation),
-                'negotiation': negotiation,
-                'gm_query': gm_query(catalog, design, negotiation),
-                'suggested_budget': default_budget(catalog),
+                'ledger': build_ledger(catalog, design, settings),
+                'settings': settings,
+                'gm_query': gm_query(catalog, design, settings),
                 'format_koku': format_koku,
                 'format_number': format_number,
             }

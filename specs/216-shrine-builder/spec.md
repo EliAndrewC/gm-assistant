@@ -355,3 +355,18 @@ The GM reviewed the deployed page. These requirements supersede the ones they na
 - **Round 18 (amendment 9, message 10) - CHANGES REQUIRED** (2026-10-18). FR-048 and the owner,
   any-group, fail-closed and cache decisions judged faithful. Change: the GM said "see", so a
   non-GM viewer's ledger is read-only; the inputs stay the GM's. Applied verbatim.
+
+## Amendment 2026-10-26: the ledger is a breakdown, not a negotiation
+
+GM, verbatim: "as for the GM's ledger on that page, while I do want to see what the prices come to, you can
+get rid of the stuff about the contested commerce rolls and Tadashi specifically, since this tool is meant to
+be more general than that. Just showing a breakdown is fine, because I can decide how to handle the contested
+commerce roles outside of the context of this app, so long as I have the information that is needed to do
+that, such as the breakdown of what costs go to carpentry and what go to stonemasons and such." ("roles" =
+rolls.)
+
+Removed: the budget (and the suggested budget), per-contract Commerce rolls and baselines, the haggled price,
+and "what Tadashi keeps" / the shortfall. Kept: the fair price of every choice by contract with each
+contract's items listed (now open by default), porterage by remoteness, Other work prices (feature 228), and
+the read-only view for Commerce players (FR-048). Links carrying the old `gm_budget`, `gm_roll_*` and
+`gm_base_*` still open their design; those parameters are ignored.

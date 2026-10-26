@@ -182,7 +182,6 @@ class Catalog:
     remoteness: tuple[Remoteness, ...]
     default_remoteness: str
     site_lines: tuple[SiteLine, ...]
-    budget_padding: float
     default_name: str = ''
     # Named wordings, in priority order: the first whose condition holds is used.
     wordings: tuple[tuple[str, Condition], ...] = ()
@@ -303,7 +302,6 @@ def parse_catalog(data: Mapping[str, Any]) -> Catalog:
             SiteLine(str(s['label']), str(s['contract']), float(s['koku']))
             for s in data['site_lines']
         ),
-        budget_padding=float(data['budget_padding']),
         default_name=str(data.get('default_name', '')),
         wordings=tuple((str(w['name']), _condition(w['when'])) for w in data.get('wordings', ())),
         phases=tuple(

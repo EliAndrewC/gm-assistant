@@ -14,13 +14,13 @@ from l7r.shrines import (
     Catalog,
     CatalogError,
     answered,
+    build_ledger,
     gm_query,
     load_catalog,
     load_raw,
-    negotiate,
     parse_catalog,
     parse_design,
-    parse_negotiation,
+    parse_settings,
     share_query,
     upgrade_params,
 )
@@ -245,7 +245,7 @@ def test_other_round_trips_through_the_share_link(catalog: Catalog) -> None:
 def test_other_is_an_unpriced_line_until_the_gm_prices_it(catalog: Catalog) -> None:
     params: dict[str, Any] = {'bell': 'suzu', 'other_bell': 'a conch'}
     design = parse_design(catalog, params)
-    ledger = negotiate(catalog, design, parse_negotiation(catalog, params))
+    ledger = build_ledger(catalog, design, parse_settings(catalog, params))
     other = next(c for c in ledger.contracts if c.key == 'other')
     assert other.fair == 0
     assert ledger.pricing.unpriced == 1
@@ -253,24 +253,24 @@ def test_other_is_an_unpriced_line_until_the_gm_prices_it(catalog: Catalog) -> N
     assert (item.step, item.priced, item.option) == ('bell', False, 'plus a conch')
 
     params['gm_other_bell'] = '2.5'
-    priced = negotiate(catalog, design, parse_negotiation(catalog, params))
+    priced = build_ledger(catalog, design, parse_settings(catalog, params))
     assert priced.pricing.unpriced == 0
-    assert priced.fair_total == pytest.approx(ledger.fair_total + 2.5)
-    assert 'gm_other_bell=2.5' in gm_query(catalog, design, parse_negotiation(catalog, params))
+    assert priced.total == pytest.approx(ledger.total + 2.5)
+    assert 'gm_other_bell=2.5' in gm_query(catalog, design, parse_settings(catalog, params))
 
 
 def test_instead_removes_the_replaced_options_price(catalog: Catalog) -> None:
     base = {'bell': 'gong'}
-    plain = negotiate(catalog, parse_design(catalog, base), parse_negotiation(catalog, base))
+    plain = build_ledger(catalog, parse_design(catalog, base), parse_settings(catalog, base))
     swap = {**base, 'other_bell': 'a conch', 'instead_bell': '1', 'gm_other_bell': '0'}
     design = parse_design(catalog, swap)
-    swapped = negotiate(catalog, design, parse_negotiation(catalog, swap))
-    assert swapped.fair_total < plain.fair_total
+    swapped = build_ledger(catalog, design, parse_settings(catalog, swap))
+    assert swapped.total < plain.total
     assert any(i.option == 'instead, a conch' for i in swapped.pricing.items)
 
 
-def test_gm_other_price_is_parsed_like_a_budget(catalog: Catalog) -> None:
-    n = parse_negotiation(
+def test_gm_other_price_is_parsed_as_koku(catalog: Catalog) -> None:
+    n = parse_settings(
         catalog, {'gm_other_bell': '-4', 'gm_other_roof': 'lots', 'gm_other_path': 'nan'}
     )
     assert n.others == {'bell': 0.0}
@@ -279,6 +279,6 @@ def test_gm_other_price_is_parsed_like_a_budget(catalog: Catalog) -> None:
 def test_no_other_means_no_other_contract(catalog: Catalog) -> None:
     params = {'bell': 'suzu', 'gm_other_bell': '3'}
     design = parse_design(catalog, params)
-    negotiation = parse_negotiation(catalog, params)
-    assert all(c.key != 'other' for c in negotiate(catalog, design, negotiation).contracts)
-    assert 'gm_other' not in gm_query(catalog, design, negotiation)
+    settings = parse_settings(catalog, params)
+    assert all(c.key != 'other' for c in build_ledger(catalog, design, settings).contracts)
+    assert 'gm_other' not in gm_query(catalog, design, settings)

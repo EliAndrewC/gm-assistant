@@ -542,7 +542,7 @@
     // the sticky nav (seen on mobile); land on the wizard's top instead.
     show(first, !!fromHash);
 
-    // The one-line "Tadashi keeps" pin shows only once the full totals box has scrolled away.
+    // The one-line total pin shows only once the full totals box has scrolled away.
     var totals = document.querySelector('.shrine-totals');
     var ledger = document.querySelector('.shrine-ledger');
     if (totals && ledger && 'IntersectionObserver' in window) {

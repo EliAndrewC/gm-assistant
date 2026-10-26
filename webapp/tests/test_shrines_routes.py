@@ -12,7 +12,14 @@ import pytest
 
 from l7r.app import Root
 from l7r.auth import CurrentUser
-from l7r.shrines import Catalog, load_catalog, negotiate, parse_design, parse_negotiation
+from l7r.shrines import (
+    Catalog,
+    build_ledger,
+    format_koku,
+    load_catalog,
+    parse_design,
+    parse_settings,
+)
 from l7r.shrines.access import FAILURE_TTL, TTL, CostAccess, commerce_owners
 
 #: The sheet app's `GET /api/characters` shape, trimmed to what FR-048 reads.
@@ -82,8 +89,9 @@ def most_expensive(catalog: Catalog) -> dict[str, str]:
 
 # Feature 228 adds a player's "Something else" and the GM's price for it (spec US3.5).
 GM_PARAMS = {
-    'gm_budget': '7',
     'gm_remote': 'deep',
+    # From before 2026-10-26, when the ledger negotiated: old links still carry these.
+    'gm_budget': '7',
     'gm_roll_carpentry': '40',
     'other_bell': 'a conch',
     'gm_other_bell': '9',
@@ -150,22 +158,25 @@ def test_gm_view_sums_match_the_ledger(root: Root, catalog: Catalog, as_user: ob
     as_user('gm')  # type: ignore[operator]
     params = {'form': 'shinmei', 'roof': 'thatch', **GM_PARAMS}
     page = root.shrines(**params).decode('utf-8')
-    ledger = negotiate(catalog, parse_design(catalog, params), parse_negotiation(catalog, params))
+    ledger = build_ledger(catalog, parse_design(catalog, params), parse_settings(catalog, params))
     assert 'GM ledger' in page
-    assert ledger.remainder < 0
-    assert re.search(r'Shortfall</dt><dd>([^<]*)', page) is not None
+    assert f'Fair price so far</dt><dd>{format_koku(ledger.total)}' in page
     for contract in ledger.contracts:
-        assert contract.label in page
-    assert 'name="gm_roll_carpentry" min="0" max="200" value="40"' in page
-    assert 'gm_budget=7' in page
-    assert 'choices still open' in page  # the GM's own link keeps the figures
+        assert f'{contract.label}</span>' in page
+        assert format_koku(contract.fair) in page
+    assert 'gm_remote=deep' in page  # the GM's own link keeps the setting
+    assert 'choices still open' in page
 
 
-def test_gm_view_shows_what_tadashi_keeps(root: Root, as_user: object) -> None:
+def test_the_ledger_is_a_breakdown_with_no_negotiation(root: Root, as_user: object) -> None:
+    """GM 2026-10-26: no budget, rolls or Tadashi - an old link with those figures opens fine."""
     as_user('gm')  # type: ignore[operator]
-    page = root.shrines(form='himorogi').decode('utf-8')
-    assert re.search(r'Tadashi keeps so far</dt><dd>[^<]*koku', page) is not None
-    assert 'not yet negotiated' in page
+    page = root.shrines(form='himorogi', **GM_PARAMS).decode('utf-8')
+    for gone in ('Tadashi', 'gm_roll', 'gm_base', 'gm_budget', 'Budget', 'haggl', 'Shortfall'):
+        assert gone not in page, gone
+    assert '<div class="shrine-contract__items">' in page  # the breakdown shows, no toggle
+    assert '1.7 bu per load' not in page  # deep, not the default trail
+    assert '3.3 bu per load' in page
 
 
 def test_chosen_option_with_voids_stays_checked(root: Root) -> None:
@@ -221,7 +232,7 @@ def test_open_choices_are_flagged_on_the_summary_and_ledger(root: Root, as_user:
     assert re.search(r'<strong data-open-count>\d+ choices still open\.</strong>', page)
     as_user('gm')  # type: ignore[operator]
     gm = root.shrines(form='hokora').decode('utf-8')
-    assert 'Tadashi keeps so far' in gm
+    assert 'Fair price so far' in gm
 
 
 def test_complete_design_has_no_open_note(root: Root, catalog: Catalog) -> None:
@@ -360,12 +371,9 @@ def test_a_commerce_player_sees_the_ledger_read_only(
     # The link's GM figures are shown and carried, never editable (the GM said "see").
     assert 'type="number"' not in page
     assert '<select name="gm_remote"' not in page
-    assert '<input type="hidden" name="gm_budget" value="7" />' in page
     assert '<input type="hidden" name="gm_remote" value="deep" />' in page
-    assert '<input type="hidden" name="gm_roll_carpentry" value="40" />' in page
-    assert 'Roll 40 against baseline 25' in page
-    assert 'Roll -' not in page
-    assert 'Only your GM can change these figures' in page
+    assert '<input type="hidden" name="gm_other_bell" value="9" />' in page
+    assert "Your character's Commerce lets you see what this shrine costs" in page
     assert 'Update totals' not in page
     assert 'Link with these GM figures' not in page
     assert 'data-priced="true"' in page
@@ -378,7 +386,7 @@ def test_the_gm_ledger_keeps_its_inputs_and_says_who_else_sees_it(
     as_user('gm')  # type: ignore[operator]
     page = root.shrines(**most_expensive(catalog), **GM_PARAMS).decode('utf-8')
     assert '<select name="gm_remote"' in page
-    assert 'name="gm_roll_carpentry"' in page
+    assert 'name="gm_other_bell"' in page
     assert 'type="number"' in page
     assert 'Players whose characters have Commerce see these figures too' in page
     assert 'data-priced="true"' in page
