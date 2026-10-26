@@ -15,6 +15,7 @@ from pathlib import Path
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
+from l7r.auth_routes import login_url
 from l7r.fortunes import CLANS, FORTUNES, clan_label
 from l7r.sections import SECTIONS
 
@@ -96,5 +97,7 @@ def build_environment() -> Environment:
     env.globals['CLANS'] = CLANS
     version = static_version()
     env.globals['STATIC_VERSION'] = version
+    # Sign-in links come back to the page they were on (GM 2026-10-26); l7r.js adds the #hash.
+    env.globals['login_href'] = login_url
     env.globals['static_url'] = lambda path, _v=version: static_url(path, _v)
     return env

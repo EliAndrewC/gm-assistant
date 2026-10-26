@@ -607,7 +607,7 @@ def test_page_carries_the_studio_only_for_signed_in_users(root: Root) -> None:
     assert 'data-studio data-signed-in="false"' in anon
     for control in ('data-describe', 'data-draw', 'data-save'):
         assert control not in anon
-    assert 'href="/auth/login">Sign in</a> to describe' in anon
+    assert 'data-signin>Sign in</a> to describe' in anon
     assert 'plus a conch' in anon  # the summary shows the player's own words
     sign_in()
     page = root.shrines(**parse_qs(QUERY)).decode()

@@ -7,6 +7,15 @@
 (function () {
   'use strict';
 
+  // Sign-in links come back to this page (GM 2026-10-26). The server already puts the path and
+  // query in ?next=; only the browser knows the #hash (the shrine builder's current step, and the
+  // address it has rewritten since the page loaded), so rebuild next from the live location.
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest && event.target.closest('a[data-signin]');
+    if (!link) return;
+    link.href = '/auth/login?next=' + encodeURIComponent(location.pathname + location.search + location.hash);
+  });
+
   function initRelicsFilter() {
     // Two kinds of fortune filters:
     //   data-fortune="<slug|all>"   - single-fortune buttons + the "all" reset
