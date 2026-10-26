@@ -1,0 +1,70 @@
+{% extends "_layout.html" %}
+
+{% block title %}Price sheets - L7R money{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ static_url('css/money.css') }}" />
+<script src="{{ static_url('js/money_prices.js') }}" defer></script>
+{% endblock %}
+
+{#
+  The price sheets (feature 225): the money ledger's Rokugani prices by kind, read at request time
+  (l7r/money/prices.py groups them). money_prices.js only filters; without it every sheet shows.
+#}
+
+{% block content %}
+<section class="container">
+  <div class="masthead">
+    <div class="masthead__copy">
+      <p class="money-crumb"><a href="/money">Money</a></p>
+      <h1 class="masthead__title">Price sheets</h1>
+      <p class="masthead__lede">What things cost in Rokugan, in the coins a buyer would hand over: food and lodging, cloth, books, tools, fuel, entertainment, and what work pays.</p>
+    </div>
+    <span class="masthead__watermark" lang="ja" aria-hidden="true">値</span>
+  </div>
+</section>
+
+<section class="container prices">
+  <div class="prices__intro detail-prose">
+    <p>A koku is 1,000 sen: 10 bu, each of 10 zeni, each of 10 sen. A range is the spread of the evidence or of the guess behind a price, not room to haggle. Each item says how solid it is: <strong>researched</strong> rests on the historical record, <strong>guess</strong> is reasoned from neighboring prices and waits for research. <strong>Days</strong> are an unskilled laborer's days of pay, about 13 sen a day. Dollars are goods dollars (what it buys today), and for wages, wage dollars (how much it matters); <a href="/money/koku">What's a koku worth?</a> explains both. Open an item for its basis and source.</p>
+    <p>Shrine-building costs are on the <a href="/shrines">shrine builder</a>.</p>
+  </div>
+
+  <nav class="prices__nav" aria-label="Price sheets">
+    <ul>
+      {% for v in sheets %}<li><a href="#{{ v.sheet.id }}">{{ v.sheet.title }}</a></li>{% endfor %}
+    </ul>
+    <label class="prices__filter"><span class="prices__filter-label">Find an item</span><input type="search" class="koku-number prices__search" data-filter placeholder="e.g. sake, inn, kimono" aria-label="Find an item" /></label>
+  </nav>
+  <p class="prices__none" data-none hidden>Nothing matches.</p>
+
+  {% for v in sheets %}
+    <section class="prices__sheet" id="{{ v.sheet.id }}" data-sheet>
+      <h2 class="prices__title">{{ v.sheet.title }}</h2>
+      <p class="prices__blurb">{{ v.sheet.blurb }}</p>
+      <div class="prices__cols" aria-hidden="true"><span>Item</span><span>Price</span><span>Days</span><span>{{ 'Wage dollars' if v.sheet.wage else 'Goods dollars' }}</span></div>
+      <ul class="prices__items">
+        {% for it in v.items %}
+          <li class="prices__item" data-item data-text="{{ (it.row.item ~ ' ' ~ it.row.notes ~ ' ' ~ it.row.tags|join(' '))|lower }}">
+            <details>
+              <summary class="prices__row">
+                <span class="prices__name">{{ it.row.item[:1]|upper ~ it.row.item[1:] }} <span class="prices__tag prices__tag--{{ it.row.label }}">{{ it.solidity }}{{ ', unverified' if it.unverified }}</span></span>
+                <span class="prices__price"><span class="prices__cell-label" aria-hidden="true">Price </span>{{ it.price }} <span class="prices__per">per {{ it.row.per }}</span></span>
+                <span class="prices__days"><span class="prices__cell-label" aria-hidden="true">Days </span>{{ it.days }}</span>
+                <span class="prices__dollars"><span class="prices__cell-label" aria-hidden="true">{{ 'Wage $ ' if v.sheet.wage else 'Goods $ ' }}</span>{{ it.dollars }}</span>
+              </summary>
+              <div class="prices__detail">
+                {% if it.row.notes %}<p>{{ it.row.notes }}</p>{% endif %}
+                <p class="prices__source">Source: {{ source_link(it.row.source)|safe }}</p>
+              </div>
+            </details>
+          </li>
+        {% endfor %}
+      </ul>
+      {% for s in v.swings %}
+        <p class="prices__swing"><strong>Across periods ({{ s.cls }}: {{ s.verdict }}).</strong> {{ s.note }} <a class="koku-link" href="{{ s.source }}">research</a></p>
+      {% endfor %}
+    </section>
+  {% endfor %}
+</section>
+{% endblock %}

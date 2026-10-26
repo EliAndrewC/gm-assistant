@@ -43,6 +43,8 @@ from l7r.dreams import DreamScene, find_scene_by_slug, load_dream_scenes, render
 from l7r.fortunes import FORTUNES
 from l7r.jinja_env import build_environment
 from l7r.money import basket as money_basket
+from l7r.money import ledger as money_ledger
+from l7r.money import prices as money_prices
 from l7r.money import web as money_web
 from l7r.money.readings import (
     LABORER_KOKU_YEAR,
@@ -420,6 +422,23 @@ class Root:
     def money(self, tool: str | None = None, **params: Any) -> bytes:
         if tool is None:
             return self._render('money_index.html', current_section='money')
+        if tool == 'prices':
+            model = money_basket.load()
+            wage = load_wages()[-1]
+            koku_kg, _ = resolve_koku_kg(None)
+            state = money_web.parse_state(model, {})
+            return self._render(
+                'money_prices.html',
+                current_section='money',
+                body_class='page-money',
+                sheets=money_prices.sheets(
+                    money_ledger.load(),
+                    money_ledger.load_swings(),
+                    money_web.state_reading(model, state, koku_kg).per_koku,
+                    wage_dollars_per_koku(wage),
+                ),
+                source_link=money_prices.source_link,
+            )
         if tool != 'koku':
             return self._render_404()
         model = money_basket.load()

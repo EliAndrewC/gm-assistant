@@ -28,7 +28,9 @@ the unit it buys.
 
 **Acceptance**:
 1. Every synthesis row of the ledger that is not a shrine-builder line appears on exactly one sheet, in a fixed order
-   of sheets, cheapest first within a sheet.
+   of sheets, cheapest first within a sheet. A **shrine-builder line** is a row tagged both `construction` and
+   `shrine` (the shrine builder's 104 line items); the tag `shrine` alone is not the test, so the Fox shrine-grade
+   charcoal rows (tagged `fuel`, `charcoal`, `shrine`) go on the fuel sheet.
 2. Each item shows its range in everyday coins (`3-5 zeni`, `about 1 koku 5 bu`), the unit (per night, per item, per
    year), and its range in laborer-days, so its size is felt without converting.
 3. Each item shows how solid it is: **researched** (label historical), **guess**, or **departs from history** (label
@@ -65,12 +67,21 @@ shrine builder for them.
 ## Requirements
 
 - **FR-001**: Sheets are derived from the ledger at request time (no copy of the prices is kept); the tag-to-sheet map
-  lives in code with the first matching sheet winning, and a test asserts every eligible row lands on a sheet.
+  lives in code with the first matching sheet winning, and a test asserts both directions: every eligible row lands on
+  exactly one sheet, and the Fox shrine-grade charcoal rows are among them on the fuel sheet.
 - **FR-002**: Coins by `coins.everyday`; laborer-days at the unskilled day; goods dollars at the central reading
   (averaged over goods), wage dollars for the wages sheet, both from the money skill's own conversion.
 - **FR-003**: Screenshots, `dom_audit` at zero issues and `frontend-review` before it ships (Principle I).
 
 ## Success Criteria
 
-- **SC-001**: every non-shrine synthesis row is on the page; the gate passes.
+- **SC-001**: every synthesis row that is not a shrine-builder line is on the page; the gate passes.
 - **SC-002**: the live page shows the sheets, and the landing page links it.
+
+## Review history
+
+- 2026-10-25, spec-fidelity round 1: CHANGES REQUIRED. "Shrine-builder line" was undefined, and filtering on the tag
+  `shrine` would have dropped the 11 Fox shrine-grade charcoal prices, ordinary fuel. Now defined as tagged both
+  `construction` and `shrine`, with a test in both directions. Ruled faithful: the shrine lines linked rather than
+  repeated, wages and incomes now, dollar readings and laborer-days, the filter and swing notes.
+- 2026-10-25, spec-fidelity round 2: FAITHFUL.
