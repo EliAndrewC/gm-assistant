@@ -44,6 +44,10 @@ laborer bought what a farm wife made. The GM wants a Money page on this work: th
 tasks with their relative cost in time, and homemade goods priced in days of work beside their market prices. Where a
 figure is missing because nobody wrote it down, the page will say so, and say why.
 
+**Estimates logged before filing**: E0194-E0218 (25 figures in hours, days, percent and count; questions 6 and 7, the
+proverb and the historiography, have no figure to guess). Logged in gm-assistant's `estimates.jsonl` and linked to this
+issue, for calibration.
+
 What the record already holds (so the session does not redo it): 0311 (Kumon 2020: annual farm servants worked
 310-330 paid days; village rest days; Li and Pomeranz's estimate of at most 200 spinning days a year for a Chinese
 woman; no household time budget); 0004 (household size and who lives under one roof); 0209 (dyers and weavers as a
