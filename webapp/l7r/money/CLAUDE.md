@@ -49,7 +49,7 @@ The page by hand: `PORT=8097 cherryd --import l7r.app` from the clone's `webapp/
 off: the averaged figure moves and the whole-basket figure does not. Pick Calrose rice: both move. Choose the
 arithmetic mean with every good on: the two figures match. Click "goods dollars", "Which should I pick?" and "What are these?": each opens a write-up, Esc closes it. A source or research link opens in a new tab. Open "Which periods set Rokugan's prices": the periods that price only rice have no weight row and are named under the table. Set Kyoto
 1745-54's weight to 0: fish's detail now rests on Beijing 1615, Beijing 1820, Canton and Tokyo only. The address bar carries each change and
-reloading it reproduces the figures. Screenshots: the `money*` entries in `tests/screenshot.py`.
+reloading it reproduces the figures. Open `/money`: the Rokugani saying sits under the masthead, captioned as a Rokugani saying (no source for it as a real proverb was found, so it is setting flavor), and "What the records leave out" follows the tool cards. Screenshots: the `money*` entries in `tests/screenshot.py`.
 
 `test_every_ledger_row_carries_label_and_source` loads the real ledger, so a row without a label or source fails the
 gate.
