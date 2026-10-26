@@ -53,6 +53,25 @@ if not body and d.get("tool_name") == "Bash":
     path = path or " ".join(re.findall(r"[\w./-]+\.(?:md|py|sh|toml|json)", cmd))
 if not body:
     print(""); raise SystemExit
+# GUARD_EDIT_OK: STRENGTHENING (feature 229, replacing the memory "no local paths in references").
+# LOCAL CONTAINER PATHS IN SETTING CONTENT. /host-l7r-repo/... and /gm-assistant/... are bind mounts
+# of this container; on GitHub they are broken links. The GM found one in budgets.md (2026-06-08) and
+# more in files a session had written. Checked BEFORE the exemption below, deliberately: that exemption
+# protects the GM own prose from being "corrected", but this rule is about text the SESSION is writing
+# into those files, and budgets.md - the file where it happened - sits under /host-l7r-repo. Only a
+# SOURCE block is skipped. Operational files (CLAUDE.md, docs/, scripts, specs, skills, code) are out of
+# scope: they name real paths because sessions run them.
+# GUARD_EDIT_OK: fixing the new rule so it does not fire on correct work.
+# For a Bash heredoc only a REDIRECT target counts: a python heredoc that edits l7r.md names that file
+# in its code, and its body is code, where a real path is correct (a mention is not an invocation).
+targets = path
+if d.get("tool_name") == "Bash":
+    targets = " ".join(re.findall(r"(?:>>?|\btee\s+(?:-a\s+)?)\s*[\x27\x22]?([^\s\x27\x22;&|]+)", inp.get("command", "") or ""))
+if re.search(r"/host-l7r-repo/|/(?:gm-assistant|\.clones/[^/\s]+)/(?:setting|campaigns|cosmology|hooks|notes)/", targets):
+    prose = re.sub(r"<!--\s*SOURCE: GM NOTES.*?<!--\s*END SOURCE\s*-->", " ", body, flags=re.S | re.I)
+    found = sorted(set(re.findall(r"(?<![\w.-])/(?:host-l7r-repo|gm-assistant|workspace)/[\w./#-]*", prose)))
+    if found:
+        print("PATHS " + " | ".join(found[:4])); raise SystemExit
 # the GM own writing, and the files that must quote the rule
 # gm-request.md is a verbatim transcript of the GM speaking - correcting it would defeat its purpose
 if "/host-l7r-repo" in path or path.endswith("l7r.md") or "gm-request.md" in path:
@@ -99,6 +118,21 @@ print(" | ".join(hits[:6]))
 ')
 
 [ -z "$REPORT" ] && exit 0
+
+# GUARD_EDIT_OK: the message for the feature-229 path rule above.
+case $REPORT in PATHS\ *)
+  cat >&2 <<TAIL
+BLOCKED: a local container path in setting content (${REPORT#PATHS }).
+
+Those paths are this container's bind mounts and are broken links anywhere else. Write instead:
+  /host-l7r-repo/<path>  ->  https://github.com/EliAndrewC/l7r/blob/master/<path>   (l7r's branch is master)
+  /gm-assistant/<path>   ->  https://github.com/EliAndrewC/gm-assistant/blob/main/<path>
+or a relative link between files in the same directory ([budgets.md](budgets.md)), with #anchor as needed.
+
+(scripts/house-style-hooks.sh; docs/l7r-style.md "References between files")
+TAIL
+  exit 2 ;;
+esac
 
 cat >&2 <<TAIL
 BLOCKED: house style ($REPORT).

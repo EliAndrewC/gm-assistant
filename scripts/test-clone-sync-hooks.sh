@@ -195,6 +195,72 @@ OUT=$(printf '{"session_id":"sid-fj"}' \
 case $OUT in *"feature.json is TRACKED"*) printf 'FAIL  warning fires on an UNTRACKED pointer\n      out: %s\n' "$OUT"; FAILED=1 ;;
              *) printf 'ok    silent when the pointer is untracked\n' ;; esac
 
+# ---- feature 229: secrets seeding, the live co-tenant warning, and the turn-end (stop) guard ----
+expect_out() { # expect_out <label> <glob-that-must-match|!glob-that-must-not>
+  case $2 in
+    !*) case $OUT in ${2#!}) printf 'FAIL  %s\n      out: %s\n' "$1" "$OUT"; FAILED=1 ;; *) printf 'ok    %s\n' "$1" ;; esac ;;
+    *)  case $OUT in $2) printf 'ok    %s\n' "$1" ;; *) printf 'FAIL  %s\n      out: %s\n' "$1" "$OUT"; FAILED=1 ;; esac ;;
+  esac
+}
+FMAIN5=$TMP/main5; git init -q -b main "$FMAIN5"
+git -C "$FMAIN5" config user.email t@t; git -C "$FMAIN5" config user.name t
+printf 'webapp/development-secrets.ini\nwebapp/.env\n' > "$FMAIN5/.gitignore"
+echo m0 > "$FMAIN5/f"; git -C "$FMAIN5" add f .gitignore; git -C "$FMAIN5" commit -qm m0
+mkdir -p "$FMAIN5/.clones/.session-clones" "$FMAIN5/webapp"
+M5=$FMAIN5/.clones/.session-clones
+printf '[obsidian_portal]\nconsumer_key = k1\n' > "$FMAIN5/webapp/development-secrets.ini"
+echo FLY_API_TOKEN=t > "$FMAIN5/webapp/.env"
+git clone -q "$FMAIN5" "$FMAIN5/.clones/miscellaneous"; C5=$FMAIN5/.clones/miscellaneous
+git -C "$C5" config user.email t@t; git -C "$C5" config user.name t; mkdir -p "$C5/webapp"
+printf '%s' "$C5" > "$M5/sid-me"
+p5() { OUT=$(printf '%s' "$2" | CLONE_MAIN="$FMAIN5" CLONE_SESSIONS_DIR="$SESS" "$HOOK" "$1" 2>&1); RC=$?; }
+
+# secrets: a fresh clone gets main's copies, and a stale copy is refreshed
+p5 prompt '{"session_id":"sid-me"}'
+cmp -s "$FMAIN5/webapp/development-secrets.ini" "$C5/webapp/development-secrets.ini"; check "prompt seeds the secrets file into a fresh clone" 0 $?
+cmp -s "$FMAIN5/webapp/.env" "$C5/webapp/.env"; check "prompt seeds webapp/.env too" 0 $?
+expect_out "seeding is announced" "*copied main's*development-secrets.ini*"
+printf '[obsidian_portal]\nconsumer_key = k2\n' > "$FMAIN5/webapp/development-secrets.ini"
+p5 prompt '{"session_id":"sid-me"}'
+cmp -s "$FMAIN5/webapp/development-secrets.ini" "$C5/webapp/development-secrets.ini"; check "a stale clone copy is refreshed from main" 0 $?
+p5 prompt '{"session_id":"sid-me"}'
+expect_out "nothing to copy -> silent about secrets" "!*copied main's*"
+
+# co-tenant: a DIRTY clone also claimed by a LIVE other session -> allowed, but the model is told
+printf '%s' "$C5" > "$M5/sid-live-other"
+echo dirt > "$C5/dirt"
+p5 pretool "{\"session_id\":\"sid-me\",\"tool_input\":{\"file_path\":\"$C5/a.txt\"}}"
+check "dirty clone with a live co-tenant -> still allowed" 0 "$RC"
+expect_out "the warning travels as additionalContext (stdout alone never reaches the model)" '*"additionalContext"*another LIVE session (sid-live-other)*'
+p5 pretool "{\"session_id\":\"sid-me\",\"tool_input\":{\"file_path\":\"$C5/a.txt\"}}"
+expect_out "the warning is once per co-tenant" "!*additionalContext*"
+printf '%s' "$C5" > "$M5/sid-dead-other"
+rm -f "$M5"/sid-me.cotenant-*; rm -f "$M5/sid-live-other"
+p5 pretool "{\"session_id\":\"sid-me\",\"tool_input\":{\"file_path\":\"$C5/a.txt\"}}"
+expect_out "a DEAD claimant draws no warning" "!*additionalContext*"
+rm -f "$C5/dirt" "$M5/sid-dead-other"
+
+# stop: no claim / already active / at main's tip -> pass; a commit main lacks -> block
+p5 stop '{"session_id":"sid-nobody"}';                       check "stop: a session with no clone -> passes" 0 "$RC"
+p5 stop '{"session_id":"sid-me"}';                           check "stop: clone at main's tip, no gate -> passes" 0 "$RC"
+echo c > "$C5/f"; git -C "$C5" commit -qam "unpushed"
+p5 stop '{"session_id":"sid-me"}';                           check "stop: clone has commits main lacks -> blocked" 2 "$RC"
+expect_out "the block names the stop-work procedure" "*sync-with-main.sh done*"
+p5 stop '{"session_id":"sid-me","stop_hook_active":true}';   check "stop: the second stop (stop_hook_active) always passes" 0 "$RC"
+git -C "$FMAIN5" pull -q "$C5" main 2>/dev/null
+p5 stop '{"session_id":"sid-me"}';                           check "stop: once main has the commit -> passes" 0 "$RC"
+
+# stop: a `make done` running inside the clone -> blocked; the same command elsewhere -> ignored
+mkdir -p "$C5/webapp"
+bash -c "cd '$C5/webapp' && exec -a make python3 -c 'import time; time.sleep(300)' done" & GATE_PID=$!
+bash -c "cd '$TMP' && exec -a make python3 -c 'import time; time.sleep(300)' done" & OTHER_GATE=$!
+command sleep 0.3
+p5 stop '{"session_id":"sid-me"}';                           check "stop: a make done running in the clone -> blocked" 2 "$RC"
+expect_out "the block says to tail the log" "*Tail its log*"
+kill "$GATE_PID" 2>/dev/null; wait "$GATE_PID" 2>/dev/null
+p5 stop '{"session_id":"sid-me"}';                           check "stop: a make done in another tree -> ignored" 0 "$RC"
+kill "$OTHER_GATE" 2>/dev/null; wait "$OTHER_GATE" 2>/dev/null
+
 [ -n "${LIVE_PID:-}" ] && kill "$LIVE_PID" 2>/dev/null; true
 rm -rf "$TMP"
 echo "-----"

@@ -135,6 +135,50 @@ claim() { # record clone<-session_id so the prompt hook can find this session's 
   [ -n "$sid" ] || return 0
   mkdir -p "$MAPDIR"
   printf '%s' "$clone" > "$MAPDIR/$sid"
+  seed_secrets >/dev/null
+}
+
+# GUARD_EDIT_OK: feature 229 adds three things here, each replacing a Claude Code memory (the project
+# keeps none): seed_secrets, warn_live_claimants, and the `stop` mode below.
+#
+# SEED SECRETS. The secrets file and webapp/.env are gitignored, so a fresh clone has neither, and the
+# OP reads are fail-soft: on 2026-08-25 a clone's "no characters" answer was really "no credentials",
+# and it nearly wrote an empty campaign cache. Main's copy is the source of truth (the GM edits it;
+# deploy-secrets-hooks.sh already refuses to deploy a clone copy that differs from it), so a clone's
+# copy is refreshed whenever it is missing or differs.
+seed_secrets() {
+  local f copied=""
+  [ -d "$clone/webapp" ] || return 0
+  for f in webapp/development-secrets.ini webapp/.env; do
+    [ -f "$MAIN/$f" ] || continue
+    cmp -s "$MAIN/$f" "$clone/$f" && continue
+    cp -p "$MAIN/$f" "$clone/$f" && copied="$copied $f"
+  done
+  [ -z "$copied" ] || echo "clone-sync: copied main's$copied into $clone (gitignored; OP calls and deploys read them)"
+}
+
+# WARN ON A LIVE CO-TENANT, DIRTY OR NOT. The claim backstop below runs only at a clean boundary, but the
+# 2026-07-26 incident was a DIRTY clone: a session the GM believed crashed was alive and had been editing
+# an uncommitted generator for 4h15m, and the newcomer chased "nondeterminism" for ~20 turns. A dirty
+# tree must never be blocked (that strands mid-task work), so this WARNS - through the hook's JSON
+# additionalContext, because a PreToolUse hook's plain stdout at exit 0 never reaches the model. Once per
+# session per co-tenant (marker file), so it is a notice and not noise.
+warn_live_claimants() {
+  local m other mark
+  [ -n "$sid" ] && [ -d "$MAPDIR" ] || return 0
+  for m in "$MAPDIR"/*; do
+    [ -f "$m" ] || continue
+    other=$(basename "$m")
+    [ "$other" = "$sid" ] && continue
+    [ "$(cat "$m" 2>/dev/null)" = "$clone" ] || continue
+    sid_is_live "$other" || continue
+    mark="$MAPDIR/$sid.cotenant-$other"
+    [ -f "$mark" ] && continue
+    : > "$mark"
+    MSG="clone-sync WARNING: another LIVE session ($other) has claimed $clone, which you are editing. Two writers in one tree look like nondeterminism (files change between runs with no edit of yours). Do not take over: commit a WIP checkpoint of what is there, and ask the GM whether that session should be stopped.   (CLAUDE.md 'Session clones')" \
+      python3 -c 'import json, os; print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": os.environ["MSG"]}}))'
+    return 0
+  done
 }
 
 case $MODE in
@@ -153,7 +197,7 @@ case $MODE in
 
     # DIRTY = mid-task work, sacred: allow (record the claim), never strand in-flight work on a
     # moving main. EVERY guard below is a clean-work-unit-boundary check only.
-    if [ -n "$dirty" ]; then claim; exit 0; fi
+    if [ -n "$dirty" ]; then warn_live_claimants; claim; exit 0; fi
 
     # --- clean work-unit boundary: enforce isolation before recording any claim ---
 
@@ -253,6 +297,7 @@ case $MODE in
       fi
     fi
 
+    seed_secrets
     if [ -n "$(git -C "$clone" status --porcelain 2>/dev/null)" ]; then
       echo "clone-sync: $clone has uncommitted work (mid-task) - auto sync-in skipped; finish and run sync-with-main.sh done"
       exit 0
@@ -264,8 +309,49 @@ case $MODE in
     fi
     exit 0
     ;;
+  stop)
+    # TURN-END GUARD (feature 229, replacing the memory "check the background gate before ending the
+    # turn"). On 2026-08-25 a session ended its turn with "I'll commit and push when the gate notifies";
+    # the notification never came and the work sat unpushed for hours, while the GM, who starts work
+    # and leaves, assumed it had landed. Two conditions block the turn end, each ONCE: the harness
+    # re-fires Stop with stop_hook_active=true after a block, and that second stop always passes, so a
+    # session that is deliberately waiting (on a subagent, or for the GM) says so and stops again.
+    # A dirty tree alone does not block: stopping mid-task to ask the GM a question is legitimate.
+    active=$(printf '%s' "$INPUT" | python3 -c 'import json, sys
+try: print("1" if json.load(sys.stdin).get("stop_hook_active") else "")
+except Exception: print("")')
+    [ -z "$active" ] || exit 0
+    sid=$(field session_id)
+    [ -n "$sid" ] && [ -f "$MAPDIR/$sid" ] || exit 0
+    clone=$(cat "$MAPDIR/$sid")
+    [ -d "$clone/.git" ] || exit 0
+    gate=$(CLONE="$clone" PROC="${CLONE_PROC_DIR:-/proc}" python3 -c '
+import os
+clone, proc = os.environ["CLONE"], os.environ["PROC"]
+for pid in os.listdir(proc):
+    if not pid.isdigit():
+        continue
+    try:
+        argv = open(os.path.join(proc, pid, "cmdline"), "rb").read().split(b"\0")
+        cwd = os.readlink(os.path.join(proc, pid, "cwd"))
+    except OSError:
+        continue
+    argv = [a.decode(errors="replace") for a in argv if a]
+    if argv and os.path.basename(argv[0]) == "make" and "done" in argv[1:] and (cwd == clone or cwd.startswith(clone + "/")):
+        print(pid); break')
+    if [ -n "$gate" ]; then
+      echo "BLOCKED (turn end): a \`make done\` is still running in $clone (pid $gate). A background gate's completion notice is not guaranteed to arrive, and the GM is not watching. Tail its log now; when it is green, commit and run ( cd $clone && scripts/sync-with-main.sh done ) in this turn. If you are deliberately waiting for it, say so and end the turn again - this blocks only once.   (CLAUDE.md 'Background the final gate')" >&2
+      exit 2
+    fi
+    head=$(git -C "$clone" rev-parse HEAD 2>/dev/null) || exit 0
+    if ! git -C "$MAIN" merge-base --is-ancestor "$head" HEAD 2>/dev/null; then
+      echo "BLOCKED (turn end): $clone has commits main does not (HEAD ${head:0:8}). The stop-work procedure is: commit, then ( cd $clone && scripts/sync-with-main.sh done ). If you are stopping mid-feature on purpose (waiting on a subagent or the GM, with work that must not reach main yet), say so and end the turn again - this blocks only once.   (CLAUDE.md 'stop-work procedure every time you stop')" >&2
+      exit 2
+    fi
+    exit 0
+    ;;
   *)
-    echo "clone-sync-hooks: unknown mode '$MODE' (want: prompt | pretool)" >&2
+    echo "clone-sync-hooks: unknown mode '$MODE' (want: prompt | pretool | stop)" >&2
     exit 1
     ;;
 esac

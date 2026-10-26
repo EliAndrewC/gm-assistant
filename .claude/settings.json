@@ -133,7 +133,19 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/gm-assistant/scripts/clone-sync-hooks.sh stop  # GUARD_EDIT_OK: new guard (feature 229), running gate or unpushed clone commits at turn end",
+            "timeout": 30
+          }
+        ]
+      }
     ]
   },
+  "autoMemoryEnabled": false,
   "claudeMdExcludes": ["**/.clones/*/CLAUDE.md"]
 }

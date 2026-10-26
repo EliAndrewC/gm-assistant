@@ -92,6 +92,21 @@ HOUSE_STYLE = [
     # guards" rule, met head on. Asserted with a doubled-l word so this case does not itself
     # depend on the fix it is testing.
     ("the cases file quoting one", edit("/r/scripts/test_hooks_cases.py", new="the cruellest form"), "ok"),
+    # LOCAL CONTAINER PATHS IN SETTING CONTENT (feature 229). budgets.md is where the GM first saw
+    # one, and it lives under /host-l7r-repo, which the spelling rules exempt - so the path rule
+    # must fire there anyway.
+    ("a local path into budgets.md", edit("/host-l7r-repo/setting/budgets.md", new="see /gm-assistant/setting/castes.md"), "blocked"),
+    ("a local path into l7r.md", edit("/host-l7r-repo/setting/l7r.md", new="see [x](/host-l7r-repo/setting/budgets.md)"), "blocked"),
+    ("a local path into a handout", write("/host-l7r-repo/current/x.md", "from /workspace/notes/a.md"), "blocked"),
+    ("a local path into a clone's setting file", edit("/gm-assistant/.clones/s/setting/castes.md", new="per /host-l7r-repo/setting/l7r.md"), "blocked"),
+    ("a local path into a campaign by heredoc", cmd("cat > /gm-assistant/campaigns/a.md <<'EOF'\nsee /host-l7r-repo/setting/l7r.md\nEOF"), "blocked"),
+    ("the GitHub URL form", edit("/host-l7r-repo/setting/budgets.md", new="see https://github.com/EliAndrewC/gm-assistant/blob/main/setting/castes.md"), "ok"),
+    ("a relative link", edit("/host-l7r-repo/setting/l7r.md", new="see [budgets.md](budgets.md#tiers)"), "ok"),
+    ("a path inside a SOURCE block", edit("/host-l7r-repo/setting/l7r.md", new="<!-- SOURCE: GM NOTES - DO NOT MODIFY -->/gm-assistant/x<!-- END SOURCE -->"), "ok"),
+    ("a python heredoc that edits l7r.md", cmd("python3 - <<'PY'\np='/host-l7r-repo/setting/l7r.md'\nopen(p,'w').write(x)\nPY"), "ok"),
+    # operational files name real paths because sessions run them
+    ("a doc naming a real path", edit("/gm-assistant/docs/container.md", new="mounted at /host-l7r-repo/setting/l7r.md"), "ok"),
+    ("a script naming one", edit("/gm-assistant/scripts/x.sh", new="cp /gm-assistant/webapp/a b"), "ok"),
 ]
 
 
