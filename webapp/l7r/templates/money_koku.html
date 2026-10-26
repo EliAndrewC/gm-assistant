@@ -133,13 +133,13 @@
                       {% for opt in row.options %}
                         <label class="koku-sub">
                           <input type="radio" name="x_{{ row.good.id }}" value="{{ loop.index0 }}"{% if loop.index0 == row.choice %} checked{% endif %} />
-                          <span><span class="koku-price">{{ dollars(opt.dollars_per_unit, 2) }} a {{ row.good.unit }}</span> <span class="koku-priced-as">{{ opt.priced_as }} <a class="koku-link" href="{{ opt.link }}">source</a></span></span>
+                          <span><span class="koku-price">{{ dollars(opt.dollars_per_unit, 2) }} a {{ row.good.unit }}</span> <span class="koku-priced-as">{{ opt.priced_as }} <a class="koku-link" href="{{ research_url(opt.link) }}">source</a></span></span>
                         </label>
                       {% endfor %}
                     </fieldset>
                   {% elif row.options %}
                     <p><span class="koku-price">{{ dollars(dpu, 2) }} a {{ row.good.unit }}</span>
-                    <span class="koku-priced-as">{{ row.options[0].priced_as }} <a class="koku-link" href="{{ row.options[0].link }}">source</a></span></p>
+                    <span class="koku-priced-as">{{ row.options[0].priced_as }} <a class="koku-link" href="{{ research_url(row.options[0].link) }}">source</a></span></p>
                   {% else %}
                     <p class="koku-missing">not priced today</p>
                   {% endif %}

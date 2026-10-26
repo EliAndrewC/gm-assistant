@@ -252,6 +252,8 @@ def test_each_good_cites_the_periods_its_rokugani_price_rests_on(root: Root) -> 
     behind its price, with a link to the research each price comes from."""
     page = html.unescape(root.money('koku').decode())
     assert 'Rokugan: in silver' not in page
+    shown = page.split('id="koku-data"')[0]
+    assert 'github.com/EliAndrewC/diagram' not in shown  # research opens in the toolkit
     assert "at Kyoto 1745-54's price" not in page
     assert 'Add goods of your own' not in page
     assert 'diagram#17' not in page
