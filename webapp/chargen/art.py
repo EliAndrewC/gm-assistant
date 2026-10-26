@@ -670,7 +670,13 @@ def crop_headshot(image_data: bytes, x: int, y: int, width: int, height: int) ->
     if y <= 0:
         band = round(height * HEADSHOT_HEADROOM)
         cropped = cv2.copyMakeBorder(
-            cropped, band, 0, band // 2, band - band // 2, cv2.BORDER_CONSTANT, value=(255, 255, 255)
+            cropped,
+            band,
+            0,
+            band // 2,
+            band - band // 2,
+            cv2.BORDER_CONSTANT,
+            value=(255, 255, 255),
         )
 
     # Encode back to PNG

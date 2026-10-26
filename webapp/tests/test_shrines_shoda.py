@@ -1,9 +1,9 @@
 """Shizu's memorial to Shoda is priced in a player handout; this keeps the two from drifting apart.
 
-The handout (`current/shoda-shrine.md` in the l7r repository) quotes each contract's fair price for
-the design in `shrine_links.txt`, on a foot trail. When shrine prices change, this test fails, and the
-fix is to re-price the handout in the same pass (the GM commits the l7r repository), update the
-figures below, and redeploy. It replaced a Claude Code memory note (feature 229).
+The handout (`current/shoda-shrine.md` in the l7r repository) quotes each contract's fair price
+for the design in `shrine_links.txt`, on a foot trail. When shrine prices change, this test fails,
+and the fix is to re-price the handout in the same pass (the GM commits the l7r repository),
+update the figures below, and redeploy. It replaced a Claude Code memory note (feature 229).
 """
 
 from __future__ import annotations
@@ -44,15 +44,20 @@ ROWS = {
 }
 FIX = (
     "Shrine prices moved, so Shizu's handout is out of date: re-price it "
-    '(current/shoda-shrine.md in the l7r repo; the GM commits that repo), update PINNED here, and redeploy.'
+    '(current/shoda-shrine.md in the l7r repo; the GM commits that repo), '
+    'update PINNED here, and redeploy.'
 )
 
 
 def shoda_prices() -> dict[str, float]:
     catalog = load_catalog()
-    link = next(ln.strip() for ln in LINKS.read_text(encoding='utf-8').splitlines() if 'Shoda' in ln and ln.startswith('http'))
+    link = next(
+        ln.strip()
+        for ln in LINKS.read_text(encoding='utf-8').splitlines()
+        if 'Shoda' in ln and ln.startswith('http')
+    )
     params = parse_qs(urlsplit(link).query)
-    design = parse_design(catalog, upgrade_params(catalog, params) or params)  # type: ignore[arg-type]
+    design = parse_design(catalog, upgrade_params(catalog, params) or params)
     return {k: v for k, v in price_design(catalog, design, 'trail').by_contract.items() if v}
 
 
@@ -65,7 +70,13 @@ def test_the_shoda_design_still_costs_what_the_handout_says() -> None:
 def test_the_handout_table_matches_the_pinned_prices() -> None:
     if not HANDOUT.exists():
         pytest.skip('the l7r repository is not mounted here; the pinned figures are still checked')
-    rows = dict(re.findall(r'^\| \*\*(\w+)\*\* \|[^|]*\| ~([\d.]+) koku \|', HANDOUT.read_text(encoding='utf-8'), re.M))
+    rows = dict(
+        re.findall(
+            r'^\| \*\*(\w+)\*\* \|[^|]*\| ~([\d.]+) koku \|',
+            HANDOUT.read_text(encoding='utf-8'),
+            re.M,
+        )
+    )
     assert {ROWS[name]: float(koku) for name, koku in rows.items()} == {
         k: round(v, 1) for k, v in PINNED.items()
     }, FIX

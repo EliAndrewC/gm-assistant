@@ -99,5 +99,6 @@ def test_a_crop_at_the_top_edge_gains_white_headroom(full_body_profile: bytes) -
     cropped = art.crop_headshot(full_body_profile, 100, 0, 120, 140)
     decoded = cv2.imdecode(np.frombuffer(cropped, np.uint8), cv2.IMREAD_COLOR)
 
+    assert decoded is not None
     assert decoded.shape[:2] == (140 + band, 120 + band)
     assert (decoded[:band] == 255).all()

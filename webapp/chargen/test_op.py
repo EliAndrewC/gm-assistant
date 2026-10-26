@@ -143,7 +143,7 @@ def test_get_character_body_projects_description(monkeypatch: pytest.MonkeyPatch
 def test_missing_credentials_raise_instead_of_reading_as_no_characters(
     monkeypatch: pytest.MonkeyPatch, section: dict[str, str]
 ) -> None:
-    """Feature 229: an empty list on missing credentials looked like "no characters" (2026-08-25)."""
+    """Feature 229: an empty list on missing credentials read as "no characters" (2026-08-25)."""
     monkeypatch.setattr(op, 'config', {'obsidian_portal': section})
     with pytest.raises(op.OPNotConfigured, match='development-secrets.ini|campaign_id'):
-        op.existing_characters()
+        op.existing_characters()  # type: ignore[no-untyped-call]
