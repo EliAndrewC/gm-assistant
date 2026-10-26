@@ -38,3 +38,5 @@ top_up-improvement.md
 # specs/NNN-*/ while CURRENT_BRANCH still reads correctly. Each clone writes its own; nothing
 # shares it. See CLAUDE.md 'Concurrent sessions' and scripts/clone-sync-hooks.sh's re-track guard.
 .specify/feature.json
+# claim-feature.py's ledger (the lock is *.lock above): a record on the host volume, never tracked
+.specify/feature-numbers.jsonl

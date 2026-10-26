@@ -63,24 +63,16 @@ This project uses spec-driven development governed by [`.specify/memory/constitu
   usage-facing index. A rule that applies to only one domain belongs in that domain's CLAUDE.md,
   not in a forked constitution.
 - **NO FEATURE BRANCHES - spec-kit work included** (GM 2026-07-27). Isolation already comes from the session clone; a branch on top of it is a second axis that buys nothing and broke the stop-work procedure for a whole session. Branch creation is off (`.specify/extensions.yml`, `before_specify`, `enabled: false`) and [`scripts/no-branch-hooks.sh`](../scripts/no-branch-hooks.sh) blocks a hand-rolled `git checkout -b` (escape hatch: `NO_BRANCH_OK` in the command, with a reason). Spec-kit still needs to know which feature is active: **`export SPECIFY_FEATURE=NNN-slug`**, which `common.sh`'s `get_current_branch()` returns ahead of asking git, so `check_feature_branch()` in `setup-plan.sh` / `setup-tasks.sh` is satisfied with no branch at all. **Export `SPECIFY_FEATURE_DIRECTORY` alongside it** - `export SPECIFY_FEATURE_DIRECTORY=specs/NNN-slug`. `SPECIFY_FEATURE` alone is NOT enough and the difference is silent: `common.sh` resolves `FEATURE_DIR` from `SPECIFY_FEATURE_DIRECTORY` (priority 1), then `.specify/feature.json` (priority 2), and only then from the branch name that `SPECIFY_FEATURE` supplies (priority 3) - so with a stale pointer present, `SPECIFY_FEATURE=115` yields `CURRENT_BRANCH=115` and `FEATURE_DIR=.../116`, and spec-kit writes into a PEER's feature directory while every log line looks right. Measured 2026-08-16 on features 115/116.
-- **Concurrent sessions: spec numbers are CLAIMED IN MAIN, not negotiated** (GM 2026-08-16). The
-  GM runs several sessions at once, and each allocates its own `specs/NNN` - so allocate from
-  main's state and publish the claim immediately: after `sync-in`, next number = highest `NNN`
-  under `specs/` + 1; the moment `/speckit-specify` writes `spec.md`, commit the new
-  `specs/NNN-slug/` in the clone and run `scripts/sync-with-main.sh push` (a mid-feature
-  milestone push). The locked pull+push makes the claim atomic - if the pull surfaces another
-  session's same-numbered spec, renumber yours before pushing. Do NOT coordinate numbering by
-  messaging peer sessions: a busy session replies late or never, while main serializes with zero
-  cooperation. Full protocol (and what peer messaging IS for) in
-  [`docs/session-clones.md`](session-clones.md).
-
-**FIXING IT IS THE EXIT.** Principle XIII's three ways out are not a menu (GM 2026-08-23): FIX is
-the expected outcome, REVERT requires a WRITTEN impossibility investigation rather than a
-preference, and a waiver is the GM's to grant after a fix has genuinely been attempted. A session
-that has found a path forward takes it.
-
-**NO KNOWN REGRESSIONS - and nothing merges to main carrying one** (constitution Principle XIII, NON-NEGOTIABLE, GM 2026-08-17: *"never count our work as being done when there are known regressions. Nothing should EVER be merged back into main if even one single new regression was added."*). Two separate bars, and work routinely clears the first and fails the second:
-
+- **Concurrent sessions: spec numbers are CLAIMED UNDER A LOCK, not computed by hand** (GM
+  2026-08-16; the tool ported from the diagram repository 2026-10-26). Run `python3
+  scripts/claim-feature.py <kebab-slug>` from your clone: under `flock` it reads main's `specs/`,
+  the fetched `origin/main`, every OTHER clone's unpushed `specs/` and its ledger, creates
+  `specs/NNN-slug/` in your clone, and prints `export SPECIFY_FEATURE=...` /
+  `export SPECIFY_FEATURE_DIRECTORY=...`. Then, the moment `/speckit-specify` writes `spec.md`,
+  commit that directory and `scripts/sync-with-main.sh push` it - the review gate passes a push
+  that is exactly one new spec directory with no verdict (the claim), and owes the verdict on the
+  next push touching it. Do NOT coordinate numbering by messaging peer sessions. Full protocol in
+  [`session-clones.md`](session-clones.md).
 - **A regression is measured, not remembered.** It is anything that passed before your change and fails after it - a test, a gate check, a pool artifact, a cohort seed, a rate. Take the baseline on unmodified code in a **detached worktree** (`git worktree add --detach /tmp/base HEAD`), never by stashing - a stash mutates the tree under any review agent currently reading it. **And check each failure the worktree reports against your clone before calling it pre-existing**: a fresh worktree carries no GITIGNORED artifacts, so tests that read them fail there for reasons that have nothing to do with the code (measured 2026-08-24: 2 such failures, 20 pool PNGs in the worktree against the clone's 28). The reverse is the dangerous half - the same gap can make a test pass ONLY in the worktree, hiding a real regression from the moment the baseline is taken.
 - **Pre-existing failures are NOT regressions.** They stay ledgered and are not fixed under someone else's feature. That distinction is exactly why the baseline is mandatory.
 - **None of these excuses one**: it is small; it is "only" a cohort seed or a fixture; you documented it (a ledger entry tracks a regression, it does not permit one); the change fixes more than it breaks; or the residue "ROTATED" because a re-roll moved which seeds fail. On rotation specifically - where per-seed comparison survives, a check that passed on a seed and now fails is a regression; where the re-roll makes per-seed comparison meaningless, the pass RATE must not drop **and** every newly-failing check must be individually diagnosed.
