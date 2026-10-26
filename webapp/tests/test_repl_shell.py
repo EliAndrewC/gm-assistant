@@ -497,3 +497,16 @@ class TestSettlingHooks:
         worker.join()
         assert drawn == ['>>> ']
         assert calls == []
+
+    def test_a_failed_settle_still_echoes_so_underscore_is_this_roll(
+        self, hooks: tuple[list[object], list[int]], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        echoed, _ = hooks
+
+        def fail(ask: object = None) -> None:
+            raise npcskills.PrimaryLeft('Hideki has left')
+
+        monkeypatch.setattr(npcskills, 'settle_pending', fail)
+        with pytest.raises(npcskills.PrimaryLeft):
+            sys.displayhook(7)
+        assert echoed == [7]
