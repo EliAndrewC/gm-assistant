@@ -114,10 +114,24 @@ def _pick[T: _Dated](items: Sequence[T], date: str | None, what: str) -> T:
     raise SystemExit(f'no {what} dated {date}; have {", ".join(i.date for i in items)}')
 
 
-def _span(low: int, high: int) -> str:
+def _span(low: float, high: float, unit: str = 'sen') -> str:
+    if unit != 'sen':
+        word = '' if unit == 'count' else f' {unit}'
+        return f'{low:g}{word}' if low == high else f'{low:g} to {high:g}{word}'
     if low == high:
-        return coins.everyday(low)
-    return f'{coins.everyday(low)} to {coins.everyday(high)}'
+        return coins.everyday(int(low))
+    return f'{coins.everyday(int(low))} to {coins.everyday(int(high))}'
+
+
+def _amount(text: str, unit: str) -> float:
+    """Coins for sen ("4 bu 2 sen"), a plain number for every other unit."""
+    if unit == 'sen':
+        return coins.parse(text)
+    try:
+        value = float(text)
+    except ValueError:
+        raise SystemExit(f'{text!r} is not a number of {unit}') from None
+    return int(value) if value.is_integer() else value
 
 
 def _convert(args: argparse.Namespace, basis: _Basis) -> None:
@@ -282,8 +296,8 @@ def _estimate(args: argparse.Namespace, basis: _Basis) -> None:
         date=_today(),
         item=args.item,
         question=args.question,
-        low=coins.parse(args.low),
-        high=coins.parse(args.high or args.low),
+        low=_amount(args.low, args.unit),
+        high=_amount(args.high or args.low, args.unit),
         per=args.per,
         category=args.category,
         method=args.method,
@@ -295,12 +309,15 @@ def _estimate(args: argparse.Namespace, basis: _Basis) -> None:
             'wage': basis.wage.date,
             'laborer_koku_year': f'{LABORER_KOKU_YEAR:.2f}',
         },
+        unit=args.unit,
     )
     if est.low > est.high:
         raise SystemExit('low is above high')
     cal.append(cal.ESTIMATES, est)
-    _say(f'{est.id}: {est.item} = {_span(est.low, est.high)} per {est.per} [{est.category}] logged')
-    _say(f'  {basis.dollars(est.low, est.high)}')
+    span = _span(est.low, est.high, est.unit)
+    _say(f'{est.id}: {est.item} = {span} per {est.per} [{est.category}] logged')
+    if est.unit == 'sen':
+        _say(f'  {basis.dollars(int(est.low), int(est.high))}')
 
 
 def _link(args: argparse.Namespace, basis: _Basis) -> None:
@@ -316,20 +333,23 @@ def _link(args: argparse.Namespace, basis: _Basis) -> None:
 
 def _finding(args: argparse.Namespace, basis: _Basis) -> None:
     estimates = cal.load_estimates()
-    if args.id not in {e.id for e in estimates}:
+    units = {e.id: e.unit for e in estimates}
+    if args.id not in units:
         raise SystemExit(f'no estimate {args.id}')
+    unit = units[args.id]
     finding = cal.Finding(
         args.id,
         _today(),
-        coins.parse(args.low),
-        coins.parse(args.high or args.low),
+        _amount(args.low, unit),
+        _amount(args.high or args.low, unit),
         args.source,
         args.verdict,
         args.notes,
     )
     cal.append(cal.FINDINGS, finding)
     cal.load_findings(estimates)
-    _say(f'{args.id}: finding {_span(finding.low, finding.high)} ({finding.verdict}) recorded')
+    span = _span(finding.low, finding.high, unit)
+    _say(f'{args.id}: finding {span} ({finding.verdict}) recorded')
 
 
 def _withdraw(args: argparse.Namespace, basis: _Basis) -> None:
@@ -354,12 +374,13 @@ def _estimates(args: argparse.Namespace, basis: _Basis) -> None:
             _say(f'{e.id} {e.date} [{e.category}] {e.item}: WITHDRAWN')
             continue
         state = (
-            f'finding {_span(found[e.id].low, found[e.id].high)} ({found[e.id].verdict})'
+            f'finding {_span(found[e.id].low, found[e.id].high, e.unit)} ({found[e.id].verdict})'
             if e.id in found
             else f'awaiting {links.get(e.id, "NO ISSUE FILED")}'
         )
         _say(
-            f'{e.id} {e.date} [{e.category}] {e.item}: {_span(e.low, e.high)} per {e.per}; {state}'
+            f'{e.id} {e.date} [{e.category}] {e.item}: '
+            f'{_span(e.low, e.high, e.unit)} per {e.per}; {state}'
         )
 
 
@@ -447,8 +468,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     p = sub.add_parser('estimate', help='log a new estimate (feature 220)')
     p.add_argument('--item', required=True)
     p.add_argument('--question', required=True, help="the GM's question, as asked")
-    p.add_argument('--low', required=True, help='an amount, e.g. "4 sen"')
+    p.add_argument('--low', required=True, help='an amount, e.g. "4 sen", or a number of --unit')
     p.add_argument('--high', help='an amount (default: same as low)')
+    p.add_argument(
+        '--unit', default='sen', choices=cal.UNITS, help='sen (the default) or a unit of time'
+    )
     p.add_argument('--per', required=True)
     p.add_argument('--category', required=True, choices=cal.CATEGORIES)
     p.add_argument('--method', required=True, help='how the figure was derived')

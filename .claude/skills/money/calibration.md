@@ -1,7 +1,15 @@
 # Estimates and calibration
 
-Load this file when: the GM asks a price the ledger cannot back with research, or a diagram answer arrives for a logged
-estimate, or the GM asks how good the model is.
+Load this file when: the GM asks a price the ledger cannot back with research, a money research request is about to be
+filed (any request, prices or not), a diagram answer arrives for a logged estimate, or the GM asks how good the model is.
+
+**Every research request is estimated first** (GM 2026-10-26): *"anything involving the money skill in any way"*, so the
+log shows whether research still moves our numbers; if it rarely does, research becomes optional detail for readers.
+A figure that is not a price (hours to weave a bolt, days a year in the fields, a share, a count) is logged with
+`--unit hours|days|percent|count` and plain numbers; it grades beside prices because the measures are ratios. From
+request 0020 on, the request file carries `**Estimates logged before filing**: E0194-E0218` (or `none: <why>`), and
+`test_every_research_request_logs_its_estimates_first` fails without it. Never put the guesses in the issue body: the
+research session must not see them.
 
 The GM (2026-10-18, feature 220): estimate what was never priced, log the guess, research it later, and track *"how in
 line with our research our estimates were, because that tells us how well calibrated our model is"*. A constant miss in

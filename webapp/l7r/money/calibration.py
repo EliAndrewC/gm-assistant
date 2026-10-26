@@ -5,7 +5,8 @@ The GM (2026-10-18): estimate a price never priced before, log the guess, resear
 calibrated our model is"*. Three append-only files in `data/`:
 
 - `estimates.jsonl` - one guess per line: id (E0001...), date, item, the GM's question, low/high in
-  sen, per, category, method, the ledger rows it used, and the model inputs in force (basket
+  the estimate's unit (sen unless `unit` says hours, days, percent or count), per, category,
+  method, the ledger rows it used, and the model inputs in force (basket
   snapshot, koku mass, wage, laborer's year). NEVER edited once committed: `rewritten()` and its
   test compare against git HEAD, so the log of guesses cannot be quietly improved after the
   research arrives.
@@ -28,6 +29,12 @@ midpoints (estimate / finding), never as differences, and averaged in log space:
 
 Declined: arithmetic means of sen differences - one koku-scale item would swamp every apple and
 arrow.
+
+UNITS. The GM (2026-10-26): estimate *anything* the money skill asks research for, not only prices,
+so the log shows whether research still moves our numbers. A question about time (hours to weave a
+bolt, days a year at the loom) is logged in hours, days, percent or count; a finding is always in
+its estimate's unit. Ratios make the measures unit-free, so these grade beside prices; they take
+the `household` category (or whichever one fits) so a category never mixes time with money.
 """
 
 from __future__ import annotations
@@ -44,6 +51,7 @@ from l7r.money.readings import DATA
 
 __all__ = [
     'CATEGORIES',
+    'UNITS',
     'COUNTED',
     'ESTIMATES',
     'FINDINGS',
@@ -84,8 +92,10 @@ CATEGORIES = (
     'entertainment',
     'construction',
     'tools',
+    'household',
     'other',
 )
+UNITS = ('sen', 'hours', 'days', 'percent', 'count')
 COUNTED = ('ATTESTED', 'ATTESTED ONLY FOR')
 VERDICTS = (*COUNTED, 'NOT ATTESTED', 'SILENT')
 _ID = re.compile(r'E\d{4}$')
@@ -97,13 +107,14 @@ class Estimate:
     date: str
     item: str
     question: str
-    low: int
-    high: int
+    low: float
+    high: float
     per: str
     category: str
     method: str
     rows: tuple[str, ...] = field(default=())
     model: dict[str, str] = field(default_factory=dict)
+    unit: str = 'sen'
 
     @property
     def mid(self) -> float:
@@ -130,8 +141,8 @@ class Withdrawal:
 class Finding:
     estimate: str
     date: str
-    low: int
-    high: int
+    low: float
+    high: float
     source: str
     verdict: str
     notes: str = ''
@@ -153,9 +164,18 @@ def _lines(path: Path) -> Iterable[tuple[int, dict[str, object]]]:
             yield number, json.loads(line)
 
 
-def _range_ok(raw: dict[str, object]) -> bool:
+def _range_ok(raw: dict[str, object], unit: str = 'sen') -> bool:
+    """Whole sen for money; any non-negative number for hours, days, percent or count."""
     low, high = raw.get('low'), raw.get('high')
-    return isinstance(low, int) and isinstance(high, int) and 0 <= low <= high
+    kinds = (int,) if unit == 'sen' else (int, float)
+    ok = all(isinstance(v, kinds) and not isinstance(v, bool) for v in (low, high))
+    return ok and 0 <= low <= high  # type: ignore[operator]
+
+
+def _range_error(where: str, unit: str) -> str:
+    if unit == 'sen':
+        return f'{where}: low/high must be whole sen with 0 <= low <= high'
+    return f'{where}: low/high must be numbers of {unit} with 0 <= low <= high'
 
 
 def load_estimates(path: Path | None = None) -> list[Estimate]:
@@ -167,8 +187,11 @@ def load_estimates(path: Path | None = None) -> list[Estimate]:
             raise ValueError(f'{where}: id must look like E0001')
         if any(e.id == raw['id'] for e in out):
             raise ValueError(f'{where}: duplicate id {raw["id"]}')
-        if not _range_ok(raw):
-            raise ValueError(f'{where}: low/high must be whole sen with 0 <= low <= high')
+        unit = str(raw.get('unit', 'sen'))
+        if unit not in UNITS:
+            raise ValueError(f'{where}: unit must be one of {", ".join(UNITS)}')
+        if not _range_ok(raw, unit):
+            raise ValueError(_range_error(where, unit))
         if raw.get('category') not in CATEGORIES:
             raise ValueError(f'{where}: category must be one of {", ".join(CATEGORIES)}')
         if not str(raw.get('method', '')).strip() or not str(raw.get('question', '')).strip():
@@ -202,11 +225,11 @@ def load_links(estimates: list[Estimate], path: Path | None = None) -> list[Link
 
 def load_findings(estimates: list[Estimate], path: Path | None = None) -> list[Finding]:
     path = path or FINDINGS
-    ids = {e.id for e in estimates}
+    units = {e.id: e.unit for e in estimates}
     out = []
     for number, raw in _lines(path):
         where = f'{path.name} line {number}'
-        if raw.get('estimate') not in ids:
+        if raw.get('estimate') not in units:
             raise ValueError(f'{where}: no estimate {raw.get("estimate")}')
         if raw.get('verdict') not in VERDICTS:
             raise ValueError(f'{where}: verdict must be one of {", ".join(VERDICTS)}')
@@ -214,8 +237,9 @@ def load_findings(estimates: list[Estimate], path: Path | None = None) -> list[F
             raise ValueError(f'{where}: a comparative source cannot grade a Rokugani estimate')
         if not str(raw.get('source', '')).startswith('https://'):
             raise ValueError(f'{where}: source must be the diagram question file URL')
-        if not _range_ok(raw):
-            raise ValueError(f'{where}: low/high must be whole sen with 0 <= low <= high')
+        unit = units[str(raw['estimate'])]
+        if not _range_ok(raw, unit):
+            raise ValueError(_range_error(where, unit))
         out.append(Finding(**raw))  # type: ignore[arg-type]
     return out
 

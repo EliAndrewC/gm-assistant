@@ -8,6 +8,9 @@ checking agents, and diagram feature 389 gave it a "Money and prices" section. N
 
 ## Asking
 
+0. **Estimate every figure the request asks for, and log it, before writing the request** (`calibration.md`; time,
+   shares and counts take `--unit`). Name the ids in the request file's `**Estimates logged before filing**:` line
+   (the gate checks it), and `link` them to the issue once it exists. The values stay out of the issue body.
 1. Write the body in `requests/NNNN-<slug>.md` (first line is the title, bolded). Per question, four things:
    - **Question** - what history should answer.
    - **Figure needed** - the number the ledger needs back, and its unit.
@@ -72,6 +75,9 @@ what is still open.
 | [EliAndrewC/diagram#17](https://github.com/EliAndrewC/diagram/issues/17) | the goods-dollar koku as an index: like-for-like modern goods, housing, era coverage, which mean (`requests/0016-index-basis.md`) | answered (feature 420); applied in 223-224; closed 2026-10-25 |
 | [EliAndrewC/diagram#18](https://github.com/EliAndrewC/diagram/issues/18) | miso and soy sauce, and which goods the opening changed (`requests/0017-miso-and-the-opening.md`) | answered (0303, 0304); applied in 224; closed 2026-10-25 |
 | [EliAndrewC/diagram#19](https://github.com/EliAndrewC/diagram/issues/19) | books (buying, borrowing, copying), skilled wages (clerk, armed guard, cook, lady's maid), a smith's inputs, sales and income, entertainers' incomes, troupe size, costumes and instruments (`requests/0018-...`; E0169-E0193) | answered 2026-10-26 by 0305-0308: 8 graded, 17 SILENT; tools and entertainment recipes adjusted; closed |
+
+| [EliAndrewC/diagram#20](https://github.com/EliAndrewC/diagram/issues/20) | days worked a year by kind of worker, engaged by the job or the year, how often players performed (`requests/0019-...`; no estimates: filed before the rule) | answered 2026-10-26 by 0307, 0309-0311: farm servants 310-330 days; the 250 stays a labeled convention; closed |
+| [EliAndrewC/diagram#21](https://github.com/EliAndrewC/diagram/issues/21) | a household's unpaid work: the year by member, the tasks and their time, the fiber chain, city households, the proverb, why women's work went unrecorded (`requests/0020-...`; E0194-E0218, in hours, days, percent and count) | open |
 
 ## Next candidates (not yet asked)
 

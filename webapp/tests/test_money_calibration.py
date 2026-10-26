@@ -404,3 +404,123 @@ def test_bad_withdrawals_are_refused(tmp_path: Path) -> None:
     path.write_text(json.dumps({'estimate': 'E0001', 'date': 'd', 'reason': ' '}) + '\n')
     with pytest.raises(ValueError, match='needs a reason'):
         cal.load_withdrawn([est('E0001', 1, 1)], path)
+
+
+# --- units other than sen (GM 2026-10-26: estimate anything the money skill asks research for) --
+
+
+def test_estimates_in_units_of_time_load_and_grade(tmp_path: Path) -> None:
+    path = tmp_path / 'e.jsonl'
+    path.write_text(json.dumps({**GOOD, 'low': 0.5, 'high': 1.5, 'unit': 'hours'}) + '\n')
+    (e,) = cal.load_estimates(path)
+    assert (e.unit, e.mid) == ('hours', 1.0)
+    fpath = tmp_path / 'f.jsonl'
+    fpath.write_text(json.dumps({**FGOOD, 'low': 2.5, 'high': 3.5}) + '\n')
+    (f,) = cal.load_findings([e], fpath)
+    (food, everything) = cal.grade([e], [f])
+    assert food.group == 'food'
+    assert math.isclose(everything.bias, 1 / 3)
+
+
+@pytest.mark.parametrize(
+    ('change', 'complaint'),
+    [
+        ({'unit': 'furlongs'}, 'unit must be one of'),
+        ({'low': 0.5}, 'whole sen'),
+        ({'unit': 'days', 'low': True}, 'numbers of days'),
+        ({'unit': 'days', 'low': 'two'}, 'numbers of days'),
+    ],
+)
+def test_bad_units_are_refused(tmp_path: Path, change: dict[str, object], complaint: str) -> None:
+    path = tmp_path / 'e.jsonl'
+    path.write_text(json.dumps({**GOOD, **change}) + '\n')
+    with pytest.raises(ValueError, match=complaint):
+        cal.load_estimates(path)
+
+
+def test_a_finding_is_in_its_estimates_unit(tmp_path: Path) -> None:
+    path = tmp_path / 'f.jsonl'
+    path.write_text(json.dumps({**FGOOD, 'low': 0.5}) + '\n')
+    with pytest.raises(ValueError, match='whole sen'):
+        cal.load_findings([est('E0001', 1, 1)], path)
+
+
+def test_cli_estimates_in_hours_and_counts(logs: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    base = ['estimate', '--question', 'q', '--category', 'household', '--method', 'm']
+    out = run(
+        capsys,
+        *base,
+        '--item',
+        'weave',
+        '--low',
+        '25',
+        '--high',
+        '50.5',
+        '--unit',
+        'hours',
+        '--per',
+        'bolt',
+    )
+    assert 'E0001: weave = 25 to 50.5 hours per bolt [household] logged' in out
+    assert '$' not in out, 'no dollar reading for a unit of time'
+    out = run(capsys, *base, '--item', 'sandals', '--low', '80', '--unit', 'count', '--per', 'year')
+    assert 'E0002: sandals = 80 per year [household] logged' in out
+    assert cal.load_estimates()[0].high == 50.5
+    assert isinstance(cal.load_estimates()[1].low, int)
+    out = run(
+        capsys,
+        'finding',
+        'E0001',
+        '--low',
+        '30',
+        '--high',
+        '40',
+        '--source',
+        'https://x',
+        '--verdict',
+        'ATTESTED',
+    )
+    assert 'E0001: finding 30 to 40 hours (ATTESTED) recorded' in out
+    assert 'finding 30 to 40 hours (ATTESTED)' in run(capsys, 'estimates')
+    with pytest.raises(SystemExit, match="'many' is not a number of hours"):
+        main([*base, '--item', 'x', '--low', 'many', '--unit', 'hours', '--per', 'x'])
+
+
+REQUESTS_DIR = ROOT.parent / '.claude' / 'skills' / 'money' / 'requests'
+ESTIMATES_LINE = '**Estimates logged before filing**:'
+
+
+def _named(line: str) -> list[str]:
+    ids: list[str] = []
+    for a, b in __import__('re').findall(r'E(\d{4})(?:-E(\d{4}))?', line):
+        ids += [f'E{n:04d}' for n in range(int(a), int(b or a) + 1)]
+    return ids
+
+
+def test_every_research_request_logs_its_estimates_first() -> None:
+    """GM 2026-10-26: every money research request carries our own estimates, logged before it
+    is filed, so calibration shows whether research still moves our numbers. From request 0020
+    on, the file names them (or says why a question has no figure to guess)."""
+    estimates = cal.load_estimates()
+    linked = {lk.estimate for lk in cal.load_links(estimates)}
+    known = {e.id for e in estimates}
+    for path in sorted(REQUESTS_DIR.glob('*.md')):
+        if int(path.name[:4]) < 20:
+            continue
+        lines = [ln for ln in path.read_text().splitlines() if ln.startswith(ESTIMATES_LINE)]
+        assert lines, (
+            f'{path.name}: add a line "{ESTIMATES_LINE} E0194-E0218" after logging an estimate '
+            'per figure asked (python3 -m l7r.money estimate ... --unit hours|days|percent|count '
+            'for figures that are not prices; calibration.md), or "none: <why>"'
+        )
+        ids = _named(lines[0])
+        if not ids:
+            assert 'none:' in lines[0], f'{path.name}: name estimate ids, or "none: <why>"'
+        for eid in ids:
+            assert eid in known, f'{path.name}: no estimate {eid} in estimates.jsonl'
+            assert eid in linked, f'{path.name}: {eid} is not linked to its diagram issue (link)'
+
+
+def test_named_ids_expand_ranges() -> None:
+    assert _named('E0003-E0005, E0009') == ['E0003', 'E0004', 'E0005', 'E0009']
+    assert _named('none: a historiography question') == []
