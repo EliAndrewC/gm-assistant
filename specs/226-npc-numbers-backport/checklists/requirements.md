@@ -32,4 +32,4 @@
 
 ## Notes
 
-- FR-003's lowering rule is an exception to "whatever ... gets backported"; sent to spec-fidelity.
+- FR-003 first refused a lower value; spec-fidelity round 1 ruled that exception illegitimate ("whatever" admits no carve-out by value) and it was removed.

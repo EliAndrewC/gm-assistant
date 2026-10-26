@@ -31,8 +31,8 @@ gm-assistant and gm-assistant writes them. The sheet already calls gm-assistant 
 
 The GM generates a combat NPC on the sheet for a character who already has an OP record (say Bayushi no Daika Koharu,
 whose block says Air 4, Water 3, sincerity 1, ...). When the sheet finishes building it, Koharu's OP block holds every
-ring and stat the sheet built: all five rings, attack, parry, every skill and knack she has. The values she already had
-are unchanged, and the GM sees on the sheet which OP record was updated and what changed.
+ring and stat the sheet built: all five rings, attack, parry, every skill and knack she has. Values the sheet built
+the same as OP's are unchanged, and the GM sees on the sheet which OP record was updated and what changed.
 
 **Why this priority**: it is the request.
 
@@ -64,20 +64,10 @@ falls behind the first time an NPC comes back stronger.
 
 1. **Given** a block with `Air 4`, **When** the sheet sends Air 5, **Then** the block says `Air 5` and the answer
    reports `Air 4 -> 5`.
+2. **Given** a block with `Air 4`, **When** the sheet sends Air 3, **Then** the block says `Air 3` and the answer
+   reports `Air 4 -> 3` - the sheet wins in both directions ("whatever their Air ring ends up being").
 
-### User Story 3 - Nothing used in play is lost (Priority: P2)
-
-A stat in the block was used at the table; the players have seen the NPC roll it. If the sheet sends a LOWER value for
-it, the sheet's build has not honored what was recorded (the NPC was generated without its recorded numbers, or a
-generator defect like character-sheet#3). Writing the lower value would make OP contradict play.
-
-**Acceptance Scenarios**:
-
-1. **Given** a block with `Air 4`, **When** the sheet sends Air 3 (and other new stats), **Then** `Air 4` stays, the
-   other stats are written, and the answer reports a conflict: "Air: the sheet built 3, Obsidian Portal has 4 (used in
-   play) - kept 4; rebuild the NPC with Air 4 recorded".
-
-### User Story 4 - NPCs with no OP page are left alone (Priority: P3)
+### User Story 3 - NPCs with no OP page are left alone (Priority: P3)
 
 Most generated NPCs are nameless guards and bandits with no OP record. The backport writes nothing for them, creates no
 page, and says so.
@@ -109,14 +99,14 @@ page, and says so.
   the "NPC numbers:" block of the one OP character the name resolves to.
 - **FR-002**: The stats are every ring (all five), attack, parry, and every skill and knack (school and foreign) the
   sheet built at rank 1 or more. Profession abilities are not stats and are not sent.
-- **FR-003**: A stat new to the block is added; a stat equal to the block's is left; a stat HIGHER than the block's
-  replaces it; a stat LOWER than the block's is NOT written and is reported as a conflict (User Story 3).
+- **FR-003**: A stat new to the block is added; a stat equal to the block's is left; a stat that differs from the
+  block's, higher or lower, replaces it, and the answer reports `old -> new`.
 - **FR-004**: Block lines the sheet did not send are kept, in place; text outside the block is never changed.
 - **FR-005**: When nothing would change, OP is not written.
 - **FR-006**: The name is resolved by the same whole-name-token matching the REPL uses (`opsynth.match_character`);
   no match or several matches write nothing and report the nearest names or the candidates.
-- **FR-007**: The answer always says what happened: the OP record matched (name and URL), the stats added, raised,
-  unchanged and refused, and any conflict, in words the GM can read on the sheet.
+- **FR-007**: The answer always says what happened: the OP record matched (name and URL), the stats added, changed
+  (`old -> new`), unchanged and refused, in words the GM can read on the sheet.
 - **FR-008**: The endpoint authenticates the caller with the bearer token the sheet already presents to gm-assistant
   (`[character_sheet] names_token`), failing closed (503 when unset, 401 when wrong), before parsing the body or
   reading OP.
@@ -141,12 +131,10 @@ page, and says so.
 ## Success Criteria *(mandatory)*
 
 - **SC-001**: For every generated, rebuilt or returning NPC with exactly one OP record, the OP block afterwards agrees
-  with the sheet on every ring and stat the sheet built, except values kept under FR-003's conflict rule, each of which
-  is reported.
+  with the sheet on every ring and stat the sheet built.
 - **SC-002**: No text outside the block, and no block line the sheet did not send, changes in any backport (checked
   byte-for-byte in tests on real recorded GM notes).
 - **SC-003**: An NPC with no OP record, or an ambiguous name, produces zero OP writes.
-- **SC-004**: A stat already in the block is never lowered by a backport.
 
 ## Assumptions
 
@@ -156,10 +144,16 @@ page, and says so.
   writes there).
 - **Push, not pull.** gm-assistant's read API on the sheet (`/api/characters`) does not expose rings, and a pull would
   need a schedule; the sheet knows the moment a build changes.
-- **Lowering is refused, not written** (FR-003). The GM's words are "whatever their Air ring ends up being in the
-  character sheet app gets backported". A lower value can only come from a build that ignored a number already used in
-  play, which the block exists to keep stable (feature 207); the conflict is reported with the fix (rebuild with it
-  recorded). Raised for adjudication by `spec-fidelity`.
 - **Existing NPCs are not backfilled** by this feature. Ones built before character-sheet#3 may carry the overshoot;
   the character-sheet session reported that those need regenerating by hand. A backfill can be run afterwards.
 - The deployed toolkit already holds the OP credentials (the image carries `development-secrets.ini`), so it can write.
+
+## Review history
+
+- **spec-fidelity round 1 (2026-10-25): CHANGES REQUIRED.** FR-003's exception (a lower value from the sheet is kept
+  and reported as a conflict) ruled illegitimate: "whatever their Air ring ends up being" admits no carve-out by value,
+  and the exception guarded against lowering while the one known generator defect (character-sheet#3) raises. Removed
+  it from FR-003, FR-007, SC-001, User Story 1, the old User Story 3, SC-004 and the Assumptions. Rebuild/bring-back,
+  skipping NPCs without a record, FR-010 and the FR-012 dependency were ruled faithful.
+- **spec-fidelity round 2 (2026-10-25): FAITHFUL.** All seven changes confirmed applied; no residue of the carve-out;
+  nothing new departs from the request.
