@@ -14,6 +14,7 @@ toolkit's Money section is `/money` (landing), `/money/koku` (the playground) an
 | `bls.py` | BLS average prices via FRED: fills series-tied options on `reprice`, and `crosscheck`. |
 | `prices.py` | The price sheets (`/money/prices`, feature 225): the ledger's Rokugani prices grouped by kind, first matching tag wins; a shrine-builder line (tagged both `construction` and `shrine`) stays on the shrine builder. A new tag no sheet takes fails `test_every_eligible_row_is_on_exactly_one_sheet`: add it to a sheet in `SHEETS`. |
 | `web.py` | The playground's link state, rows and embedded data; `../static/js/money.js` is its browser twin (`compute`). |
+| `household.py` | The household-work page (`/money/household`, feature 231): loads `data/household.json` (every figure with the research's verdict and question file; one without either fails to load) and sets homemade goods beside the ledger's market price and the day wages. |
 | `../templates/_money_terms.html` | The section's explainers (goods dollars, wage dollars, the means, the baskets): native popovers opened by `term()` / `why()`; imported `with context` so they can quote the page's live figures. A new control or term that a reader could ask "what is this?" about gets one here. |
 | `ledger.py` | Load, validate and search the price ledger; the row rules are in its docstring. |
 | `rules.py` | Consistency rules between synthesis rows (`data/rules.jsonl`): a kimono costs at least its cloth. |
@@ -49,7 +50,7 @@ The page by hand: `PORT=8097 cherryd --import l7r.app` from the clone's `webapp/
 off: the averaged figure moves and the whole-basket figure does not. Pick Calrose rice: both move. Choose the
 arithmetic mean with every good on: the two figures match. Click "goods dollars", "Which should I pick?" and "What are these?": each opens a write-up, Esc closes it. A source or research link opens in a new tab. Open "Which periods set Rokugan's prices": the periods that price only rice have no weight row and are named under the table. Set Kyoto
 1745-54's weight to 0: fish's detail now rests on Beijing 1615, Beijing 1820, Canton and Tokyo only. The address bar carries each change and
-reloading it reproduces the figures. Open `/money`: the Rokugani saying sits under the masthead, captioned as a Rokugani saying (no source for it as a real proverb was found, so it is setting flavor), and "What the records leave out" follows the tool cards. Screenshots: the `money*` entries in `tests/screenshot.py`.
+reloading it reproduces the figures. Open `/money`: the Rokugani saying sits under the masthead, captioned as a Rokugani saying (no source for it as a real proverb was found, so it is setting flavor), and "What the records leave out" follows the tool cards. Open `/money/household`: every figure carries a badge that opens its research page, untimed tasks read "not recorded", and the cloth row's market price matches the price sheets' cotton-cloth row. Screenshots: the `money*` entries in `tests/screenshot.py`.
 
 `test_every_ledger_row_carries_label_and_source` loads the real ledger, so a row without a label or source fails the
 gate.

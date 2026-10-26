@@ -247,3 +247,18 @@ black 1.3-1.6x high except the cartload, 0.76x).
 Adjusted 2026-10-22: long-haul carriage cut from 0.5-1 to 0.15-0.3 sen a bale a ri and the Ryoko Owari tier from 2.5-6
 bu to 1.1-3.2 bu a bale, because diagram 0280-0283 (feature 411) gave freight rates (tax rice 24 mon a horse-load a ri,
 Qing mule ~2 sen) a third to a sixth of the post-station fares the guess used; E0167-E0168 themselves are SILENT.
+
+## Household work (time, not money)
+
+**Q15. How much unpaid work a household did, by task** (GM 2026-10-26; estimates E0194-E0218 in hours, days, percent
+and count; diagram#21, questions 0311-0317; the `/money/household` page, feature 231). Few tasks have a time in any
+source; what has one: a tan of cotton is **4 days from ginned cotton** (spin 2, prepare 1, weave 1; Niikawa, mid-1800s),
+a household of five's own cloth **12.8 tan, about 51 days a year**; on one 1.2-hectare Iyo farm of 1629-1654, **fuel
+120 days a year**, oxen and horses 120, fertilizer grass 40, house repairs, ditches and silkworms 20 each; China's bolt
+about 7 days with hand-spun yarn. Cooking, water, sewing, mending, straw goods per piece and care: SILENT.
+**Recipe**: days per unit from the researched rates above; a day is a working day (convert to hours at 8-12 only
+when a question asks hours, and say so); the household's share of cloth made at home about half (Akita 1808-10: 47%).
+Adjusted 2026-10-26: textile work runs at a quarter to a third of the first guesses (a tan of cotton is days, not weeks:
+spinning 16-24 hours, not 60-120), while fuel runs about three times higher (120 days a year, not 25-60) and a household
+weaves more cloth (12.8 tan, not 3-8), because calibration showed household guesses running 1.64x high with a typical
+miss of 2.82x (n=7).

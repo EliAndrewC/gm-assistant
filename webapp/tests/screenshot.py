@@ -59,6 +59,7 @@ PAGES = [
     ('money', '/money', False),
     ('money-koku', '/money/koku', False),
     ('money-prices', '/money/prices', False),
+    ('money-household', '/money/household', False),
     (
         'money-koku-variant',
         '/money/koku?b=bassino-ma-a&q_fish=0&x_rice=2&m=arithmetic&eq=1&w_kyoto-1745=2',

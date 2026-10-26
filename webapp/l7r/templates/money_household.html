@@ -1,0 +1,157 @@
+{% extends "_layout.html" %}
+{% from '_money_terms.html' import term, explainers with context %}
+
+{% block title %}Work that was never paid - L7R money{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ static_url('css/money.css') }}" />
+{% endblock %}
+
+{#
+  Work that was never paid (feature 231): l7r/money/household.py reads data/household.json, where
+  every figure carries the research's verdict and its question file. `badge(fig)` shows both.
+#}
+
+{% macro badge(fig) -%}
+<a class="hh-verdict hh-verdict--{{ fig.verdict|lower|replace(' ', '-') }}" href="{{ research_url(source_url(fig.source)) }}" target="_blank" rel="noopener" title="The research behind this figure">{{ verdict_words[fig.verdict] }}</a>
+{%- endmacro %}
+
+{% block content %}
+<section class="container">
+  <div class="masthead">
+    <div class="masthead__copy">
+      <p class="money-crumb"><a href="/money">Money</a></p>
+      <h1 class="masthead__title">Work that was never paid</h1>
+      <p class="masthead__lede">Cloth, food, fuel, straw goods, repairs and care: what a household did for itself, how long it took, and why so much of it went unrecorded.</p>
+    </div>
+    <span class="masthead__watermark" lang="ja" aria-hidden="true">織</span>
+  </div>
+</section>
+
+<section class="container hh">
+  <p class="hh__lead">The rest of this section prices a koku by what it buys and by the paid days it stands for. Neither sees the work a household did for itself, though that work made much of what a family wore, ate and burned. A robe woven at home cost no coin, only someone's days.</p>
+  <p class="hh__lead"><strong>Can the sources count that work, class by class?</strong> Not fully. They give one farm's year counted task by task, the days a household spent on its own cloth, who did each task, and what a city household bought instead. They do not give hours for each member of a household, or any count at all for a city household's own work. Each figure below says how solid it is.</p>
+  <p class="hh__callout"><strong>Most of this work was women's, and women's household work was almost never written down at the time.</strong> That is why so many figures below read "not recorded", and the silence is a historical fact in its own right: <a href="#records">why so much is missing</a>.</p>
+
+  <p class="hh__key">
+    <span class="hh-verdict hh-verdict--attested">Attested</span>
+    <span class="hh-verdict hh-verdict--attested-only-for">Attested for one place</span>
+    <span class="hh-verdict hh-verdict--attested-only-as-an-estimate">A historian's estimate</span>
+    <span class="hh-verdict hh-verdict--not-attested">Not borne out</span>
+    <span class="hh-verdict hh-verdict--silent">Not recorded</span>
+    <span class="hh__key-note">Each opens the research behind it.</span>
+  </p>
+
+  <h2 class="hh__h" id="year">One farm's year, counted</h2>
+  {% set year = data.year %}
+  <p>{{ year.scope }} {{ badge(year) }}</p>
+  {% set top = year.bars|map(attribute='days')|max %}
+  <figure class="hh-bars" aria-labelledby="hh-year-cap">
+    <figcaption id="hh-year-cap" class="hh-bars__cap">Days of work a year, by task: the holding's counted days ({{ '{:,}'.format(year.counted_total) }} in all, the women's field days not among them), and, set beside them from another source, a household's own cloth.</figcaption>
+    <ul class="hh-bars__list">
+      {% for b in year.bars %}
+      <li class="hh-bars__row{% if b.who == 'women' %} hh-bars__row--women{% endif %}" title="{{ b.label }}: {{ b.note or b.days }} days">
+        <span class="hh-bars__label">{{ b.label }}</span>
+        <span class="hh-bars__track"><span class="hh-bars__bar" style="width: {{ '%.1f' % (b.days / top * 100) }}%"></span></span>
+        <span class="hh-bars__value">{{ b.note or b.days }}</span>
+      </li>
+      {% endfor %}
+      {% set c = year.cloth %}
+      <li class="hh-bars__row hh-bars__row--women hh-bars__row--other" title="{{ c.label }}: {{ c.days|round|int }} days">
+        <span class="hh-bars__label">{{ c.label }}*</span>
+        <span class="hh-bars__track"><span class="hh-bars__bar" style="width: {{ '%.1f' % (c.days / top * 100) }}%"></span></span>
+        <span class="hh-bars__value">{{ c.days|round|int }}</span>
+      </li>
+    </ul>
+    <p class="hh-bars__legend"><span class="hh-swatch hh-swatch--women" aria-hidden="true"></span>Women's work, where a source says so. The rest is a man's day unless a source says otherwise.</p>
+    <p class="hh-bars__legend">* {{ c.scope }} {{ badge(c) }}</p>
+  </figure>
+
+  <h2 class="hh__h" id="tasks">The tasks, and their time</h2>
+  <p>As near a full list as the sources allow. Few tasks have a time in any source read; every one is listed with who did it, where a source says, and its time or that none was found.</p>
+  {% for g in data.tasks %}
+  <h3 class="hh__h3">{{ g.group }}</h3>
+  <table class="hh-table hh-table--tasks">
+    <colgroup><col class="hh-col-task"><col class="hh-col-who"><col class="hh-col-time"><col class="hh-col-basis"></colgroup>
+    <thead><tr><th scope="col">Task</th><th scope="col">Who</th><th scope="col">Time</th><th scope="col">Basis</th></tr></thead>
+    <tbody>
+      {% for t in g['items'] %}
+      <tr>
+        <th scope="row">{{ t.task }}</th>
+        <td data-label="Who">{% if t.who %}{{ t.who }}{% else %}<span class="hh-none">not recorded</span>{% endif %}</td>
+        <td data-label="Time">{% if t.time %}{{ t.time }}{% if t.where %} <span class="hh-where">({{ t.where }})</span>{% endif %}{% else %}<span class="hh-none">not recorded</span>{% endif %}{% if t.note %} <span class="hh-where">({{ t.note }})</span>{% endif %}</td>
+        <td data-label="Basis">{{ badge(t) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endfor %}
+
+  <h2 class="hh__h" id="clothes">Did clothes take more of one person's time than farming?</h2>
+  <p>Only the cloth itself can be tested: growing the fiber, dyeing and sewing have no time in any source read, so the cloth days below are the least that clothes took, not the whole.</p>
+  <h3 class="hh__h3">For the woman who made them, more than her fieldwork?</h3>
+  <ul class="hh-answers">
+    {% for h in data.hypothesis if h.half == 'first' %}<li><strong>{{ h.fiber }}.</strong> {{ h.says }} {{ badge(h) }}</li>{% endfor %}
+  </ul>
+  <h3 class="hh__h3">For the household as a whole, less than its fieldwork?</h3>
+  <ul class="hh-answers">
+    {% for h in data.hypothesis if h.half == 'second' %}<li><strong>{{ h.fiber }}.</strong> {{ h.says }} {{ badge(h) }}</li>{% endfor %}
+  </ul>
+  <p>So the answer turns on the fiber. Where a household spun cotton, its cloth was a few weeks' work a year; where it made hemp or ramie cloth, as in the centuries before cotton, the same clothes may well have been the largest claim on one woman's year.</p>
+
+  <h2 class="hh__h" id="homemade">Homemade, beside bought</h2>
+  <p>A good made at home cost days, not coin. Here are those days beside what the same thing cost at market, and what the days would have earned at a day's wage. A woman hired by the day earned a third to two-thirds of a man's pay: {{ data.woman_day.scope }} {{ badge(data.woman_day) }}</p>
+  <table class="hh-table hh-table--made">
+    <thead><tr><th scope="col">Good</th><th scope="col">Days</th><th scope="col">At market</th><th scope="col">At a laborer's wage</th><th scope="col">At a woman's wage</th></tr></thead>
+    <tbody>
+      {% for m in made %}
+      <tr>
+        <th scope="row">{{ m.label }} {{ badge(m) }}</th>
+        <td data-label="Days of work">{{ ('%g' % m.days) }}</td>
+        <td data-label="At market"><span class="money-nowrap">{{ coin(m.market_low) }}</span> to <span class="money-nowrap">{{ coin(m.market_high) }}</span></td>
+        <td data-label="At a laborer's wage"><span class="money-nowrap">{{ coin(m.laborer_sen) }}</span></td>
+        <td data-label="At a woman's day wage"><span class="money-nowrap">{{ coin(m.woman_low) }}</span> to <span class="money-nowrap">{{ coin(m.woman_high) }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="hh-note">The arithmetic: days &times; {{ '%.1f' % day_sen }} sen, an unskilled laborer's day ({{ term('wage', 'why') }}); a woman's day at 16 to 33 mon against a man's 50. The market price is the cotton-cloth row of the <a href="/money/prices#clothing">price sheets</a>, times the number of tan. The days start from ginned cotton, so the cotton itself is on top. Days of work reckoned like this are a labor value, the same kind of measure as {{ term('wage', 'wage dollars') }}: how much of a life a thing took. The market price is what {{ term('goods', 'goods dollars') }} would read.</p>
+  <p>The gap between the market price and the days' worth is the cotton and the weaver's skill; what ginned cotton cost has not been researched yet.</p>
+
+  <h2 class="hh__h" id="city">In the city: buying what a farm made</h2>
+  <p>An Edo household could buy its rice polished, its firewood, its baths, much of its clothing secondhand and its sushi at a stall. What it did for itself, at the tenement's shared well, was the washing, the rinsing of rice and the cooking, and the wives did it.</p>
+  <table class="hh-table">
+    <thead><tr><th scope="col">Bought</th><th scope="col">What the record says</th><th scope="col">Rokugani price</th><th scope="col">Basis</th></tr></thead>
+    <tbody>
+      {% for c in data.city %}
+      <tr>
+        <th scope="row">{{ c.thing }}</th>
+        <td data-label="Record">{{ c.says }}</td>
+        <td data-label="Rokugani price">{% if c.ledger %}{% set r = rows[c.ledger] %}{{ coin(r.low) }}{% if r.high != r.low %} to {{ coin(r.high) }}{% endif %} a {{ r.per }}{% else %}<span class="hh-none">{% if c.note == 'price' %}price not recorded{% else %}-{% endif %}</span>{% endif %}</td>
+        <td data-label="Basis">{{ badge(c) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 class="hh__h" id="classes">Class by class</h2>
+  <ul class="hh-answers">
+    {% for c in data.classes %}<li><strong>{{ c.who }}.</strong> {{ c.says }} {{ badge(c) }}</li>{% endfor %}
+  </ul>
+
+  <h2 class="hh__h" id="records">Why so much is missing</h2>
+  <p><strong>Women's household work was almost never written down at the time.</strong> That is why so many figures on this page read "not recorded", and it is a fact about the past in its own right, not a gap in one source. Paid days and prices were recorded because someone paid them; work done at home for the household was not. {{ badge({'verdict': 'ATTESTED', 'source': 'records'}) }}</p>
+  <ul class="hh-answers">
+    <li><strong>Writing served rule, and the rulers were men.</strong> A historian of Edo-period women puts the biggest cause in the sources themselves: writing spread because rulers needed it to govern, the samurai who ruled were all men, and the village officials who kept the village's papers were men too. What survives is administrative and economic records, full of the names of male household heads.</li>
+    <li><strong>Historians recover women's work from records kept for other purposes:</strong> village headmen's diaries, temple population registers, rules written for women (read against their purpose), and official commendations of exemplary women.</li>
+    <li><strong>In China the same shadow falls differently.</strong> While cloth was a tax, women's weaving was tied to the state; when the state stopped asking for bolts of cloth, their work was, in one historian's phrase, masked, not lessened. The best estimates of Chinese farm and household labor rest on a narrow base of documents, and the gazetteers' lives of women were written to teach virtue, not to count days.</li>
+  </ul>
+  <p>The same is true of every pre-modern society, and of any setting built from one: the lives of lords and soldiers are recorded far better than those of common people, and men's better than women's. Reconstructing a household's year means reading around that silence, and saying where it is. More on the <a href="/money#records">Money page</a>.</p>
+
+  <h2 class="hh__h" id="proverb">The proverb</h2>
+  <p>The Money page quotes a Rokugani farming proverb: <em>No one who rises before dawn on all three hundred and sixty days of the year will fail to make their family rich.</em> No Chinese or Japanese source gives it in that form; the English wording traces to Malcolm Gladwell's <cite>Outliers</cite>, which calls it a Chinese proverb. {{ badge({'verdict': 'SILENT', 'source': 'proverb'}) }}</p>
+  <p>Its halves are old. <span lang="zh">早起三朝當一工</span>, <em>zǎo qǐ sān zhāo dāng yī gōng</em>, "rising early three mornings makes one day's work": the first line of a joking poem by Lou Yue, who died in 1213. A farming almanac begun in 1314 sets it among sayings for those who farm, beside "a lifetime's plan lies in diligence" and "if you want wealth and honor, you must put in bitter effort". {{ badge({'verdict': 'ATTESTED', 'source': 'proverb'}) }}</p>
+  <p class="hh-back"><a href="/money">&larr; Back to Money</a></p>
+</section>
+{{ explainers(['goods', 'wage']) }}
+{% endblock %}

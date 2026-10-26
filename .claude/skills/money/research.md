@@ -77,7 +77,7 @@ what is still open.
 | [EliAndrewC/diagram#19](https://github.com/EliAndrewC/diagram/issues/19) | books (buying, borrowing, copying), skilled wages (clerk, armed guard, cook, lady's maid), a smith's inputs, sales and income, entertainers' incomes, troupe size, costumes and instruments (`requests/0018-...`; E0169-E0193) | answered 2026-10-26 by 0305-0308: 8 graded, 17 SILENT; tools and entertainment recipes adjusted; closed |
 
 | [EliAndrewC/diagram#20](https://github.com/EliAndrewC/diagram/issues/20) | days worked a year by kind of worker, engaged by the job or the year, how often players performed (`requests/0019-...`; no estimates: filed before the rule) | answered 2026-10-26 by 0307, 0309-0311: farm servants 310-330 days; the 250 stays a labeled convention; closed |
-| [EliAndrewC/diagram#21](https://github.com/EliAndrewC/diagram/issues/21) | a household's unpaid work: the year by member, the tasks and their time, the fiber chain, city households, the proverb, why women's work went unrecorded (`requests/0020-...`; E0194-E0218, in hours, days, percent and count) | open |
+| [EliAndrewC/diagram#21](https://github.com/EliAndrewC/diagram/issues/21) | a household's unpaid work: the year by member, the tasks and their time, the fiber chain, city households, the proverb, why women's work went unrecorded (`requests/0020-...`; E0194-E0218, in hours, days, percent and count) | answered 2026-10-26 by 0311-0317: 7 graded, 17 SILENT; household recipe adjusted; four city prices in the ledger; the `/money/household` page (feature 231); closed |
 
 ## Next candidates (not yet asked)
 

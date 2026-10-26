@@ -46,6 +46,8 @@ from l7r.dreams import DreamScene, find_scene_by_slug, load_dream_scenes, render
 from l7r.fortunes import FORTUNES
 from l7r.jinja_env import build_environment
 from l7r.money import basket as money_basket
+from l7r.money import coins as money_coins
+from l7r.money import household as money_household
 from l7r.money import ledger as money_ledger
 from l7r.money import prices as money_prices
 from l7r.money import web as money_web
@@ -577,6 +579,25 @@ class Root:
     def money(self, tool: str | None = None, **params: Any) -> bytes:
         if tool is None:
             return self._render('money_index.html', current_section='money')
+        if tool == 'household':
+            data = money_household.load()
+            ledger_rows = money_ledger.load()
+            return self._render(
+                'money_household.html',
+                current_section='money',
+                body_class='page-money',
+                data=data,
+                made=money_household.homemade(data, ledger_rows),
+                rows={r.id: r for r in ledger_rows if r.id},
+                verdict_words=money_household.VERDICT_WORDS,
+                source_url=lambda key: money_household.source_url(data, key),
+                research_url=money_prices.research_url,
+                coin=lambda sen: money_coins.everyday(round(sen)),
+                day_sen=LABORER_DAY_SEN,
+                laborer_koku_year=LABORER_KOKU_YEAR,
+                day_rice_kg=DAY_RICE_KG,
+                koku_kg=resolve_koku_kg(None)[0],
+            )
         if tool == 'prices':
             model = money_basket.load()
             wage = load_wages()[-1]

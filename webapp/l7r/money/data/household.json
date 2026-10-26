@@ -1,0 +1,481 @@
+{
+  "_about": "The household-work page's figures (feature 231), from the diagram research answer to diagram#21 (questions 0311-0317, verified on diagram main at aa9bbeb). Every figure carries the verdict the research gave it and its question file; l7r/money/household.py checks both. Prose that frames them lives in templates/money_household.html.",
+  "sources": {
+    "days": "0311-how-many-days-a-year-did-a-worker-work",
+    "farm": "0312-what-work-did-a-farm-household-do-that-was-never-paid",
+    "cloth": "0313-how-long-did-it-take-to-make-cloth",
+    "experiment": "0314-how-long-did-modern-experimenters-take-to-spin-and-weave-by-hand",
+    "city": "0315-what-did-a-city-household-buy-that-a-farm-household-made",
+    "records": "0316-why-was-womens-household-work-so-rarely-written-down",
+    "proverb": "0317-is-there-an-old-saying-that-rising-early-makes-a-family-rich"
+  },
+  "year": {
+    "verdict": "ATTESTED ONLY FOR",
+    "source": "farm",
+    "scope": "One holding of 1 cho 2 tan 5 se (about 1.2 hectares), a samurai who farmed his own land, in Iyo between 1629 and 1654, by the Seiryoki; larger than most farms. Night work is not counted, and the women's days are one lump of field labor.",
+    "bars": [
+      {
+        "label": "Men's fieldwork, a cho of paddy",
+        "days": 293,
+        "who": "men"
+      },
+      {
+        "label": "Women's fieldwork, a cho of paddy",
+        "days": 200,
+        "who": "women",
+        "note": "200+"
+      },
+      {
+        "label": "Fuel",
+        "days": 120
+      },
+      {
+        "label": "Oxen and horses",
+        "days": 120
+      },
+      {
+        "label": "A quarter-cho of dry fields",
+        "days": 90
+      },
+      {
+        "label": "Barley on part of the paddy",
+        "days": 66
+      },
+      {
+        "label": "Cutting grass for fertilizer",
+        "days": 40
+      },
+      {
+        "label": "Silkworms",
+        "days": 20
+      },
+      {
+        "label": "House repairs",
+        "days": 20
+      },
+      {
+        "label": "Dredging the ditches",
+        "days": 20
+      },
+      {
+        "label": "Thatch grass for mats and rain capes, and mending tools",
+        "days": 12
+      },
+      {
+        "label": "Making tea",
+        "days": 10
+      }
+    ],
+    "counted_total": 811,
+    "cloth": {
+      "label": "Spinning and weaving the household's own cotton cloth (women)",
+      "days": 51.2,
+      "who": "women",
+      "verdict": "ATTESTED ONLY FOR",
+      "source": "cloth",
+      "scope": "A household of slightly under five in Niikawa, mid-1800s, two centuries later and in another province: 12.8 tan a year at 4 days a tan, from ginned cotton."
+    }
+  },
+  "tasks": [
+    {
+      "group": "Cloth",
+      "items": [
+        {
+          "task": "Spinning cotton yarn",
+          "who": "women",
+          "time": "2 days a tan, from ginned cotton",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "cloth",
+          "where": "Niikawa, mid-1800s"
+        },
+        {
+          "task": "Preparing the yarn for the loom",
+          "who": "women",
+          "time": "1 day a tan",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "cloth",
+          "where": "Niikawa, mid-1800s"
+        },
+        {
+          "task": "Weaving cotton",
+          "who": "women",
+          "time": "1 day a tan",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "cloth",
+          "where": "Niikawa, mid-1800s"
+        },
+        {
+          "task": "Splitting ramie fiber",
+          "who": "women",
+          "time": "a full day for 3 to 5 zhu (about 5 to 8 grams)",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "cloth",
+          "where": "China, 1637 (Tiangong kaiwu)"
+        },
+        {
+          "task": "Reeling silk",
+          "who": "women",
+          "time": "30 liang (about 1.1 kg) a day with a full day's strength",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "cloth",
+          "where": "China, 1637 (Tiangong kaiwu)"
+        },
+        {
+          "task": "Growing and retting hemp, ramie or cotton",
+          "who": "the household",
+          "verdict": "SILENT",
+          "source": "cloth"
+        },
+        {
+          "task": "Weaving a tan of hemp, ramie or silk",
+          "who": "women",
+          "verdict": "SILENT",
+          "source": "cloth"
+        },
+        {
+          "task": "Dyeing",
+          "who": "",
+          "verdict": "SILENT",
+          "source": "cloth"
+        },
+        {
+          "task": "Sewing a robe",
+          "who": "women",
+          "verdict": "SILENT",
+          "source": "cloth"
+        },
+        {
+          "task": "Unpicking, washing and resewing robes (araihari)",
+          "who": "women",
+          "verdict": "SILENT",
+          "source": "farm"
+        },
+        {
+          "task": "Mending",
+          "who": "women",
+          "verdict": "SILENT",
+          "source": "farm"
+        }
+      ]
+    },
+    {
+      "group": "Food",
+      "items": [
+        {
+          "task": "Cooking the morning and evening meals",
+          "who": "women, called from any other work to serve the men",
+          "verdict": "SILENT",
+          "source": "farm"
+        },
+        {
+          "task": "Threshing and readying the grain",
+          "who": "women, in Japan",
+          "verdict": "SILENT",
+          "source": "farm"
+        },
+        {
+          "task": "Husking rice",
+          "who": "hired men on rainy days (Huzhou, about 1640)",
+          "time": "at most 1 shi (about 100 liters) a day for one person",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "farm",
+          "where": "Jiangnan, 1834"
+        },
+        {
+          "task": "Making tea",
+          "who": "",
+          "time": "10 days a year",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "farm",
+          "where": "the Seiryoki's holding"
+        },
+        {
+          "task": "Pickling, and making miso and soy sauce",
+          "who": "women",
+          "verdict": "SILENT",
+          "source": "farm"
+        }
+      ]
+    },
+    {
+      "group": "Fuel and water",
+      "items": [
+        {
+          "task": "Gathering and splitting firewood",
+          "who": "hired men split it on rainy days (Huzhou); in North China, gathering it was women's and children's",
+          "time": "120 days a year",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "farm",
+          "where": "the Seiryoki's holding"
+        },
+        {
+          "task": "Making charcoal",
+          "who": "",
+          "verdict": "SILENT",
+          "source": "farm"
+        },
+        {
+          "task": "Hauling water",
+          "who": "women (in the city, at the tenement's shared well)",
+          "verdict": "SILENT",
+          "source": "city"
+        }
+      ]
+    },
+    {
+      "group": "Straw",
+      "items": [
+        {
+          "task": "Cutting thatch grass for mats and rain capes, with mending tools",
+          "who": "",
+          "time": "12 days a year",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "farm",
+          "where": "the Seiryoki's holding"
+        },
+        {
+          "task": "Twisting rope",
+          "who": "hired men on rainy days",
+          "time": "7 to 8 jin (about 4 to 5 kg) a day for a good worker, 5 for an average one",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "farm",
+          "where": "Huzhou, about 1640"
+        },
+        {
+          "task": "Night straw work (yonabe)",
+          "who": "in some households the whole family",
+          "verdict": "SILENT",
+          "source": "farm",
+          "note": "attested as done, near Kanazawa, as remembered of the years before the mid-1920s; its hours are not"
+        },
+        {
+          "task": "A pair of sandals, a mat, a rain cape",
+          "who": "",
+          "verdict": "SILENT",
+          "source": "farm"
+        }
+      ]
+    },
+    {
+      "group": "The house, the tools and the animals",
+      "items": [
+        {
+          "task": "The oxen and horses",
+          "who": "",
+          "time": "120 days a year",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "farm",
+          "where": "the Seiryoki's holding"
+        },
+        {
+          "task": "Cutting grass for fertilizer",
+          "who": "",
+          "time": "40 days a year",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "farm",
+          "where": "the Seiryoki's holding"
+        },
+        {
+          "task": "House repairs",
+          "who": "",
+          "time": "20 days a year",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "farm",
+          "where": "the Seiryoki's holding"
+        },
+        {
+          "task": "Dredging the ditches",
+          "who": "",
+          "time": "20 days a year",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "farm",
+          "where": "the Seiryoki's holding"
+        },
+        {
+          "task": "Silkworms",
+          "who": "women's work in every source that says",
+          "time": "20 days a year",
+          "verdict": "ATTESTED ONLY FOR",
+          "source": "farm",
+          "where": "the Seiryoki's holding"
+        }
+      ]
+    },
+    {
+      "group": "Care",
+      "items": [
+        {
+          "task": "Children, childbirth and aged parents",
+          "who": "women",
+          "verdict": "SILENT",
+          "source": "farm"
+        },
+        {
+          "task": "The sick",
+          "who": "",
+          "verdict": "SILENT",
+          "source": "farm"
+        }
+      ]
+    }
+  ],
+  "hypothesis": [
+    {
+      "half": "first",
+      "fiber": "Cotton, Japan",
+      "verdict": "NOT ATTESTED",
+      "source": "farm",
+      "says": "No. A household's own cloth took about 51 days a year, against over 200 women's field days for a cho of paddy. Cotton, two historians argue, freed women's time for the fields."
+    },
+    {
+      "half": "first",
+      "fiber": "Hemp and ramie, Japan",
+      "verdict": "ATTESTED ONLY AS AN ESTIMATE",
+      "source": "farm",
+      "says": "Perhaps. Ramie took nearly ten times the labor of cotton by one historian's estimate; at ten times, the same cloth would take about 512 days, more than one woman's year (the research project's arithmetic)."
+    },
+    {
+      "half": "first",
+      "fiber": "Cotton, Jiangnan",
+      "verdict": "SILENT",
+      "source": "farm",
+      "says": "Only cloth for sale is counted: a woman spinning and weaving about 200 days a year was at the practical maximum, about level with a small farm's field year. A household's own clothes are not timed."
+    },
+    {
+      "half": "second",
+      "fiber": "Cotton, Japan",
+      "verdict": "ATTESTED",
+      "source": "farm",
+      "says": "Yes. The holding's 811 counted days and the women's 200-odd far exceed the cloth's 51."
+    },
+    {
+      "half": "second",
+      "fiber": "Jiangnan",
+      "verdict": "NOT ATTESTED",
+      "source": "farm",
+      "says": "No: wives probably worked almost as many days for income as their husbands."
+    }
+  ],
+  "city": [
+    {
+      "thing": "Polished rice",
+      "says": "Only the rice polishers could sell white rice; about 1,100 polished it in the street in 1727.",
+      "verdict": "ATTESTED",
+      "source": "city"
+    },
+    {
+      "thing": "A peddler's family's food",
+      "says": "Rice 200 mon a day and miso and soy sauce 50, from a vegetable peddler's takings (Bunsei era, 1818-30).",
+      "ledger": "rice-peddler-family-day",
+      "verdict": "ATTESTED ONLY FOR",
+      "source": "city"
+    },
+    {
+      "thing": "A carpenter's family's month",
+      "says": "About 128 monme: rent 10, food for a couple and a child about 30, seasonings and firewood together 58, the rest tools, furniture and clothing (Bunsei era).",
+      "verdict": "ATTESTED ONLY FOR",
+      "source": "city"
+    },
+    {
+      "thing": "Cooked food",
+      "says": "Sushi 8 mon a piece and egg omelette 16 at street stalls, three or four stalls a block where people were about at night.",
+      "ledger": "sushi-piece",
+      "verdict": "ATTESTED ONLY FOR",
+      "source": "city"
+    },
+    {
+      "thing": "A bath",
+      "says": "8 mon an adult from 1841 (a tenement had no bath); 24 by 1866 as firewood grew dear.",
+      "ledger": "bath-public",
+      "verdict": "ATTESTED",
+      "source": "city"
+    },
+    {
+      "thing": "Used clothing",
+      "says": "Much of a commoner's clothing was bought secondhand; 220 licensed buyers walked Edo's streets in 1659. No price was found.",
+      "verdict": "SILENT",
+      "source": "city",
+      "note": "price"
+    },
+    {
+      "thing": "Washing",
+      "says": "Washing shops by about 1688; no price, and no account of whose clothes they washed.",
+      "verdict": "SILENT",
+      "source": "city",
+      "note": "price"
+    },
+    {
+      "thing": "Water",
+      "says": "A tenement's water was piped to a shared well; elsewhere people bought river water from sellers. No price was found.",
+      "verdict": "SILENT",
+      "source": "city",
+      "note": "price"
+    },
+    {
+      "thing": "Mending",
+      "says": "No trade that mended a household's clothes, and no price, was found.",
+      "verdict": "SILENT",
+      "source": "city"
+    }
+  ],
+  "classes": [
+    {
+      "who": "A farm household",
+      "verdict": "ATTESTED ONLY FOR",
+      "source": "farm",
+      "says": "One holding's year is counted task by task (above), with night work and the women's household work left out. No source splits a farm household's year among its members."
+    },
+    {
+      "who": "A city laborer, single or with a family",
+      "verdict": "SILENT",
+      "source": "city",
+      "says": "No source counts a city household's own work, for a single man in a back tenement or for a family. Both budgets found are family men's. One writer, citing nothing, says married peddlers worked every day while single ones rested when they liked."
+    },
+    {
+      "who": "A live-in servant, apprentice or clerk",
+      "verdict": "ATTESTED",
+      "source": "days",
+      "says": "No household of their own to work for: they lived in the shop until head clerk. Leave home was a few days after New Year and at Bon (yabuiri), sometimes with pocket money and new clothes. Whether they traded on the side is not recorded."
+    },
+    {
+      "who": "A samurai posted alone to a lord's Edo compound",
+      "verdict": "ATTESTED",
+      "source": "city",
+      "says": "Cooked for himself or ate out, and often used the public baths."
+    },
+    {
+      "who": "A porter, a guard or a footman",
+      "verdict": "SILENT",
+      "source": "days",
+      "says": "What they did on their days off is not recorded."
+    }
+  ],
+  "woman_day": {
+    "man": 50,
+    "low": 16,
+    "high": 33,
+    "verdict": "ATTESTED ONLY FOR",
+    "source": "farm",
+    "scope": "The Imai, wealthy farmers of Shinano, 1821: a day laborer was paid 50 mon if a man, 16 to 33 mon if a woman."
+  },
+  "homemade": [
+    {
+      "label": "A tan of cotton cloth, the bolt for one kimono",
+      "days": 4,
+      "count": 1,
+      "ledger": "cloth-cotton-kimono-length",
+      "verdict": "ATTESTED ONLY FOR",
+      "source": "cloth",
+      "scope": "Niikawa, mid-1800s: spinning 2 days, preparing the yarn 1, weaving 1, from ginned cotton."
+    },
+    {
+      "label": "A household's own cloth for a year (12.8 tan)",
+      "days": 51.2,
+      "count": 12.8,
+      "ledger": "cloth-cotton-kimono-length",
+      "verdict": "ATTESTED ONLY FOR",
+      "source": "cloth",
+      "scope": "A household of slightly under five in Niikawa, mid-1800s."
+    }
+  ]
+}

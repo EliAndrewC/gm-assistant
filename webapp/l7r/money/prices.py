@@ -78,7 +78,7 @@ SHEETS = (
     Sheet(
         'travel',
         'Lodging, travel and horses',
-        'Inns and cheap lodging on the road, a horse fed and stabled, a cart hired.',
+        'Inns and cheap lodging on the road, a public bath, a horse fed and stabled, a cart hired.',
         ('travel', 'transport', 'horse', 'animal'),
     ),
     Sheet(

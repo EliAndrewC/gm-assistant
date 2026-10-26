@@ -273,7 +273,9 @@
 .koku-notes { max-width: var(--reading-max); margin-left: 0; }
 
 /* Landing */
-.money-tools { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1.25rem; }
+.money-tools { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.25rem; }
+.money-tools > li { display: flex; }
+.money-tools .money-tool { flex: 1; }
 .money-tool {
   display: block;
   padding: 1.2rem 1.4rem;
@@ -454,3 +456,65 @@ details[open] > .prices__row::before { transform: rotate(90deg); }
 .money-pop__body p, .money-pop__body ul { margin: 0 0 0.7rem; }
 .money-pop__body ul { padding-left: 1.2rem; }
 .prices__filter-label { white-space: nowrap; }
+
+/* Work that was never paid (feature 231). Verdict badges tell five kinds of basis apart by fill
+   and border, not by color alone; each links to its research question. The year's bars are one
+   measure (days) with women's work in vermillion and the rest in ink, with a legend. */
+.hh { padding-bottom: 4rem; max-width: 62rem; }
+.hh > p, .hh-answers, .hh-note { max-width: var(--reading-max); line-height: 1.55; }
+.hh__lead { margin: 0 0 0.8rem; }
+.hh__h { margin: 2.2rem 0 0.5rem; font-family: var(--font-display); font-size: 1.45rem; }
+.hh__h3 { margin: 1.3rem 0 0.4rem; font-size: 1.08rem; }
+.hh__key { display: flex; flex-wrap: wrap; gap: 0.35rem 0.5rem; align-items: center; margin: 0.8rem 0 0; }
+.hh__key-note { color: var(--ink-faded); font-size: 0.92rem; }
+.hh-verdict { display: inline-block; padding: 0 0.4rem; border-radius: 3px; font-size: 0.88rem; line-height: 1.45; white-space: nowrap; color: var(--ink); text-decoration: none; vertical-align: 0.05em; }
+a.hh-verdict:hover, a.hh-verdict:focus-visible { text-decoration: underline; }
+.hh-verdict--attested { background: var(--ink); color: var(--paper-raised); border: 1px solid var(--ink); }
+.hh-verdict--attested-only-for { border: 1px solid var(--ink); }
+.hh-verdict--attested-only-as-an-estimate { border: 1px dashed var(--ink); }
+.hh-verdict--not-attested { border: 3px double var(--ink); padding: 0 0.35rem; }
+.hh-verdict--not-attested::before { content: "\2715\00a0"; }
+.hh-verdict--silent { border: 1px dotted var(--ink-soft); color: var(--ink-soft); }
+.hh-none { color: var(--ink-faded); font-style: italic; }
+.hh-where { color: var(--ink-faded); font-size: 0.92em; }
+.hh-note { color: var(--ink-soft); font-size: 0.95rem; }
+.hh__callout { margin: 0.9rem 0 0; padding: 0.7rem 1rem; border-left: 4px solid var(--vermillion); background: var(--paper-raised); }
+.hh-back { margin-top: 2.5rem; }
+.hh-table--tasks { table-layout: fixed; }
+.hh-col-task { width: 29%; }
+.hh-col-who { width: 23%; }
+.hh-col-time { width: 28%; }
+.hh-col-basis { width: 20%; }
+
+.hh-bars { margin: 0.8rem 0 0; padding: 1rem 1.2rem; background: var(--paper-raised); border: 1px solid var(--hairline); border-radius: 4px; }
+.hh-bars__cap { margin: 0 0 0.8rem; color: var(--ink-soft); font-size: 0.95rem; }
+.hh-bars__list { list-style: none; margin: 0; padding: 0; }
+.hh-bars__row { display: grid; grid-template-columns: minmax(10rem, 19rem) minmax(0, 1fr) 3.2rem; gap: 0.7rem; align-items: center; padding: 2px 0; }
+.hh-bars__row--other { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed var(--hairline); }
+.hh-bars__label { font-size: 0.93rem; line-height: 1.25; }
+.hh-bars__track { display: block; height: 0.8rem; }
+.hh-bars__bar { display: block; height: 100%; min-width: 2px; background: var(--ink-soft); border-radius: 0 4px 4px 0; }
+.hh-bars__row--women .hh-bars__bar { background: var(--vermillion); }
+.hh-bars__value { font-variant-numeric: tabular-nums; text-align: right; font-size: 0.93rem; }
+.hh-bars__legend { margin: 0.7rem 0 0; color: var(--ink-soft); font-size: 0.92rem; }
+.hh-swatch { display: inline-block; width: 0.8rem; height: 0.8rem; margin-right: 0.4rem; border-radius: 2px; vertical-align: -0.05em; }
+.hh-swatch--women { background: var(--vermillion); }
+
+.hh-table { width: 100%; border-collapse: collapse; margin: 0.3rem 0 0.6rem; font-size: 0.95rem; }
+.hh-table th, .hh-table td { padding: 0.4rem 0.6rem 0.4rem 0; border-bottom: 1px solid var(--hairline); text-align: left; vertical-align: top; }
+.hh-table thead th { color: var(--ink-faded); font-weight: 600; font-size: 0.85rem; }
+.hh-table tbody th { font-weight: 600; }
+.hh-table--made td { font-variant-numeric: tabular-nums; }
+.hh-answers { padding-left: 1.2rem; }
+.hh-answers li { margin: 0 0 0.5rem; }
+
+@media (max-width: 720px) {
+  .hh-bars { padding: 0.8rem; }
+  .hh-bars__row { grid-template-columns: minmax(0, 1fr) 2.6rem; gap: 0.15rem 0.5rem; }
+  .hh-bars__label { grid-column: 1 / -1; }
+  .hh-table thead { display: none; }
+  .hh-table, .hh-table tbody, .hh-table tr, .hh-table th, .hh-table td { display: block; width: auto; }
+  .hh-table tr { padding: 0.5rem 0; border-bottom: 1px solid var(--hairline); }
+  .hh-table th, .hh-table td { border: 0; padding: 0.1rem 0; }
+  .hh-table td::before { content: attr(data-label) ": "; color: var(--ink-faded); font-size: 0.88em; }
+}
