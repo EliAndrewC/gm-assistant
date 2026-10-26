@@ -1,0 +1,34 @@
+# Shrine builder, feature 228: the art styles a player can choose for the picture (FR-007).
+# `preamble` opens the image prompt; the shrine's description follows it (l7r/shrines/art.py).
+# Player-facing (label and note): feature 216's player-text rules apply.
+styles:
+  - key: ink
+    label: Ink and wash
+    note: Brush and ink on paper, touched with pale color.
+    preamble: >-
+      A Japanese ink-wash painting (sumi-e) on textured paper, confident brushwork with soft washes
+      of muted color, generous mist and empty space.
+  - key: woodblock
+    label: Woodblock print
+    note: Flat color and crisp outlines, like an old landscape print.
+    preamble: >-
+      A Japanese woodblock print landscape in the shin-hanga manner, crisp outlines, flat layered
+      color, subtle wood grain in the sky, soft gradations.
+  - key: watercolor
+    label: Watercolor
+    note: Loose, light and luminous.
+    preamble: >-
+      A delicate watercolor illustration, loose wet-on-wet washes, luminous dappled light, fine
+      pencil underdrawing showing through.
+  - key: screen
+    label: Folding screen
+    note: Rich mineral color on a ground of gold leaf.
+    preamble: >-
+      A painting in the manner of a Japanese folding screen, rich mineral pigments, stylized clouds
+      of gold leaf drifting across the scene, bold simplified trees.
+  - key: realistic
+    label: Lifelike
+    note: As if you stood on the path yourself.
+    preamble: >-
+      A lifelike, richly detailed painting with natural light and photographic depth, as if seen by
+      a traveler standing on the approach path.

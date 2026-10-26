@@ -1,0 +1,12 @@
+# Shrine builder: old link keys and where they went (feature 228, FR-001/FR-002).
+#
+# Every link a player has made must keep working (GM 2026-10-26, a standing rule for all future
+# shrine-builder work). When a step or an option is renamed or merged, record the OLD key here and
+# the key it became; parse_design reads old links through this table, and the route redirects an
+# old link to its current spelling. Removing an option a saved link uses without an entry here
+# fails tests/test_shrines.py (the frozen links in tests/shrine_links.txt).
+#
+#   steps:   {old_step: new_step}
+#   options: {step: {old_option: new_option}}   (step is the CURRENT step key)
+steps: {}
+options: {}

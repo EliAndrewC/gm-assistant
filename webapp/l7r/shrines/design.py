@@ -11,14 +11,27 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from urllib.parse import urlencode
 
-from l7r.shrines.catalog import TEXT_FIELDS, Catalog, Category, Clause, Option, holds_all
+from l7r.shrines.catalog import (
+    INSTEAD_PREFIX,
+    OTHER_CAP,
+    OTHER_PREFIX,
+    TEXT_FIELDS,
+    Catalog,
+    Category,
+    Clause,
+    Option,
+    holds_all,
+)
 
 __all__ = [
     'Design',
     'Effect',
+    'Other',
+    'answered',
+    'upgrade_params',
     'option_effects',
     'first',
     'picks',
@@ -45,6 +58,15 @@ def first(value: object) -> str | None:
 
 
 @dataclass(frozen=True, slots=True)
+class Other:
+    """A step's "Something else" (feature 228, FR-003): the player's own words, and whether they
+    replace the cards (`instead`) or add to the pick."""
+
+    text: str
+    instead: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class Design:
     """The player's selections, resolved. `choices` holds only steps in play with real picks."""
 
@@ -57,6 +79,8 @@ class Design:
     dropped: tuple[str, ...] = ()
     # The named wording in force ('' = the plain wording), FR-030/FR-032/FR-037.
     wording: str = ''
+    # Feature 228: "Something else" per step in play, in wizard order.
+    others: dict[str, Other] = field(default_factory=dict)
 
     @property
     def voided(self) -> frozenset[str]:
@@ -104,6 +128,49 @@ def _resolve(
     return choices, inactive
 
 
+def upgrade_params(catalog: Catalog, params: Mapping[str, object]) -> dict[str, object] | None:
+    """A link written with renamed keys (data/legacy.yaml, FR-002), respelled with the current
+    ones; None when nothing in it is old. Old links must keep working forever (GM 2026-10-26)."""
+    if not catalog.legacy_steps and not catalog.legacy_options:
+        return None
+    changed = False
+    out: dict[str, object] = {}
+    for key, value in params.items():
+        new_key = key
+        for prefix in ('', OTHER_PREFIX, INSTEAD_PREFIX):
+            bare = key[len(prefix) :] if key.startswith(prefix) else None
+            if bare is not None and bare in catalog.legacy_steps:
+                new_key = prefix + catalog.legacy_steps[bare]
+                break
+        renames = catalog.legacy_options.get(new_key, {})
+        values = [renames.get(v, v) for v in picks(value)] if renames else None
+        if values is not None and values != picks(value):
+            value = values if isinstance(value, list) else values[0]
+            changed = True
+        if new_key != key:
+            changed = True
+            if new_key in out:  # an old and a new spelling of one multi-select step
+                value = picks(out[new_key]) + picks(value)
+        out[new_key] = value
+    return out if changed else None
+
+
+def _others(catalog: Catalog, params: Mapping[str, object]) -> dict[str, Other]:
+    others = {}
+    for category in catalog.categories:
+        raw = first(params.get(OTHER_PREFIX + category.key))
+        text = ' '.join(raw.split())[:OTHER_CAP] if raw else ''
+        if text:
+            flag = first(params.get(INSTEAD_PREFIX + category.key))
+            others[category.key] = Other(text, flag in ('1', 'true', 'on'))
+    return others
+
+
+def answered(design: Design, key: str) -> bool:
+    """A step has an answer: a pick, or a "Something else" in place of the cards."""
+    return key in design.choices or key in design.multi or key in design.others
+
+
 def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
     """Read a design from query parameters. Nothing is pre-selected (an option picked on arrival
     biases the player - GM 2026-10-17), so a step not reached yet is absent and costs nothing.
@@ -114,6 +181,8 @@ def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
     chosen: dict[str, str] = {}
     picked: dict[str, list[str]] = {}
     dropped: list[str] = []
+    params = upgrade_params(catalog, params) or params
+    others = _others(catalog, params)
     for category in catalog.categories:
         if category.multi:
             values = picks(params.get(category.key))
@@ -126,6 +195,12 @@ def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
             chosen[category.key] = raw
         elif raw is not None:
             dropped.append(category.key)
+    # FR-004: "instead" means no listed option on that step, so later rules see it unanswered.
+    for key, other in others.items():
+        if other.instead:
+            chosen.pop(key, None)
+            picked.pop(key, None)
+            dropped = [d for d in dropped if d != key]
     choices, inactive = _resolve(catalog, chosen)
     multi = _resolve_multi(catalog, picked, choices, inactive)
     text = {}
@@ -143,6 +218,7 @@ def parse_design(catalog: Catalog, params: Mapping[str, object]) -> Design:
         text=text,
         dropped=tuple(d for d in dropped if d not in inactive),
         wording=next((n for n, cond in catalog.wordings if holds_all(cond, choices)), ''),
+        others={k: o for k, o in others.items() if k not in inactive},
     )
 
 
@@ -249,6 +325,11 @@ def share_query(catalog: Catalog, design: Design) -> str:
         if c.key in design.choices:
             pairs.append((c.key, design.choices[c.key]))
         pairs += [(c.key, v) for v in design.multi.get(c.key, ())]
+        other = design.others.get(c.key)
+        if other is not None:
+            pairs.append((OTHER_PREFIX + c.key, other.text))
+            if other.instead:
+                pairs.append((INSTEAD_PREFIX + c.key, '1'))
     pairs += [(name, design.text[name]) for name in TEXT_FIELDS if name in design.text]
     return urlencode(pairs)
 

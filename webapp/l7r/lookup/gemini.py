@@ -88,6 +88,7 @@ def generate(
     system: str,
     prompt: str,
     thinking: str = 'none',
+    temperature: float = 0.2,
     timeout: float = 30.0,
     opener: Callable[..., Any] = urllib.request.urlopen,
     clock: Callable[[], float] = time.monotonic,
@@ -96,7 +97,7 @@ def generate(
     body = {
         'systemInstruction': {'parts': [{'text': system}]},
         'contents': [{'role': 'user', 'parts': [{'text': prompt}]}],
-        'generationConfig': {'temperature': 0.2, **thinking_config(thinking)},
+        'generationConfig': {'temperature': temperature, **thinking_config(thinking)},
     }
     request = urllib.request.Request(
         ENDPOINT.format(model=model),

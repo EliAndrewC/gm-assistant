@@ -16,6 +16,7 @@ from l7r.shrines.design import Design, first, reference_design, share_query
 
 __all__ = [
     'BUDGET_MAX',
+    'OTHER_CONTRACT',
     'DEFAULT_BASELINE',
     'ROLL_MAX',
     'ContractResult',
@@ -36,6 +37,8 @@ __all__ = [
 DEFAULT_BASELINE = 25  # the Culture gift rule's "roll minus 25" (rules/02-skills.md)
 ROLL_MAX = 200
 BUDGET_MAX = 100_000.0
+# Feature 228 (FR-005): the contract every player's "Something else" is priced and haggled under.
+OTHER_CONTRACT = 'other'
 
 
 # --- pricing (GM only) --------------------------------------------------------------------------
@@ -48,6 +51,9 @@ class LineItem:
     contract: str
     koku: float
     heavy: float
+    # Feature 228: a "Something else" line names its step, and is unpriced until the GM prices it.
+    step: str = ''
+    priced: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,12 +64,23 @@ class Pricing:
     by_contract: dict[str, float]
 
     @property
+    def unpriced(self) -> int:
+        """How many "Something else" lines the GM has not priced: the totals are not whole."""
+        return sum(1 for i in self.items if not i.priced)
+
+    @property
     def total(self) -> float:
         return sum(self.by_contract.values())
 
 
-def price_design(catalog: Catalog, design: Design, remoteness: str) -> Pricing:
-    """Fair price of every line in the design, by contract, with porterage on heavy lines."""
+def price_design(
+    catalog: Catalog,
+    design: Design,
+    remoteness: str,
+    other_prices: Mapping[str, float] | None = None,
+) -> Pricing:
+    """Fair price of every line in the design, by contract, with porterage on heavy lines. Each
+    "Something else" is a line of the Other work contract at the GM's price, or unpriced."""
     items: list[LineItem] = [
         LineItem('Site preparation', s.label, s.contract, s.koku, 0.0) for s in catalog.site_lines
     ]
@@ -99,6 +116,21 @@ def price_design(catalog: Catalog, design: Design, remoteness: str) -> Pricing:
                     line.heavy * factor,
                 )
             )
+    for key, other in design.others.items():
+        step = catalog.category(key)
+        assert step is not None  # parse_design reads others only for catalog steps
+        price = (other_prices or {}).get(key)
+        items.append(
+            LineItem(
+                step.label,
+                f'{"instead, " if other.instead else "plus "}{other.text}',
+                OTHER_CONTRACT,
+                price or 0.0,
+                0.0,
+                step=key,
+                priced=price is not None,
+            )
+        )
     rate = catalog.remoteness_rate(remoteness)
     heavy = sum(i.heavy for i in items)
     by_contract = {c.key: 0.0 for c in catalog.contracts}
@@ -123,6 +155,8 @@ class Negotiation:
     remoteness: str
     rolls: dict[str, int] = field(default_factory=dict)
     baselines: dict[str, int] = field(default_factory=dict)
+    # Feature 228: the GM's price for a step's "Something else" (absent = unpriced).
+    others: dict[str, float] = field(default_factory=dict)
 
 
 def _int(value: object, low: int, high: int) -> int | None:
@@ -136,17 +170,23 @@ def _int(value: object, low: int, high: int) -> int | None:
     return max(low, min(high, number))
 
 
+def _koku(value: object) -> float | None:
+    """A koku figure from a field: None when missing, blank or not a finite number."""
+    raw = first(value)
+    if raw is None:
+        return None
+    try:
+        parsed = float(raw.strip())
+    except ValueError:
+        return None
+    return max(0.0, min(BUDGET_MAX, parsed)) if math.isfinite(parsed) else None
+
+
 def parse_negotiation(catalog: Catalog, params: Mapping[str, object]) -> Negotiation:
     """Read the GM's `gm_*` settings; anything missing or malformed takes its default."""
-    budget = default_budget(catalog)
-    raw_budget = first(params.get(GM_PREFIX + 'budget'))
-    if raw_budget is not None:
-        try:
-            parsed = float(raw_budget.strip())
-        except ValueError:
-            parsed = math.nan
-        if math.isfinite(parsed):
-            budget = max(0.0, min(BUDGET_MAX, parsed))
+    budget = _koku(params.get(GM_PREFIX + 'budget'))
+    if budget is None:
+        budget = default_budget(catalog)
     remoteness = first(params.get(GM_PREFIX + 'remote'))
     if remoteness not in {r.key for r in catalog.remoteness}:
         remoteness = catalog.default_remoteness
@@ -159,8 +199,13 @@ def parse_negotiation(catalog: Catalog, params: Mapping[str, object]) -> Negotia
         base = _int(params.get(f'{GM_PREFIX}base_{contract.key}'), 0, ROLL_MAX)
         if base is not None:
             baselines[contract.key] = base
+    others = {}
+    for category in catalog.categories:
+        price = _koku(params.get(f'{GM_PREFIX}other_{category.key}'))
+        if price is not None:
+            others[category.key] = price
     assert remoteness is not None
-    return Negotiation(budget, remoteness, rolls, baselines)
+    return Negotiation(budget, remoteness, rolls, baselines, others)
 
 
 @dataclass(frozen=True, slots=True)
@@ -206,11 +251,12 @@ def saving_percent(roll: int | None, baseline: int) -> int:
 
 
 def negotiate(catalog: Catalog, design: Design, negotiation: Negotiation) -> Ledger:
-    pricing = price_design(catalog, design, negotiation.remoteness)
+    pricing = price_design(catalog, design, negotiation.remoteness, negotiation.others)
     results = []
     for contract in catalog.contracts:
         fair = pricing.by_contract[contract.key]
-        if fair <= 0:
+        # Other work shows while there is a "Something else" to price, even at nothing yet.
+        if fair <= 0 and not (contract.key == OTHER_CONTRACT and design.others):
             continue
         roll = negotiation.rolls.get(contract.key)
         baseline = negotiation.baselines.get(contract.key, DEFAULT_BASELINE)
@@ -241,6 +287,11 @@ def gm_query(catalog: Catalog, design: Design, negotiation: Negotiation) -> str:
             pairs.append(
                 (f'{GM_PREFIX}base_{contract.key}', str(negotiation.baselines[contract.key]))
             )
+    pairs += [
+        (f'{GM_PREFIX}other_{key}', format_number(price))
+        for key, price in negotiation.others.items()
+        if key in design.others
+    ]
     share = share_query(catalog, design)
     return '&'.join(q for q in (share, urlencode(pairs)) if q)
 

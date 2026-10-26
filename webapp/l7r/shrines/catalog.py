@@ -20,6 +20,9 @@ import yaml
 __all__ = [
     'DATA_DIR',
     'GM_PREFIX',
+    'INSTEAD_PREFIX',
+    'OTHER_CAP',
+    'OTHER_PREFIX',
     'TEXT_FIELDS',
     'Catalog',
     'CatalogError',
@@ -46,6 +49,13 @@ DATA_DIR = Path(__file__).with_name('data')
 TEXT_FIELDS: dict[str, int] = {'shrine_name': 120}
 
 GM_PREFIX = 'gm_'
+
+# Feature 228 (FR-003): a step's "Something else" rides in the link as `other_<step>=<text>`, and
+# `instead_<step>=1` when it replaces the cards rather than adding to the pick. Optional, so the
+# no-homework rule (FR-017) still holds: nothing makes the player type.
+OTHER_PREFIX = 'other_'
+INSTEAD_PREFIX = 'instead_'
+OTHER_CAP = 300
 
 
 class CatalogError(ValueError):
@@ -102,6 +112,8 @@ class Option:
     gloss: str = ''
     # FR-044: on a multi-select step, picking this one clears the others (and vice versa).
     exclusive: bool = False
+    # Feature 228 (FR-007): what it looks like, for the image prompt ('' = nothing to see).
+    look: str = ''
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,6 +187,9 @@ class Catalog:
     # Named wordings, in priority order: the first whose condition holds is used.
     wordings: tuple[tuple[str, Condition], ...] = ()
     phases: tuple[Phase, ...] = ()
+    # Feature 228 (FR-002): renamed link keys, old -> current (data/legacy.yaml).
+    legacy_steps: dict[str, str] = field(default_factory=dict)
+    legacy_options: dict[str, dict[str, str]] = field(default_factory=dict)
 
     def phase_number(self, group_key: str) -> int:
         """1-based phase of a group."""
@@ -247,6 +262,7 @@ def _option(raw: Mapping[str, Any]) -> Option:
         units=float(raw.get('units', 1)),
         gloss=_squash(raw.get('gloss', '')),
         exclusive=bool(raw.get('exclusive', False)),
+        look=_squash(raw.get('look', '')),
     )
 
 
@@ -293,6 +309,11 @@ def parse_catalog(data: Mapping[str, Any]) -> Catalog:
         phases=tuple(
             Phase(str(p['label']), tuple(str(g) for g in p['groups'])) for p in data['phases']
         ),
+        legacy_steps={str(k): str(v) for k, v in (data.get('legacy_steps') or {}).items()},
+        legacy_options={
+            str(step): {str(k): str(v) for k, v in renames.items()}
+            for step, renames in (data.get('legacy_options') or {}).items()
+        },
     )
     _validate(catalog)
     return catalog
@@ -317,8 +338,23 @@ def _validate(catalog: Catalog) -> None:
     keys = [c.key for c in catalog.categories]
     if len(keys) != len(set(keys)):
         raise CatalogError('duplicate category key')
-    if any(k.startswith(GM_PREFIX) for k in keys) or set(keys) & set(TEXT_FIELDS):
-        raise CatalogError('a category key collides with a text field or the gm_ prefix')
+    prefixes = (GM_PREFIX, OTHER_PREFIX, INSTEAD_PREFIX)
+    if any(k.startswith(prefixes) for k in keys) or set(keys) & set(TEXT_FIELDS):
+        raise CatalogError('a category key collides with a text field or a reserved prefix')
+    for old, new in catalog.legacy_steps.items():
+        if new not in keys or old in keys:
+            raise CatalogError(
+                f'legacy step {old!r} -> {new!r}: must map a gone key to a current one'
+            )
+    for step, renames in catalog.legacy_options.items():
+        target = catalog.category(step)
+        if target is None:
+            raise CatalogError(f'legacy options for unknown step {step!r}')
+        for old, new in renames.items():
+            if target.option(new) is None or target.option(old) is not None:
+                raise CatalogError(
+                    f'legacy option {step}.{old} -> {new}: must map a gone key to a current one'
+                )
     in_order = [g for p in catalog.phases for g in p.groups]
     if in_order != [g.key for g in catalog.groups]:
         raise CatalogError('phases must list every group exactly once, in wizard order')
@@ -363,15 +399,38 @@ def _validate(catalog: Catalog) -> None:
                     raise CatalogError(f'{where}: per names {line.per!r}, not an earlier step')
 
 
+def _read(path: Path) -> Any:
+    with path.open(encoding='utf-8') as fh:
+        return yaml.safe_load(fh)
+
+
+def _merge_looks(groups: list[dict[str, Any]], looks: Mapping[str, Mapping[str, str]]) -> None:
+    """Give every option its `look` from looks.yaml; a missing or stray entry is an error, so a new
+    option cannot reach the image prompt silently blank (feature 228)."""
+    seen = set()
+    for group in groups:
+        for category in group['categories']:
+            for option in category['options']:
+                where = f'{category["key"]}.{option["key"]}'
+                entry = looks.get(category['key'], {})
+                if option['key'] not in entry:
+                    raise CatalogError(f'{where}: no look in data/looks.yaml')
+                option['look'] = entry[option['key']]
+                seen.add(where)
+    stray = {f'{c}.{o}' for c, entry in looks.items() for o in entry} - seen
+    if stray:
+        raise CatalogError(f'data/looks.yaml names unknown options {sorted(stray)}')
+
+
 def load_raw(data_dir: Path = DATA_DIR) -> dict[str, Any]:
-    """`catalog.yaml` with its `groups` list of keys replaced by the group files' contents."""
-    with (data_dir / 'catalog.yaml').open(encoding='utf-8') as fh:
-        raw: dict[str, Any] = yaml.safe_load(fh)
-    groups = []
-    for key in raw['groups']:
-        with (data_dir / 'groups' / f'{key}.yaml').open(encoding='utf-8') as fh:
-            groups.append(yaml.safe_load(fh))
-    raw['groups'] = groups
+    """`catalog.yaml` with its `groups` list of keys replaced by the group files' contents, each
+    option's `look` merged from `looks.yaml`, and the renamed keys from `legacy.yaml`."""
+    raw: dict[str, Any] = _read(data_dir / 'catalog.yaml')
+    raw['groups'] = [_read(data_dir / 'groups' / f'{key}.yaml') for key in raw['groups']]
+    _merge_looks(raw['groups'], _read(data_dir / 'looks.yaml'))
+    legacy = _read(data_dir / 'legacy.yaml') or {}
+    raw['legacy_steps'] = legacy.get('steps') or {}
+    raw['legacy_options'] = legacy.get('options') or {}
     return raw
 
 

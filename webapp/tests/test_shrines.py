@@ -123,7 +123,8 @@ def player_texts(catalog: Catalog) -> list[str]:
         for category in group.categories:
             texts += [category.label, category.prompt, category.decides, *worded(category)]
             for option in category.options:
-                texts += [option.label, option.text, option.romaji, option.appeal, *worded(option)]
+                texts += [option.label, option.text, option.romaji, option.appeal, option.look]
+                texts += worded(option)
     return [t for t in texts if t]
 
 
@@ -151,7 +152,8 @@ def test_no_option_is_an_absence(catalog: Catalog) -> None:
         prompts = [category.prompt, *worded(category)]
         assert not any(YES_NO_PROMPT.search(p) for p in prompts), category.key
         for option in category.options:
-            for text in (option.label, option.text, option.appeal, *worded(option)):
+            # feature 228: the visual phrase too ("no building - a sacred space ..." was caught)
+            for text in (option.label, option.text, option.appeal, option.look, *worded(option)):
                 assert not ABSENCE.search(text), text
 
 

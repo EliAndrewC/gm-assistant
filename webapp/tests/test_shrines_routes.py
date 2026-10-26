@@ -80,7 +80,14 @@ def most_expensive(catalog: Catalog) -> dict[str, str]:
     }
 
 
-GM_PARAMS = {'gm_budget': '7', 'gm_remote': 'deep', 'gm_roll_carpentry': '40'}
+# Feature 228 adds a player's "Something else" and the GM's price for it (spec US3.5).
+GM_PARAMS = {
+    'gm_budget': '7',
+    'gm_remote': 'deep',
+    'gm_roll_carpentry': '40',
+    'other_bell': 'a conch',
+    'gm_other_bell': '9',
+}
 
 
 @pytest.mark.parametrize('role', [None, 'player'])
@@ -189,12 +196,17 @@ def test_wizard_has_a_step_per_category_plus_name_and_review(root: Root, catalog
 
 
 def test_name_is_prefilled_and_no_homework_fields(root: Root, catalog: Catalog) -> None:
-    """FR-017: one free-text field, pre-filled; no sacred-object notes, no inscription box."""
+    """FR-017: one free-text field the player must have, pre-filled; no sacred-object notes, no
+    inscription box. Feature 228 (FR-010) adds one OPTIONAL "Something else" box per step: disabled
+    until the player turns it on, so it is never asked of them and never reaches the link empty."""
     page = root.shrines().decode('utf-8')
     assert (
         f'name="shrine_name" rows="1" maxlength="120" data-one-line>{catalog.default_name}<' in page
     )
     assert page.count('<textarea name=') == 1
+    others = re.findall(r'<textarea class="shrine-other__text"[^>]*>', page)
+    assert len(others) == len(catalog.categories)
+    assert all(' disabled' in t for t in others)
     for gone in ('enshrined', 'sacred_note', 'inscription'):
         assert f'name="{gone}"' not in page
 

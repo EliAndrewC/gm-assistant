@@ -9,6 +9,9 @@
    - Ledger viewers (the GM, or a player whose character has Commerce, FR-048):
      every change resubmits the form so the server recomputes the ledger,
      returning to the same step.
+   - Feature 228: "Something else" on every step (the player's own words, instead of the cards or
+     as well), and the studio on the last step: a description, a picture, and the shrine's wiki
+     page. Option inputs carry data-opt; nothing else in a fieldset is a pick.
    Nothing here knows a price - the ledger is rendered by the server.
    Without this script every step shows at once and the form still works.
    ========================================================================= */
@@ -61,6 +64,27 @@
       return clause[2] ? !present : present;
     }
 
+    // Feature 228: a step's "Something else" - null when off, else its text and mode
+    // ('instead', 'also', or null before the player says which).
+    function otherState(fs) {
+      var box = fs.querySelector('[data-other]');
+      if (!box || !box.querySelector('[data-other-toggle]').checked) return null;
+      var mode = box.querySelector('[data-other-mode]:checked');
+      return { text: box.querySelector('textarea').value.trim(), mode: mode ? mode.dataset.otherMode : null };
+    }
+
+    // Off = its text and mode are disabled, so they never reach the link (FormData skips them).
+    function syncOther(fs) {
+      var box = fs.querySelector('[data-other]');
+      if (!box) return;
+      var on = box.querySelector('[data-other-toggle]').checked;
+      box.classList.toggle('is-on', on);
+      box.querySelector('[data-other-body]').hidden = !on;
+      box.querySelectorAll('textarea, [data-other-mode]').forEach(function (el) { el.disabled = !on; });
+      var st = otherState(fs);
+      fs.classList.toggle('is-instead', !!(st && st.mode === 'instead'));
+    }
+
     function resolve() {
       var choices = {};
       form.querySelectorAll('fieldset.shrine-cat').forEach(function (fs) {
@@ -69,14 +93,18 @@
         fs.classList.toggle('is-moot', !!failing);
         fs.disabled = !!failing;
         if (failing) return;
+        syncOther(fs);
+        // FR-004: "instead" sets the cards aside - the step has no listed option.
+        var st = otherState(fs);
+        var instead = !!(st && st.mode === 'instead');
         var optionRules = rules.options[key] || {};
-        fs.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(function (input) {
+        fs.querySelectorAll('input[data-opt]').forEach(function (input) {
           var ok = (optionRules[input.value] || []).every(function (c) { return holds(c, choices); });
           input.closest('.shrine-opt-cell').classList.toggle('is-unavailable', !ok);
-          input.disabled = !ok;
-          if (!ok) input.checked = false;
+          input.disabled = !ok || instead;
+          if (!ok || instead) input.checked = false;
         });
-        var checked = fs.querySelector('input:checked');
+        var checked = fs.querySelector('input[data-opt]:checked');
         if (checked) choices[key] = checked.value;
       });
       // FR-030/FR-032/FR-037: the first named wording whose rule holds replaces the plain wording.
@@ -104,7 +132,7 @@
     var model = Array.prototype.map.call(form.querySelectorAll('fieldset.shrine-cat'), function (fs) {
       return {
         key: fs.dataset.cat,
-        options: Array.prototype.map.call(fs.querySelectorAll('input[type=radio]'), function (i) { return i.value; })
+        options: Array.prototype.map.call(fs.querySelectorAll('input[data-opt][type=radio]'), function (i) { return i.value; })
       };
     });
 
@@ -135,7 +163,7 @@
 
     function currentRaw() {
       var raw = {};
-      form.querySelectorAll('fieldset.shrine-cat:not(:disabled) input[type=radio]:checked').forEach(function (i) {
+      form.querySelectorAll('fieldset.shrine-cat:not(:disabled) input[data-opt][type=radio]:checked').forEach(function (i) {
         raw[i.name] = i.value;
       });
       return raw;
@@ -247,8 +275,10 @@
       if (list) {
         list.innerHTML = '';
         form.querySelectorAll('fieldset.shrine-cat:not(:disabled)').forEach(function (fs) {
-          var picked = fs.querySelectorAll('input:checked');
+          var picked = fs.querySelectorAll('input[data-opt]:checked');
           var checked = picked[0];
+          var other = otherState(fs);
+          if (other && (!other.text || !other.mode)) other = null;
           var li = document.createElement('li');
           var a = document.createElement('a');
           a.href = '#shrine-step-' + fs.dataset.cat;
@@ -258,10 +288,16 @@
           a.appendChild(label);
           a.appendChild(document.createTextNode(' '));
           var answer = document.createElement('em');
-          if (checked) {
-            answer.textContent = Array.prototype.map.call(picked, function (i) {
+          if (checked || other) {
+            var parts = Array.prototype.map.call(picked, function (i) {
               return shownText(i.closest('.shrine-opt').querySelector('.shrine-opt__title'));
-            }).join('; ');
+            });
+            var text = parts.join('; ');
+            if (other) {
+              text = other.mode === 'instead' ? 'Instead, ' + other.text
+                : (text ? text + ', plus ' : 'Plus ') + other.text;
+            }
+            answer.textContent = text;
           } else {
             answer.textContent = 'not chosen yet';
             answer.className = 'is-open';
@@ -324,7 +360,11 @@
       nextBtn.hidden = last;
       gateNext();
       nextBtn.textContent = index === list.length - 2 ? 'See your shrine' : 'Next';
-      if (step.dataset.step === 'review') { syncSummary(); fitShare(); }
+      if (step.dataset.step === 'review') {
+        syncSummary();
+        fitShare();
+        document.dispatchEvent(new CustomEvent('shrine:review'));
+      }
       updateEffects(step);
       writeAddress();
       if (scroll) wizard.scrollIntoView({ block: 'start' });
@@ -335,11 +375,19 @@
     function gateNext() {
       if (!current) return;
       var fs = current.querySelector('fieldset.shrine-cat');
-      var open = fs && !fs.disabled && !fs.querySelector('input:checked');
-      nextBtn.disabled = !!open;
       var hint = wizard.querySelector('[data-hint]');
-      hint.hidden = !open;
-      hint.textContent = fs && fs.querySelector('input[type=checkbox]') ? 'Choose at least one' : 'Choose one';
+      var message = '';
+      if (fs && !fs.disabled) {
+        var st = otherState(fs);
+        var picked = fs.querySelector('input[data-opt]:checked');
+        var many = fs.querySelector('input[data-opt][type=checkbox]');
+        if (st && !st.text) message = 'Describe it in your own words';
+        else if (st && !st.mode) message = 'Instead, or as well?';
+        else if (!(st && st.mode === 'instead') && !picked) message = many ? 'Choose at least one' : 'Choose one';
+      }
+      nextBtn.disabled = !!message;
+      hint.hidden = !message;
+      hint.textContent = message;
     }
 
     function neighbor(step, delta) {
@@ -399,10 +447,20 @@
     form.addEventListener('change', function (event) {
       // FR-044: on a multi-select step an exclusive option and the others clear each other
       var box = event.target;
-      if (box.type === 'checkbox' && box.checked) {
-        box.closest('fieldset').querySelectorAll('input[type=checkbox]').forEach(function (other) {
+      if (box.form !== form) return;  // the studio's fields belong to #shrine-studio
+      if (box.hasAttribute('data-opt') && box.type === 'checkbox' && box.checked) {
+        box.closest('fieldset').querySelectorAll('input[data-opt][type=checkbox]').forEach(function (other) {
           if (other !== box && (box.hasAttribute('data-exclusive') || other.hasAttribute('data-exclusive'))) other.checked = false;
         });
+      }
+      var otherBox = box.closest('[data-other]');
+      if (otherBox) {
+        var ofs = otherBox.closest('fieldset');
+        syncOther(ofs);
+        if (box.matches('[data-other-toggle]') && box.checked) otherBox.querySelector('textarea').focus();
+        // An unfinished "something else" changes nothing yet: no reload for the ledger.
+        var ost = otherState(ofs);
+        if (priced && ost && (!ost.text || !ost.mode)) { gateNext(); return; }
       }
       if (priced) {
         try { sessionStorage.setItem(SCROLL_KEY, String(window.scrollY)); } catch (e) { /* ignore */ }
@@ -420,7 +478,12 @@
       }
     });
     form.addEventListener('input', function (event) {
+      if (event.target.form !== form) return;
       if (event.target.matches('[data-one-line]')) fitBox(event.target);
+      if (event.target.closest('[data-other]')) {
+        gateNext();
+        if (!priced) { syncSummary(); writeAddress(); }
+      }
       if (!priced && event.target.matches('[name=shrine_name]')) { syncSummary(); writeAddress(); }
     });
     // The name box wraps but is one line: Enter moves on instead of breaking it.
@@ -496,10 +559,176 @@
       }
     } catch (e) { /* storage unavailable: no scroll restore */ }
 
+    initStudio(designQuery);
+
     window.addEventListener('resize', fitShare);
     window.addEventListener('resize', function () { if (current) updateEffects(current); });
     window.addEventListener('load', fitShare);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitShare);
+  }
+
+  /* -----------------------------------------------------------------------
+     Feature 228: the studio on the last step. It looks up the shrine's wiki
+     page (anyone), and for a signed-in viewer writes a description, draws a
+     picture and saves both to the wiki. Nothing is stored on this server:
+     a drawn picture stays in the page until it is saved.
+     ----------------------------------------------------------------------- */
+  function initStudio(designQuery) {
+    var studio = document.querySelector('[data-studio]');
+    if (!studio) return;
+    var signedIn = studio.dataset.signedIn === 'true';
+    var status = studio.querySelector('[data-wiki-status]');
+    var desc = studio.querySelector('[data-description]');
+    var promptBox = studio.querySelector('[data-prompt]');
+    var picture = studio.querySelector('[data-picture]');
+    var img = studio.querySelector('[data-picture-img]');
+    var saveBtn = studio.querySelector('[data-save]');
+    var note = studio.querySelector('[data-studio-status]');
+    var drawn = null;          // {image, mime} of a picture drawn this visit, not yet saved
+    var hasSavedPicture = false;
+    var loadedFor = null;      // the wiki page whose contents fill the boxes
+    var lastQuery = null;
+    var descDirty = false;
+    var promptDirty = false;
+    if (desc) desc.addEventListener('input', function () { descDirty = true; });
+    if (promptBox) promptBox.addEventListener('input', function () { promptDirty = true; });
+
+    function say(el, text) { if (el) el.textContent = text; }
+
+    function json(url, body) {
+      var opts = body === undefined ? {} : {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      };
+      return fetch(url, opts).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (data) {
+          if (!r.ok) throw new Error(data.error || ('The server said ' + r.status + '.'));
+          return data;
+        });
+      });
+    }
+
+    function showPicture(src) {
+      img.src = src;
+      picture.hidden = false;
+    }
+
+    function setStyle(key) {
+      var radio = key && studio.querySelector('input[name=art_style][value="' + key + '"]');
+      if (radio) radio.checked = true;
+    }
+
+    function wikiStatus(data) {
+      status.innerHTML = '';
+      if (data.error) { say(status, data.error); return; }
+      if (!data.found) {
+        say(status, signedIn
+          ? 'This shrine has no wiki page yet. Describe it and draw it, then create one.'
+          : 'This shrine has no wiki page yet.');
+        if (saveBtn) saveBtn.textContent = 'Create wiki page';
+        return;
+      }
+      var a = document.createElement('a');
+      a.href = data.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = 'its wiki page';
+      status.appendChild(document.createTextNode('This shrine has '));
+      status.appendChild(a);
+      status.appendChild(document.createTextNode(data.matches
+        ? ', and it matches these choices.'
+        : '. The choices here differ from the wiki page' + (signedIn ? ': update it to save them.' : '.')));
+      status.classList.toggle('is-stale', !data.matches);
+      if (saveBtn) saveBtn.textContent = 'Update wiki page';
+    }
+
+    function refreshPrompt(force) {
+      if (!promptBox || (promptDirty && !force)) return Promise.resolve();
+      return json('/shrines/prompt?' + designQuery()).then(function (data) {
+        promptBox.value = data.prompt;
+        promptDirty = false;
+      });
+    }
+
+    function lookUp() {
+      var q = designQuery();
+      if (q === lastQuery) return;
+      lastQuery = q;
+      json('/shrines/wiki?' + q).then(function (data) {
+        wikiStatus(data);
+        // a signed-out visitor sees the boxes only when there is a saved page to show
+        studio.querySelector('[data-studio-grid]').hidden = !signedIn && !data.found;
+        if (data.found && loadedFor !== data.url) {
+          loadedFor = data.url;
+          if (!descDirty) desc.value = data.description || '';
+          if (data.image_url && !drawn) { showPicture(data.image_url); hasSavedPicture = true; }
+          setStyle(data.style);
+          if (promptBox && data.prompt && !promptDirty) { promptBox.value = data.prompt; promptDirty = true; }
+        }
+      }).catch(function () { say(status, 'Could not check the wiki just now.'); });
+      refreshPrompt(false);
+    }
+
+    document.addEventListener('shrine:review', lookUp);
+    if (document.querySelector('.wizard-step.is-current[data-step=review]')) lookUp();
+    if (!signedIn) return;
+
+    function busy(button, text, work) {
+      var label = button.textContent;
+      button.disabled = true;
+      button.textContent = text;
+      say(note, '');
+      return work().catch(function (err) { say(note, err.message); }).then(function () {
+        button.disabled = false;
+        button.textContent = label;
+      });
+    }
+
+    studio.querySelector('[data-describe]').addEventListener('click', function (event) {
+      if (descDirty && desc.value.trim() && !window.confirm('Replace the description you edited?')) return;
+      busy(event.currentTarget, 'Writing...', function () {
+        return json('/shrines/describe', { query: designQuery() }).then(function (data) {
+          desc.value = data.text;
+          descDirty = false;
+        });
+      });
+    });
+
+    studio.querySelector('[data-rebuild]').addEventListener('click', function () { refreshPrompt(true); });
+
+    studio.querySelector('[data-draw]').addEventListener('click', function (event) {
+      var style = studio.querySelector('input[name=art_style]:checked');
+      busy(event.currentTarget, 'Drawing... (about 15 seconds)', function () {
+        return refreshPrompt(false).then(function () {
+          return json('/shrines/draw', { prompt: promptBox.value, style: style ? style.value : '' });
+        }).then(function (data) {
+          drawn = data;
+          showPicture('data:' + data.mime + ';base64,' + data.image);
+        });
+      });
+    });
+
+    saveBtn.addEventListener('click', function (event) {
+      if (!desc.value.trim()) { say(note, 'Write a description, or press Describe the shrine, first.'); return; }
+      if (!drawn && !hasSavedPicture) { say(note, 'Draw a picture first: the wiki page needs both a picture and a description.'); return; }
+      var style = studio.querySelector('input[name=art_style]:checked');
+      busy(event.currentTarget, 'Saving to the wiki...', function () {
+        return json('/shrines/wiki', {
+          query: designQuery(),
+          description: desc.value,
+          style: style ? style.value : '',
+          prompt: promptBox.value,
+          image: drawn ? drawn.image : ''
+        }).then(function (data) {
+          drawn = null;
+          hasSavedPicture = true;
+          loadedFor = data.url;
+          descDirty = true;  // what is in the box is what the page now says
+          lastQuery = null;
+          lookUp();
+          say(note, data.created ? 'Wiki page created.' : 'Wiki page updated.');
+        });
+      });
+    });
   }
 
   if (document.readyState === 'loading') {

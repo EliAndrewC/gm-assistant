@@ -49,7 +49,7 @@
       <span class="shrine-opt__tip" role="tooltip" data-effect-tip>{% if fx and fx.tag %}<b>Makes possible later:</b> {{ (fx.added + fx.opens)|join(', ') }}{% endif %}</span>
     </span>
     <label class="shrine-opt{% if category.multi %} shrine-opt--check{% endif %}">
-      <input type="{{ 'checkbox' if category.multi else 'radio' }}" name="{{ category.key }}" value="{{ option.key }}"{% if picked %} checked{% endif %}{% if option.exclusive %} data-exclusive{% endif %}{% if not offered %} disabled{% endif %} />
+      <input data-opt type="{{ 'checkbox' if category.multi else 'radio' }}" name="{{ category.key }}" value="{{ option.key }}"{% if picked %} checked{% endif %}{% if option.exclusive %} data-exclusive{% endif %}{% if not offered %} disabled{% endif %} />
       <span class="shrine-opt__body">
         <span class="shrine-opt__title">{{ t(option, 'label') }}</span>
         {% if option.ja or option.romaji %}
@@ -60,6 +60,27 @@
         {% if option.appeal %}<span class="shrine-opt__appeal">{{ t(option, 'appeal') }}</span>{% endif %}
       </span>
     </label>
+  </div>
+{%- endmacro %}
+
+{# Feature 228 (FR-003): "Something else" on every step - the player's own words, replacing the cards
+   ("Instead") or adding to the pick ("As well"). The toggle has no name, so it never reaches the
+   link; shrines.js disables the text and the mode while it is off, which keeps them out of it too. #}
+{% macro other_block(category) -%}
+  {%- set other = design.others.get(category.key) -%}
+  <div class="shrine-other{% if other %} is-on{% endif %}" data-other="{{ category.key }}">
+    <label class="shrine-other__toggle">
+      <input type="checkbox" data-other-toggle{% if other %} checked{% endif %} />
+      <span>Something else</span>
+    </label>
+    <div class="shrine-other__body" data-other-body{% if not other %} hidden{% endif %}>
+      <label class="shrine-other__label" for="shrine-other-{{ category.key }}">In your own words</label>
+      <textarea class="shrine-other__text" id="shrine-other-{{ category.key }}" name="{{ other_prefix }}{{ category.key }}" rows="2" maxlength="{{ other_cap }}"{% if not other %} disabled{% endif %}>{{ other.text if other else '' }}</textarea>
+      <div class="shrine-other__mode" role="radiogroup" aria-label="How it fits the choices above">
+        <label><input type="radio" name="{{ instead_prefix }}{{ category.key }}" value="1" data-other-mode="instead"{% if other and other.instead %} checked{% endif %}{% if not other %} disabled{% endif %} /> <span>Instead of these</span></label>
+        <label><input type="radio" name="{{ instead_prefix }}{{ category.key }}" value="" data-other-mode="also"{% if other and not other.instead %} checked{% endif %}{% if not other %} disabled{% endif %} /> <span>As well as my choice</span></label>
+      </div>
+    </div>
   </div>
 {%- endmacro %}
 
@@ -87,7 +108,11 @@
       <aside class="shrine-ledger" aria-labelledby="shrine-ledger-title">
         <h2 class="shrine-ledger__title" id="shrine-ledger-title">{{ 'GM ledger' if is_gm else 'Ledger' }}</h2>
         <p class="shrine-ledger__subject">Pricing <strong>{{ design.text.get('shrine_name', 'this shrine') }}</strong>{% if missing %}, {{ missing }} choice{{ 's' if missing != 1 }} still open{% endif %}.</p>
-        <p class="shrine-ledger__pin" aria-hidden="true">{% if ledger.remainder >= 0 %}Tadashi keeps{{ ' so far' if missing }} <strong>{{ format_koku(ledger.remainder) }}</strong>{% else %}Shortfall <strong>{{ format_koku(-ledger.remainder) }}</strong>{% endif %}</p>
+        <p class="shrine-ledger__pin" aria-hidden="true">{% if ledger.remainder >= 0 %}Tadashi keeps{{ ' so far' if missing }} <strong>{{ format_koku(ledger.remainder) }}</strong>{% if ledger.pricing.unpriced %}, less {{ ledger.pricing.unpriced }} unpriced{% endif %}{% else %}Shortfall <strong>{{ format_koku(-ledger.remainder) }}</strong>{% endif %}</p>
+        {% if ledger.pricing.unpriced %}
+          {% set n = ledger.pricing.unpriced %}
+          <p class="shrine-ledger__unpriced" role="note">{{ 'One addition' if n == 1 else n ~ ' additions' }} the player wrote in {{ 'has' if n == 1 else 'have' }} no price yet, and the totals leave {{ 'it' if n == 1 else 'them' }} out.{% if is_gm %} Price {{ 'it' if n == 1 else 'them' }} under Other work, at the bottom of the ledger.{% endif %}</p>
+        {% endif %}
         {% if is_gm %}
           <p class="shrine-ledger__lede">Players whose characters have Commerce see these figures too; only you can change them. Enter Tadashi's Commerce roll for each contract; each point over the baseline takes one percent off that contract. Totals update when you leave a field or press Enter.</p>
         {% else %}
@@ -95,11 +120,13 @@
         {% endif %}
 
         <dl class="shrine-totals">
-          <div><dt>Fair price</dt><dd>{{ format_koku(ledger.fair_total) }}</dd></div>
-          <div><dt>Paid after haggling</dt><dd>{{ format_koku(ledger.paid_total) }}</dd></div>
+          {% set unpriced = ledger.pricing.unpriced %}
+          {% set plus = ('<small class="shrine-totals__open">+ ' ~ unpriced ~ ' unpriced</small>')|safe if unpriced else '' %}
+          <div><dt>Fair price</dt><dd>{{ format_koku(ledger.fair_total) }}{{ plus }}</dd></div>
+          <div><dt>Paid after haggling</dt><dd>{{ format_koku(ledger.paid_total) }}{{ plus }}</dd></div>
           <div><dt>Budget</dt><dd>{{ format_koku(ledger.budget) }}</dd></div>
           {% if ledger.remainder >= 0 %}
-            <div class="shrine-totals__keep"><dt>Tadashi keeps{{ ' so far' if missing }}</dt><dd>{{ format_koku(ledger.remainder) }}</dd></div>
+            <div class="shrine-totals__keep"><dt>Tadashi keeps{{ ' so far' if missing }}</dt><dd>{{ format_koku(ledger.remainder) }}{% if unpriced %}<small class="shrine-totals__open">less {{ unpriced }} unpriced</small>{% endif %}</dd></div>
           {% else %}
             <div class="shrine-totals__short"><dt>Shortfall</dt><dd>{{ format_koku(-ledger.remainder) }}</dd></div>
           {% endif %}
@@ -137,7 +164,8 @@
             <li class="shrine-contract{% if c.roll is not none %} is-negotiated{% endif %}">
               <div class="shrine-contract__head">
                 <span class="shrine-contract__label">{{ c.label }}</span>
-                <span class="shrine-contract__fair">{{ format_koku(c.fair) }}</span>
+                {% set open_lines = c.items|rejectattr('priced')|list|length %}
+                <span class="shrine-contract__fair">{% if open_lines and not c.fair %}{{ open_lines }} unpriced{% else %}{{ format_koku(c.fair) }}{% if open_lines %} + {{ open_lines }} unpriced{% endif %}{% endif %}</span>
               </div>
               <div class="shrine-contract__rolls">
                 {% if is_gm %}
@@ -153,11 +181,23 @@
                 </span>
               </div>
               <details class="shrine-contract__items">
-                <summary>{% if c.key == 'porterage' %}Show the heavy loads{% else %}Show {{ c.items|length }} item{{ 's' if c.items|length != 1 }}{% endif %}</summary>
+                <summary>{% if c.key == 'porterage' %}Show the heavy loads{% elif c.key == 'other' and is_gm %}Price {{ c.items|length }} item{{ 's' if c.items|length != 1 }}{% else %}Show {{ c.items|length }} item{{ 's' if c.items|length != 1 }}{% endif %}</summary>
                 <ul>
                   {% if c.key == 'porterage' %}
                     {% for item in ledger.pricing.items if item.heavy %}
                       <li><span>{{ item.category }}: {{ item.option }}</span><span>{{ format_number(item.heavy) }} loads</span></li>
+                    {% endfor %}
+                  {% elif c.key == 'other' %}
+                    {# FR-005: each "Something else" is priced by the GM, or stays unpriced. #}
+                    {% for item in c.items %}
+                      <li class="shrine-other-line"><span>{{ item.category }}: {{ item.option }}</span>
+                        {% if is_gm %}
+                          <label class="shrine-other-line__price"><input type="number" name="gm_other_{{ item.step }}" min="0" step="0.1" value="{{ format_number(item.koku) if item.priced else '' }}" placeholder="unpriced" aria-label="Price in koku" /> koku</label>
+                        {% else %}
+                          {% if item.priced %}<input type="hidden" name="gm_other_{{ item.step }}" value="{{ format_number(item.koku) }}" />{% endif %}
+                          <span>{{ format_koku(item.koku) if item.priced else 'unpriced' }}</span>
+                        {% endif %}
+                      </li>
                     {% endfor %}
                   {% else %}
                     {% for item in c.items %}
@@ -236,6 +276,7 @@
                   {% for option in category.options %}{{ card(category, option, effects, has_tags) }}{% endfor %}
                 </div>
               {% endif %}
+              {{ other_block(category) }}
             </fieldset>
           </section>
         {% endfor %}
@@ -248,7 +289,8 @@
         <ul class="shrine-summary" data-summary>
           {% for category in catalog.categories if category.key not in design.voided %}
             {% set keys = design.multi.get(category.key, ()) if category.multi else ([design.choices[category.key]] if category.key in design.choices else []) %}
-            <li><a href="#shrine-step-{{ category.key }}" data-goto="{{ category.key }}"><span>{{ category.label }}</span> {% if keys %}<em>{% for k in keys %}{{ category.option(k).label }}{{ '; ' if not loop.last }}{% endfor %}</em>{% else %}<em class="is-open">not chosen yet</em>{% endif %}</a></li>
+            {% set other = design.others.get(category.key) %}
+            <li><a href="#shrine-step-{{ category.key }}" data-goto="{{ category.key }}"><span>{{ category.label }}</span> {% if keys or other %}<em>{% for k in keys %}{{ category.option(k).label }}{{ '; ' if not loop.last }}{% endfor %}{% if other %}{{ 'Instead, ' if other.instead else (', plus ' if keys else 'Plus ') }}{{ other.text }}{% endif %}</em>{% else %}<em class="is-open">not chosen yet</em>{% endif %}</a></li>
           {% endfor %}
         </ul>
         <div class="shrine-share__row">
@@ -257,6 +299,47 @@
           <button class="shrine-button" type="button" data-copy="#shrine-share-url">Copy link</button>
         </div>
         <noscript><button class="shrine-button shrine-button--quiet" type="submit">Update the link</button></noscript>
+
+        {# Feature 228: the description, the picture and the shrine's wiki page. Its fields belong to
+           the empty form #shrine-studio (form="..."), never to the design or its link. #}
+        <section class="shrine-studio" data-studio data-signed-in="{{ 'true' if signed_in else 'false' }}" aria-labelledby="shrine-studio-title">
+          <h3 class="shrine-studio__title" id="shrine-studio-title">Picture and description</h3>
+          <p class="shrine-studio__wiki" data-wiki-status role="status">Looking for this shrine's wiki page...</p>
+          {% if not signed_in %}
+            <p class="shrine-studio__note"><a href="/auth/login">Sign in</a> to describe and draw your shrine, and to save it to the campaign wiki.</p>
+          {% endif %}
+          <div class="shrine-studio__grid" data-studio-grid{% if not signed_in %} hidden{% endif %}>
+            <div class="shrine-studio__col">
+              <label class="shrine-text__label" for="shrine-description">Description</label>
+              <textarea class="shrine-studio__box" id="shrine-description" form="shrine-studio" rows="10" data-description{% if not signed_in %} readonly{% endif %} placeholder="{{ 'Press Describe the shrine, or write your own.' if signed_in else 'No description yet.' }}"></textarea>
+              {% if signed_in %}<button class="shrine-button shrine-button--quiet" type="button" data-describe>Describe the shrine</button>{% endif %}
+            </div>
+            <div class="shrine-studio__col">
+              <figure class="shrine-studio__picture" data-picture hidden><img alt="A picture of the shrine" data-picture-img /></figure>
+              {% if signed_in %}
+                <fieldset class="shrine-studio__styles">
+                  <legend class="shrine-text__label">Art style</legend>
+                  {% for style in art_styles %}
+                    <label class="shrine-studio__style"><input type="radio" form="shrine-studio" name="art_style" value="{{ style.key }}"{% if loop.first %} checked{% endif %} /> <span><b>{{ style.label }}</b> {{ style.note }}</span></label>
+                  {% endfor %}
+                </fieldset>
+                <details class="shrine-studio__prompt" data-prompt-box>
+                  <summary>What the picture should show</summary>
+                  <p class="shrine-studio__hint">Built from your choices. Change anything, such as where the guardians stand, then draw again.</p>
+                  <textarea class="shrine-studio__box" form="shrine-studio" rows="12" data-prompt aria-label="What the picture should show"></textarea>
+                  <button class="shrine-button shrine-button--quiet" type="button" data-rebuild>Rebuild from my choices</button>
+                </details>
+                <button class="shrine-button shrine-button--quiet" type="button" data-draw>Draw the shrine</button>
+              {% endif %}
+            </div>
+          </div>
+          {% if signed_in %}
+            <div class="shrine-studio__save">
+              <button class="shrine-button" type="button" data-save>Create wiki page</button>
+              <span class="shrine-studio__status" data-studio-status role="status"></span>
+            </div>
+          {% endif %}
+        </section>
       </section>
 
       <div class="wizard-nav">
@@ -267,4 +350,5 @@
     </div>
   </div>
 </form>
+<form id="shrine-studio" hidden></form>
 {% endblock %}

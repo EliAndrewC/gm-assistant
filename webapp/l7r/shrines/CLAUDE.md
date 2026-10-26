@@ -1,4 +1,15 @@
-# Shrine builder (`/shrines`, feature 216)
+# Shrine builder (`/shrines`, features 216 and 228)
+
+## OLD LINKS MUST KEEP WORKING (GM 2026-10-26, standing rule for every change here)
+
+Players have made shrines, and a link IS the save (Shizu's is the first line of
+`tests/shrine_links.txt`). Every future change must keep every such link opening the design it was
+made with. The format may change, but only behind a compatibility layer: a renamed step or option
+goes into `data/legacy.yaml` (old key -> current key), `parse_design` reads old links through it,
+and `GET /shrines` 303-redirects an old link to the current spelling. Never delete or rename an
+option a saved link may use without an entry there, and never edit a frozen link to make a test
+pass. Add any link a player shares to `tests/shrine_links.txt`; `tests/test_shrines_other.py`
+checks that each one still resolves with nothing dropped.
 
 A player designs a small, remote, unstaffed shrine in a step-by-step wizard, one decision per page
 (the name first, a summary and the share link last; steps that do not apply are skipped). The
@@ -16,10 +27,17 @@ ledger read-only (FR-048); its inputs stay the GM's.
 | `catalog.py` | the data model, the one `when` grammar (`Clause`), loading (`load_raw` merges the files) and validation |
 | `design.py` | resolving a design in one forward pass, links, moot notes, `enables`, and `rules_json` for the browser |
 | `pricing.py` | fair prices, porterage, Tadashi's per-contract haggling, number formatting (ledger viewers only) |
+| `data/looks.yaml` | feature 228: what each option LOOKS like, one phrase each, for the image prompt (missing or stray = CatalogError) |
+| `data/art.yaml`, `art.py` | the art styles; the deterministic image prompt; the Gemini image call (REST) |
+| `describe.py` | the description's short brief and the design as the model reads it |
+| `wiki.py` | the shrine's Obsidian Portal wiki page: body, GM-notes block, parsing it back, finding it by name |
+| `web.py` | `ShrineServices`: `/shrines/prompt`, `/shrines/describe`, `/shrines/draw`, `/shrines/wiki`, the runaway guard |
+| `data/legacy.yaml` | renamed link keys (see the rule above) |
 | `access.py` | `CostAccess`: who besides the GM sees the ledger - owners of a grouped Commerce character on the sheet app (`GET /api/characters`, `[character_sheet] roll_query_token`), cached 10 minutes, failing closed |
 | `../templates/shrines.html`, `../static/css/shrines.css`, `../static/js/shrines.js` | the page; the script's `resolve()` mirrors `design._resolve` |
 | `../../tests/test_shrines.py`, `../../tests/test_shrines_routes.py` | logic and rules; what each viewer can see |
-| `specs/216-shrine-builder/` (repo root) | spec with every amendment, the GM's messages verbatim, research with sources, plan |
+| `../../tests/test_shrines_other.py`, `../../tests/test_shrines_studio.py`, `../../tests/shrine_links.txt` | feature 228: frozen links, Something else, its pricing; description, picture, wiki, routes |
+| `specs/216-shrine-builder/`, `specs/228-shrine-wiki-art/` (repo root) | specs with every amendment, the GM's messages verbatim, research with sources, plans |
 
 ## The one rule: `when`
 
@@ -53,9 +71,26 @@ wizard in one pass. Don't reintroduce `voids`/`only_with`-style side channels: e
   shrine, a clearing lights the path, visitors wash in the stream as the hermit did. Prompts ask
   "what"/"how", never "is there a...?". Nothing is "the usual"; say "one of the most common".
   Tests enforce each of these.
-- **No homework** (FR-017): the only free-text field is the shrine's name, pre-filled
-  (`default_name` in the catalog: "The memorial hermitage of Shoda the Fox-forest Guardian", the
-  GM's wording). Don't add notes or inscription boxes.
+- **No homework** (FR-017): the only free-text field a player must fill is the shrine's name,
+  pre-filled (`default_name` in the catalog: "The memorial hermitage of Shoda the Fox-forest
+  Guardian", the GM's wording). Don't add notes or inscription boxes. Feature 228 (the GM's request)
+  adds ONE optional box per step, "Something else", off until the player turns it on.
+- **Something else** (feature 228): `other_<step>=<text>` (300 characters), plus `instead_<step>=1`
+  when it replaces the cards. "Instead" means the step has no listed option, so the `when` rules see
+  it unanswered (Instead on Kind removes the remains steps). "As well" still needs a pick. The GM
+  prices each one in the ledger's Other work contract (`gm_other_<step>`); unpriced ones are named
+  in the totals ("+ 1 unpriced"), never silently counted as nothing. Option inputs carry `data-opt`
+  in the page: nothing else in a fieldset is a pick, so script selectors must use it.
+- **The studio** (feature 228, last step): a description (Gemini Flash-Lite, a ~250-word brief,
+  ~$0.001 each), a picture (the portrait image model, 4:3, ~$0.07, the prompt built from `look`
+  phrases with no LLM; the player can edit it, and the style preamble is added only at draw time),
+  and the shrine's wiki page on Obsidian Portal, which is the ONLY save (nothing is stored on
+  fly.io; a drawn picture stays in the browser until saved). Describe, draw and save need a sign-in;
+  anyone can see the wiki status and a saved page's text and picture. The page is found by the
+  shrine's NAME and tag `shrine`, and "matches" compares the two designs after resolving both. The
+  key is `[shrines] gemini_api_key` (the `[gemini] api_key` was found invalid on 2026-10-26). The
+  per-user guard (120 descriptions, 60 pictures an hour) only stops runaway loops: the GM wants
+  players to retry as often as they like.
 - **Nothing pre-selected, and no fixed order** (FR-023): every step starts empty, Next waits for a
   choice, and `shrines.js` shuffles the cards each time a step is shown. Catalog order means
   nothing to the player.
@@ -164,6 +199,13 @@ did, in `test_shoda_only_appears_as_an_example`).
   holds the link. View source: no `koku` anywhere.
 - Signed in as GM, open the same link: the GM ledger appears on the right (below on narrow screens).
   Type a roll into a contract; the page recalculates and the "Tadashi keeps" line moves.
+- Old links: `python3 -m pytest -q tests/test_shrines_other.py -k frozen` (Shizu's link first).
+- Something else: on any step, check "Something else", type, pick "Instead of these": the cards dim,
+  Next unlocks, the link gains `other_<step>` and `instead_<step>=1`, and the summary shows it. As
+  GM the ledger shows an Other work line with an "unpriced" box and "+ 1 unpriced" totals.
+- Studio (signed in): on the last step press Describe the shrine (~2 s), pick a style, Draw the
+  shrine (~15 s), then Create wiki page; reopen the link and the page's text, picture and prompt
+  load back with "matches these choices"; change a choice and it says the choices differ.
 - Signed in as a player whose grouped character has Commerce (Marshall as Asako Tadashi, Chris as
   Tsuruchi Jimen): the "Ledger" panel shows the same figures with no inputs; changing a choice
   reprices it. Any other player sees no ledger. A new Commerce rank shows within 10 minutes.

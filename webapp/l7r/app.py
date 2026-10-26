@@ -34,6 +34,7 @@ import logging
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode
 
 import cherrypy
 from jinja2 import Environment
@@ -77,8 +78,12 @@ from l7r.pool import Relic, load_relics
 from l7r.research import ResearchSite
 from l7r.sections import SECTIONS
 from l7r.shrines import (
+    INSTEAD_PREFIX,
+    OTHER_CAP,
+    OTHER_PREFIX,
     TEXT_FIELDS,
     Catalog,
+    answered,
     default_budget,
     format_koku,
     format_number,
@@ -92,8 +97,10 @@ from l7r.shrines import (
     parse_negotiation,
     rules_json,
     share_query,
+    upgrade_params,
 )
 from l7r.shrines.access import CostAccess
+from l7r.shrines.web import ShrineServices
 from l7r.slugs import find_relic_by_slug, neighbors_in_fortune, relics_for_fortune
 
 logger = logging.getLogger(__name__)
@@ -367,10 +374,14 @@ class Root:
         names_token: Callable[[], str] | None = None,
         shrine_catalog: Catalog | None = None,
         cost_access: CostAccess | None = None,
+        shrine_services: ShrineServices | None = None,
     ) -> None:
         self._relics = relics
         self._shrine_catalog = shrine_catalog if shrine_catalog is not None else load_catalog()
         self._cost_access = cost_access or CostAccess(lambda: _sheet_token())
+        self._shrine_services = shrine_services or ShrineServices(
+            self._shrine_catalog, lambda: _load_secrets()
+        )
         # Resolved at REQUEST time (a lambda, not a bound default), so a test patching
         # `_names_token` reaches a Root built before the patch.
         self.api = NamesApi(names_token or (lambda: _names_token()))
@@ -449,8 +460,15 @@ class Root:
     # never read, so neither the page nor its source can carry a price. The sheet roster is
     # consulted only for a signed-in non-GM.
     @cherrypy.expose
-    def shrines(self, **params: Any) -> bytes:
+    def shrines(self, action: str | None = None, **params: Any) -> bytes:
+        if action is not None:
+            return self._shrine_action(action, params)
         catalog = self._shrine_catalog
+        # FR-002 (feature 228): a link with renamed keys is sent on to its current spelling, so
+        # every link a player ever made keeps working.
+        upgraded = upgrade_params(catalog, params)
+        if upgraded is not None:
+            raise cherrypy.HTTPRedirect('/shrines?' + urlencode(upgraded, doseq=True), 303)
         design = parse_design(catalog, params)
         user = current_user()
         is_gm = user is not None and user.role == 'gm'
@@ -483,12 +501,49 @@ class Root:
             missing=sum(
                 1
                 for c in catalog.categories
-                if c.key not in design.choices
-                and c.key not in design.multi
-                and c.key not in design.voided
+                if not answered(design, c.key) and c.key not in design.voided
             ),
+            other_prefix=OTHER_PREFIX,
+            instead_prefix=INSTEAD_PREFIX,
+            other_cap=OTHER_CAP,
+            art_styles=self._shrine_services.styles,
+            signed_in=user is not None,
             **context,
         )
+
+    # Feature 228: /shrines/prompt and GET /shrines/wiki for anyone; POST /shrines/describe,
+    # /shrines/draw and /shrines/wiki for a signed-in user only (they spend money or write to the
+    # wiki).
+    def _shrine_action(self, action: str, params: dict[str, Any]) -> bytes:
+        services = self._shrine_services
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+        method = cherrypy.request.method
+        if method == 'GET' and action == 'prompt':
+            status, answer = services.prompt(params)
+        elif method == 'GET' and action == 'wiki':
+            status, answer = services.wiki_get(params)
+        elif method == 'POST' and action in {'describe', 'draw', 'wiki'}:
+            user = current_user()
+            if user is None:
+                return _json_error(401, 'Sign in to do that.')
+            try:
+                body = json.loads(cherrypy.request.body.read() or b'{}')
+            except ValueError:
+                return _json_error(400, 'the body is not JSON')
+            if not isinstance(body, dict):
+                return _json_error(400, 'the body must be a JSON object')
+            handler = {
+                'describe': services.describe,
+                'draw': services.draw,
+                'wiki': services.wiki_save,
+            }[action]
+            status, answer = handler(user.discord_id, body)
+            if action == 'wiki' and status == 200:
+                cherrypy.log(f'shrines: {user.discord_id} saved the wiki page {answer["url"]}')
+        else:
+            return _json_error(404, 'no such shrine action')
+        cherrypy.response.status = status
+        return json.dumps(answer).encode('utf-8')
 
     # GET /money - the Money section (feature 222): a landing page listing its tools, and
     # /money/koku, what a koku is worth: the whole basket and the average over goods (feature 223),

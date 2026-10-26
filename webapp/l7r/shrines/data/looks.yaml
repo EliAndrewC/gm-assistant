@@ -1,0 +1,170 @@
+# Shrine builder, feature 228: what each option LOOKS like, for the image prompt (FR-007).
+#
+# One short phrase per option, written for an image model: only what an eye would see, no
+# meanings, no history, no prices. '' for an option with nothing to see (a rite, a portion sent
+# to a temple elsewhere) - present but empty, so a forgotten option still fails validation. The prompt is assembled from these in wizard order
+# (l7r/shrines/art.py), so each phrase must read as a clause on its own. Every option of every
+# step must have one (validated in catalog.parse_catalog via load_raw), and the player can read
+# them in the prompt box, so feature 216's player-text rules apply (no price words).
+#
+# Steps are keyed as in data/groups/<group>.yaml; a renamed option must be renamed here too.
+
+kind:
+  memorial: a small memorial shrine where the spirit of someone revered is honored
+  fortune: a small shrine to one of the Fortunes, the great powers of the world
+  kami: a small shrine to the nature spirit (kami) of this place
+
+heart:
+  registered: a simple ancestral spirit tablet of plain wood within the shrine
+  disciples: a simple ancestral spirit tablet of plain wood within the shrine, with small fresh offerings left by visitors
+  bones: the resting place of the remains is the clear center of the shrine, with offerings set before it
+
+preparation:
+  # the remains are prepared, then stored out of sight: drawing them put a bundle of bones on the
+  # ground (2026-10-26); a reliquary shows its bone through `display`
+  washed: ''
+  wrapped: ''
+
+sharing:
+  together: a single resting place for the remains
+  headmound: a second, smaller earthen mound with its own small stone beside the main grave
+  temple: ''
+  mountain: ''
+
+resting:
+  inner: a short flight of mossy stone steps climbing behind the sanctuary to a small stone coffer under the trees
+  gorinto: a weathered stone five-ring pagoda (gorinto) of five stacked shapes - cube, sphere, pyramid, crescent and jewel
+  hall: a tiny closed wooden hall on a low stone base beside the sanctuary
+  mound: a low rounded mound of earth crowned with a single upright stone
+
+display:
+  sealed: ''
+  reliquary: a small pagoda-shaped reliquary with crystal sides
+  kaicho: ''
+  lattice: a lacquered chest visible through a latticed wooden door
+
+form:
+  nagare: a one-bay wooden sanctuary in the nagare style, its gabled roof sweeping long and low over the front steps
+  kasuga: a compact one-bay wooden sanctuary in the kasuga style, entered from the gable end under a small curved porch roof
+  shinmei: a one-bay wooden sanctuary in the shinmei style, raised on round posts sunk in the earth, with a straight roof and crossed finials (chigi) at the ridge
+  hokora: a small chest-high shrine-house of carved stone (hokora) on a stone plinth
+  himorogi: a sacred space under the open sky, bound with straw rope and white paper streamers
+
+dwelling:
+  tree: a huge ancient tree at the center, its trunk bound with a thick straw rope (shimenawa) and zigzag white paper streamers
+  rock: a great boulder at the center, ringed with straw rope and white paper streamers
+  standing: a tall rough unworked standing stone raised upright at the center of the clearing
+  grove: the whole grove as the sacred center, its edges marked with straw rope and paper streamers
+
+ground:
+  gravel: a level court of pale raked gravel in neat lines
+  moss: a forest floor carpeted in thick green moss
+  bamboo: four freshly cut green bamboo poles at the corners of a square, joined by a sacred rope hung with paper streamers
+  stones: a ring of smooth gray river stones
+
+timber:
+  sugi: built of reddish cedar
+  hinoki: built of pale, silvery hinoki cypress
+  keyaki: built of dark, strongly figured zelkova hardwood
+
+roof:
+  thatch: a deep, soft-edged thatched roof of reed and grass
+  kokera: a roof of thin wooden shingles in finely ribbed courses
+  hiwada: a roof of dark cypress bark in smooth sweeping curves
+  copper: a copper roof weathered blue-green
+
+finish:
+  shiraki: bare unpainted wood weathered silver-gray
+  kakishibu: wood stained a warm persimmon brown
+  vermilion: wood painted bright vermilion red-orange
+  lacquer: wood in deep glossy black lacquer
+
+carving:
+  plain: plain squared posts and beams with visible joinery
+  accents: a carved pendant at the gable peak and beam ends carved into curling clouds
+  lattice: openwork geometric lattice transoms above the doors
+  panels: transoms carved in relief with scenes from the shrine's legend
+
+hall:
+  open: open ground before the sanctuary under the trees and the sky
+  cover: a simple roofed shed built over the small sanctuary, open at the front
+  pavilion: a small roofed worship platform before the sanctuary, open on all sides
+
+altar:
+  table: a low eight-legged offering table of unpainted wood with small stands of rice, salt and sake
+  slab: a dressed stone offering slab on two stone legs
+  natural: a naturally flat stone used as an offering table
+  belonging: a worn old low wooden table used as an offering table
+
+sacred:
+  belonging: ''
+  stone: ''
+  mirror: a round bronze mirror glinting inside the sanctuary
+  gohei: a wand hung with folded white paper streamers (gohei) inside the sanctuary
+
+box:
+  banded: a wooden offering chest with a slatted top, bound in iron
+  bamboo: a thick green bamboo tube bound upright to a post as an offering box
+  stone: an offering box hollowed from a stone block with an iron-bound lid
+
+bell:
+  clap: ''
+  suzu: a round brass rattle-bell hanging at the front on a thick braided red-and-white rope
+  gong: a flat bronze gong hanging at the front with a thick braided rope before it
+
+gate_form:
+  trees: two great trees on either side of the path joined by a sacred straw rope hung with paper streamers, as the gate
+  shinmei: a plain torii gate with two round posts and two straight crossbeams
+  myojin: a myojin torii gate with a top beam curving up at the ends and a small name plaque between the beams
+  row: a tunnel of many small torii gates set close together along the path
+
+gate_material:
+  wood: the gate of bare weathered wood
+  vermilion: the gate painted vermilion
+  stone: the gate of gray cut granite
+
+path:
+  earth: a swept path of beaten earth with tree roots for steps
+  gravel: a path of raked pale gravel
+  stepping: flat stepping stones set in moss a stride apart
+  steps: a flight of cut stone steps climbing to the shrine
+
+enclosure:
+  none: dense old trees standing close around the sanctuary
+  rope: a twisted rice-straw rope hung with zigzag white paper streamers strung around the sacred ground
+  fence: a knee-high fence of square wooden posts and rails around the sanctuary
+  posts: squat stone posts linked by rails around the sanctuary
+  hedge: a hedge of glossy evergreen sakaki around the sanctuary
+
+guardians:
+  none: deer and birds among the old trees
+  komainu: a pair of stone lion-dogs (komainu) on pedestals flanking the approach
+  foxes: a pair of stone foxes on pedestals flanking the approach, one holding a jewel and one a key in its mouth
+  wooden: a small pair of carved and painted wooden lion-dogs on the sanctuary's porch
+
+lanterns:
+  none: an opening in the forest canopy letting sunlight fall on the path and the sanctuary
+  pair: a pair of tall stone lanterns flanking the path
+  tall: a single tall stone lantern at the foot of the path
+  hanging: two pierced bronze lanterns hanging from the sanctuary's eaves
+
+water:
+  stream: a clear forest stream running beside the shrine
+  basin: a carved stone water basin fed by a bamboo spout, with a long-handled dipper across it
+  pavilion: a small open-sided roofed pavilion over a long stone water trough with wooden dippers
+
+plaque:
+  none: a squared stone pillar at the foot of the path with characters cut into its face
+  painted: a painted wooden name plaque over the shrine's front
+  calligrapher: a gilded carved name plaque over the shrine's front
+  patron: a carved wooden name plaque over the shrine's front
+
+stele:
+  none: ''
+  stele: an upright inscribed stone
+  board: a wooden notice board under a little roof
+
+rite:
+  monk: ''
+  full: ''
+  festival: ''

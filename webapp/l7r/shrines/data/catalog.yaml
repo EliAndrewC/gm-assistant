@@ -65,6 +65,9 @@ contracts:
     label: Burakumin (retrieving and preparing the remains)
   - key: porterage
     label: Porters
+  # Feature 228: every player's "Something else", priced by the GM line by line (FR-005).
+  - key: other
+    label: Other work
 
 remoteness:
   default: trail

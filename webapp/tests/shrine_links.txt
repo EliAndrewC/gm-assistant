@@ -1,0 +1,8 @@
+# Shrine builder links players have made (feature 228, FR-001). Every one must keep opening
+# exactly the design it was made with - tests/test_shrines_other.py checks each. A standing rule
+# for all future shrine-builder work (GM 2026-10-26): if a change renames a step or an option,
+# add the old key to l7r/shrines/data/legacy.yaml; never edit a link here to make a test pass.
+# Add any link a player shares to this list.
+#
+# Shizu (Tsuruchi Shizukanaken) - the memorial to Shoda
+https://l7r-gm-assistant.fly.dev/shrines?shrine_name=The%20memorial%20hermitage%20of%20Shoda%20the%20Fox-forest%20Guardian&kind=memorial&heart=bones&preparation=washed&sharing=headmound&sharing=temple&resting=mound&display=sealed&form=himorogi&ground=moss&hall=open&altar=natural&box=bamboo&bell=suzu&gate_form=trees&path=earth&enclosure=none&guardians=foxes&lanterns=none&water=stream&plaque=patron&stele=board&rite=full
