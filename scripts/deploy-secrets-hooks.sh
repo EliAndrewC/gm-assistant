@@ -3,7 +3,7 @@
 # Run by `make prepare-deploy` as: scripts/deploy-secrets-hooks.sh check <webapp dir>
 #
 # WHY (2026-10-18): the Dockerfile bakes webapp/development-secrets.ini into the image, and a clone's
-# copy is copied from main once, when the clone is made (memory: "clone needs secrets"). Main's copy
+# copy is a copy of main's (seeded by clone-sync-hooks.sh since feature 229; GUARD_EDIT_OK: comment only). Main's copy
 # had since gained the /look-up key ([lookup] gemini_api_key); the shrines clone's had not, and its
 # `make deploy` would have shipped production without it - a silent regression. Caught only because
 # a cmp happened to run first. .env (FLY_API_TOKEN) is checked for the same reason.

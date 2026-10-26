@@ -79,7 +79,7 @@ sync_in() {
 #   GITHUB_PUSH_URL  test seam / override: where to push (default: main's origin, ssh rewritten to
 #                    https so the token applies; the GM's laptop clone keeps using ssh)
 # The token is read from main's secrets file, NOT the clone's: development-secrets.ini is
-# gitignored and a fresh clone has no copy (CLAUDE.md memory "Clone needs secrets for OP").
+# gitignored and a clone has only the copy clone-sync-hooks.sh seeds, which may lag main's.
 github_push() {
   local secrets url token
   secrets=$MAIN/webapp/development-secrets.ini

@@ -185,6 +185,8 @@ def create_character(
             from chargen import opcache
 
             opcache.refresh_cache_file()
+        except OPNotConfigured:
+            raise
         except Exception as e:
             cherrypy.log(f'Created character but failed to refresh the campaign cache: {e}')
     elif response.status_code == 422:
@@ -389,6 +391,16 @@ def upload_avatar(image_data: bytes, filename: str) -> dict:
         response.raise_for_status()
 
 
+class OPNotConfigured(ValueError):
+    """Obsidian Portal credentials are missing from development-secrets.ini.
+
+    Raised through every fail-soft read below rather than answered with an empty result: an empty
+    character list on missing credentials reads as "the campaign has no characters", and on
+    2026-08-25 it nearly wrote an empty campaign cache from a session clone that had no secrets file
+    (clone-sync-hooks.sh now copies main's into each clone). A network failure is still fail-soft.
+    """
+
+
 def _get_oauth_session():
     """Build a requests_oauthlib session signed with the configured tokens.
 
@@ -413,7 +425,7 @@ def _get_oauth_session():
         if not val
     ]
     if missing:
-        raise ValueError(
+        raise OPNotConfigured(
             f'OAuth credentials not configured: {", ".join(missing)} '
             f'missing from [obsidian_portal] in development-secrets.ini. '
             f'Run probe_op_oauth.py --full to obtain access tokens.'
@@ -426,7 +438,7 @@ def _get_campaign_id():
     op_config = config.get('obsidian_portal', {})
     cid = op_config.get('campaign_id', '')
     if not cid:
-        raise ValueError(
+        raise OPNotConfigured(
             'campaign_id not configured in [obsidian_portal]. Discover it '
             'via GET /v1/users/me.json (the "campaigns" array on the response).'
         )
@@ -448,6 +460,8 @@ def existing_characters():
         url = f'{API_BASE_URL}/campaigns/{campaign_id}/characters.json'
         response = api.get(url, timeout=20)
         response.raise_for_status()
+    except OPNotConfigured:
+        raise
     except Exception as e:
         cherrypy.log(f'Failed to fetch existing characters: {e}')
         return []
@@ -483,6 +497,8 @@ def get_character_body(character_id: str) -> dict[str, object] | None:
         response = api.get(url, timeout=20)
         response.raise_for_status()
         c = response.json() or {}
+    except OPNotConfigured:
+        raise
     except Exception as e:
         cherrypy.log(f'Failed to fetch character body {character_id}: {e}')
         return None
@@ -509,6 +525,8 @@ def fetch_character_page(character_url: str) -> str | None:
         response = session.get(character_url, timeout=30)
         response.raise_for_status()
         return response.text
+    except OPNotConfigured:
+        raise
     except Exception as e:
         cherrypy.log(f'Failed to fetch character page {character_url}: {e}')
         return None
@@ -577,6 +595,8 @@ def existing_wiki_pages():
         url = f'{API_BASE_URL}/campaigns/{campaign_id}/wikis.json'
         response = api.get(url, timeout=20)
         response.raise_for_status()
+    except OPNotConfigured:
+        raise
     except Exception as e:
         cherrypy.log(f'Failed to fetch wiki pages: {e}')
         return []
@@ -710,6 +730,8 @@ def update_used_names():
             for name in existing_names():
                 # we only track the personal name (e.g. "Gohei" instead of "Matsu Gohei")
                 c.USED_NAMES.add(sheetroster.given_name(name) or name)
+        except OPNotConfigured:
+            raise
         except Exception as e:
             cherrypy.log(f'Failed to update used names: {e}')
         sleep(3600)

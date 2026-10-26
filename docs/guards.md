@@ -6,7 +6,7 @@
 
 ---
 
-**WHAT IS ENFORCED, AND WHERE** (audit 2026-08-24). Fourteen guards, each with a test companion that
+**WHAT IS ENFORCED, AND WHERE** (audit 2026-08-24; feature 229). Sixteen guards, each with a test companion that
 `make hooks-test` runs as a gate phase - a guard without one turns the gate red (constitution XVIII).
 
 | rule | mechanism |
@@ -15,12 +15,15 @@
 | no git writes to `/host-l7r-repo` | same script; EDITS there stay legal, the intake workflow needs them |
 | the GM's SOURCE blocks are not editable (V) | [`scripts/source-block-hooks.sh`](../scripts/source-block-hooks.sh) - checks containment against the file on disk |
 | hyphens only; American spellings | [`scripts/house-style-hooks.sh`](../scripts/house-style-hooks.sh) - exempts the GM's writing and the files that must quote the rule |
+| no local container paths in setting content | same script, checked BEFORE that exemption, because it is the session's text going into the GM's files (`budgets.md` is where the GM found one); operational files keep real paths (feature 229) |
 | a README is the GM's to write (XVII) | [`scripts/readme-hooks.sh`](../scripts/readme-hooks.sh) |
 | guard files are not edited casually | [`scripts/guard-file-hooks.sh`](../scripts/guard-file-hooks.sh) |
 | a spec is reviewed before implementation (XVI) | [`scripts/review-gate.sh`](../scripts/review-gate.sh), run by `sync-with-main.sh` at PUSH time |
 | no `-k` subset before the gate; no branches; no polling; batching | the pre-existing `gate`/`no-branch`/`no-poll`/`batching` hooks |
 | shared subagent instructions live in a definition, not repeated launch prompts | [`scripts/subagent-cache-hooks.sh`](../scripts/subagent-cache-hooks.sh) (general-purpose launches, once per session); `omitClaudeMd` on every definition by `webapp/tests/test_agent_definitions.py` |
 | INI files are read with ConfigObj (`l7r.inifile.read_ini`), never configparser | `webapp/tests/test_ini_reader.py`, which parses every tracked `.py` for a configparser import (2026-10-26: configparser keeps the quotes `development-secrets.ini` writes around values, so a quoted Gemini key was sent with its quotes and rejected as invalid - for the second time, after feature 218) |
+| a turn does not end with a `make done` still running in the clone, or with commits main lacks | `scripts/clone-sync-hooks.sh stop`, a `Stop` hook; blocks ONCE (the re-fired stop passes, for a session deliberately waiting) - 2026-08-25, a gate notification that never came left work unpushed for hours (feature 229) |
+| a clone has main's secrets; a live co-tenant in your clone is announced | `scripts/clone-sync-hooks.sh` seeds `development-secrets.ini` and `webapp/.env` from main on claim and every prompt, and warns (JSON `additionalContext`, never a block) when another live session claims the clone even on a dirty tree - 2026-07-26, a "crashed" session still editing (feature 229) |
 | a clone deploys main's secrets, never its own stale copy | [`scripts/deploy-secrets-hooks.sh`](../scripts/deploy-secrets-hooks.sh), run by `make prepare-deploy` (2026-10-18: a stale clone copy would have shipped production without the /look-up key) |
 
 **Deliberately NOT enforced**, because a guard that fires on correct work teaches a session to bypass

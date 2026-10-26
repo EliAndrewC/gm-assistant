@@ -137,3 +137,13 @@ def test_get_character_body_projects_description(monkeypatch: pytest.MonkeyPatch
     assert body is not None
     assert body['description'] == _CHARACTER_JSON['description']
     assert body['game_master_info'] == _CHARACTER_JSON['game_master_info']
+
+
+@pytest.mark.parametrize('section', [{}, {'consumer_key': 'k'}])
+def test_missing_credentials_raise_instead_of_reading_as_no_characters(
+    monkeypatch: pytest.MonkeyPatch, section: dict[str, str]
+) -> None:
+    """Feature 229: an empty list on missing credentials looked like "no characters" (2026-08-25)."""
+    monkeypatch.setattr(op, 'config', {'obsidian_portal': section})
+    with pytest.raises(op.OPNotConfigured, match='development-secrets.ini|campaign_id'):
+        op.existing_characters()

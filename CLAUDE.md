@@ -21,6 +21,7 @@ Content between `<!-- SOURCE: GM NOTES - DO NOT MODIFY -->` and `<!-- END SOURCE
 ### File Organization
 
 - **Skills** (`.claude/skills/<name>/SKILL.md`) *generate* content; Claude Code lists them with their descriptions and argument hints. `/diagram` **moved** to its own repository (<https://github.com/EliAndrewC/diagram>, feature 131) - map work happens in a session there.
+- **No Claude Code memory in this project** (`autoMemoryEnabled: false`, feature 229; GM: a one-person project, where a memory is the worst place for anything): a rule goes in a doc or skill file where the next session reads it, and a recurring mistake becomes a hook or a test.
 - **Reference directories** hold source material, each indexed by its own `CLAUDE.md`: `/setting/` (demographics, castes, currency, ranks, government, geography, lineage, merchants, ashigaru, experience), `/campaigns/` (campaigns, timelines, PC/NPC backstories, Order of Lord Moon), `/hooks/` (adventure hooks by setting type, grifts), `/cosmology/` (Moon court, stories, maho, between places, gaijin religions, Fortune theology, soothsaying), `/notes/` (not yet organized). Skills draw on these for shared context.
 
 ### Generation Behavior (one line each; full text, incidents and mechanisms in [`docs/generation-rules.md`](docs/generation-rules.md))
@@ -96,7 +97,7 @@ Governed by [`.specify/memory/constitution.md`](.specify/memory/constitution.md)
 - Keep `pytest`/`ripgrep` scoped to the working dir (they would double-collect every clone).
 - Clone `CLAUDE.md` files are excluded from loading (`claudeMdExcludes` in `.claude/settings.json`), so every session reads MAIN's copy once instead of both - an edit to CLAUDE.md in your clone takes effect for sessions only after it is pushed.
 
-**Guards** - fifteen hooks and checks, each with a test companion run by the gate; the table, what is deliberately not enforced, and the four properties every new guard needs are in [`docs/guards.md`](docs/guards.md). A guideline that can be counted gets asserted at the STANDARD, not where the code sits.
+**Guards** - sixteen hooks and checks, each with a test companion run by the gate; the table, what is deliberately not enforced, and the four properties every new guard needs are in [`docs/guards.md`](docs/guards.md). A guideline that can be counted gets asserted at the STANDARD, not where the code sits.
 
 **Review subagents are pre-authorized** (`backstory-review`, `frontend-review`, `spec-fidelity`, `mention-context-review`) via `container-scripts/append-system-prompt.md`, because the default system prompt otherwise outranks this file; if one gets skipped, check `type claude` first. Run `mention-context-review` one category at a time, never in parallel (the GM's terminal has crashed on fan-out). Broad fan-out, `Workflow` and deep research still need an explicit request.
 

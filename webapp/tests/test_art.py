@@ -175,3 +175,45 @@ def test_prompt_samurai_wardrobe_unchanged() -> None:
     prompt = generate_prompt({'gender': 'male', 'clan': 'crab', 'school': 'hida bushi', 'age': 30})
     assert 'a formal kimono and is not wearing armor' in prompt
     assert 'noble' in prompt
+
+
+# The steering lines below fix defects the portraits showed until they were in the prompt (validated
+# 2026-07-29 regenerating Hida no Reiji Sakura's portrait; they lived in a memory note until feature 229).
+
+
+def test_prompt_scars_are_old_and_healed_not_fresh_wounds() -> None:
+    from chargen.art import generate_prompt
+
+    prompt = generate_prompt({'gender': 'male', 'school': 'hida bushi', 'age': 40, 'traits': ['Scarred']})
+    assert 'fully healed' in prompt
+    assert 'silvery' in prompt
+    assert 'never fresh, red, wet or bleeding' in prompt
+
+
+def test_prompt_bushi_wear_the_daisho_on_the_left_hip() -> None:
+    from chargen.art import generate_prompt
+
+    prompt = generate_prompt({'gender': 'male', 'clan': 'crab', 'school': 'hida bushi', 'age': 30})
+    assert 'katana and a wakizashi' in prompt
+    assert 'LEFT hip' in prompt
+    assert 'no third sword' in prompt
+    courtier = generate_prompt({'gender': 'male', 'clan': 'crane', 'school': 'doji courtier', 'age': 30})
+    assert 'wakizashi' not in courtier
+
+
+def test_prompt_asks_for_the_whole_figure_and_footwear() -> None:
+    from chargen.art import generate_prompt
+
+    samurai = generate_prompt({'gender': 'male', 'school': 'hida bushi', 'age': 30})
+    assert 'complete full-length figure' in samurai
+    assert 'white tabi and straw zori' in samurai
+    peasant = generate_prompt({'gender': 'male', 'character_type': 'Peasant', 'age': 30})
+    assert 'straw sandals' in peasant
+    assert 'tabi' not in peasant
+
+
+def test_prompt_women_are_unmistakably_women() -> None:
+    from chargen.art import generate_prompt
+
+    assert 'unmistakably a woman' in generate_prompt({'gender': 'female', 'school': 'doji courtier', 'age': 25})
+    assert 'unmistakably' not in generate_prompt({'gender': 'male', 'school': 'doji courtier', 'age': 25})

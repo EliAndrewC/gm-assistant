@@ -88,3 +88,16 @@ def test_a_profile_head_beats_a_frontal_false_positive_lower_down() -> None:
     tattoo = (182, 257, 61, 61)
 
     assert art._pick_face([(0, tattoo), (2, head)]) == head
+
+
+def test_a_crop_at_the_top_edge_gains_white_headroom(full_body_profile: bytes) -> None:
+    """trim_whitespace leaves the crown TRIM_BORDER px from the top, so a headshot whose crop starts
+    at y=0 had its hair clipped against the edge (2026-07-29). It is padded with white instead."""
+    import cv2
+
+    band = round(140 * art.HEADSHOT_HEADROOM)
+    cropped = art.crop_headshot(full_body_profile, 100, 0, 120, 140)
+    decoded = cv2.imdecode(np.frombuffer(cropped, np.uint8), cv2.IMREAD_COLOR)
+
+    assert decoded.shape[:2] == (140 + band, 120 + band)
+    assert (decoded[:band] == 255).all()

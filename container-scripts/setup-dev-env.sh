@@ -62,6 +62,8 @@ with sync_playwright() as p: p.chromium.launch().close()'"
     # the claude() wrapper that appends this repo's standing authorizations to the system prompt.
     # ~/.bashrc is NOT on a bind mount (only the repo and ~/.claude survive a rebuild), so this has
     # to be re-established on every fresh container exactly like the apt and pip state.
+    # flyctl: `make deploy` from a clone (the Makefile puts ~/.fly/bin on PATH); not in the image.
+    _t "flyctl (make deploy)"                    "test -x $HOME/.fly/bin/flyctl || command -v flyctl"
     _t "claude() system-prompt wrapper"          "grep -qF 'gm-assistant append-system-prompt' $HOME/.bashrc"
     return $bad
 }
@@ -94,6 +96,10 @@ echo "==> playwright browser + its OS libraries"
 # not in this image. --with-deps apt-installs those too (it shells out to sudo, which is why this
 # script belongs inside the container). ~180MB download, skipped when already unpacked.
 python3 -m playwright install --with-deps chromium >/dev/null
+
+# flyctl lands in ~/.fly/bin, which webapp/Makefile already puts on PATH (feature 229: it used to be
+# installed by hand, from a memory note, whenever a clone first deployed).
+[ -x "$HOME/.fly/bin/flyctl" ] || command -v flyctl >/dev/null || curl -fsSL https://fly.io/install.sh | sh >/dev/null
 
 # ---- the claude() wrapper ----------------------------------------------------------------------
 # WHY a system-prompt append and not a CLAUDE.md line: CLAUDE.md sits BELOW the system prompt in the

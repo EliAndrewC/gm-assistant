@@ -53,6 +53,10 @@ TRIM_FUZZ = 0.10
 #: White padding (in pixels) added back around the trimmed content.
 TRIM_BORDER = 10
 
+#: White headroom added above a headshot whose crop starts at the image's top edge, as a fraction
+#: of the crop's height (see ``crop_headshot``).
+HEADSHOT_HEADROOM = 0.12
+
 #: Connected mask regions smaller than this many pixels are treated as
 #: generator noise - the stray 2-3px specks Gemini image models scatter on an
 #: otherwise-white background - and ignored when computing the crop box. Real
@@ -201,7 +205,12 @@ def generate_prompt(character: dict) -> str:
 
         # Injuries and marks
         elif trait_lower == 'scarred':
-            trait_descriptions.append(f'{pronoun} has visible scars')
+            # A bare "visible scars" renders as fresh, red, bleeding gashes; forbidding blood alone
+            # makes the model drop the scars entirely. Both halves are needed (validated 2026-07-29).
+            trait_descriptions.append(
+                f'{pronoun} has old battle scars, clearly visible but fully healed: pale silvery '
+                'seams of scar tissue, never fresh, red, wet or bleeding wounds, and no blood'
+            )
         elif trait_lower == 'tattooed':
             trait_descriptions.append(f'{pronoun} has visible tattoos')
         elif trait_lower == 'permanent wound':
@@ -349,12 +358,29 @@ def generate_prompt(character: dict) -> str:
         )
         if 'bushi' in school:
             clothing = 'a formal kimono and is not wearing armor'
+            # Without this a bushi renders with no swords at all, and naming the daisho without
+            # placing it gets a third sword or a floating rod on the right (validated 2026-07-29).
+            extra_style_lines = [
+                f'-> {pronoun.title()} wears the daisho, a katana and a wakizashi thrust through '
+                f'{possessive} obi on {possessive} LEFT hip; there is no third sword and nothing '
+                f'on {possessive} right hip',
+            ]
         elif 'courtier' in school or 'diplomat' in school or 'artisan' in school:
             clothing = 'elegant formal court robes'
         elif 'merchant' in school:
             clothing = 'practical but quality merchant attire'
         else:
             clothing = 'a traditional kimono'
+
+    # Bare feet are the model's default. Peasants wear straw sandals; white tabi are for those
+    # who can keep them white.
+    if character_type == 'peasant':
+        extra_style_lines.append(f'-> {pronoun.title()} wears straw sandals')
+    else:
+        extra_style_lines.append(f'-> {pronoun.title()} wears white tabi and straw zori')
+    # Women sometimes render as men without this (validated 2026-07-29).
+    if gender == 'female':
+        extra_style_lines.append('-> She is unmistakably a woman')
 
     # Check if character has fine makeup trait
     has_fine_makeup = 'fine makeup' in [t.lower() for t in traits]
@@ -394,7 +420,9 @@ def generate_prompt(character: dict) -> str:
             'on a pure white (#FFFFFF) background: the entire area around the figure on all four '
             'sides must be uniform solid pure white. Do NOT render any floor, ground, surface, '
             'horizon line, studio backdrop, vignette, gradient, or cast shadow - the subject '
-            'must appear to float on plain white with no setting of any kind.',
+            'must appear to float on plain white with no setting of any kind. Show the complete '
+            'full-length figure from the top of the head to the soles of the feet, with clear '
+            'white space above the head and below the feet; nothing is cut off at any edge.',
         ]
     )
 
@@ -634,6 +662,16 @@ def crop_headshot(image_data: bytes, x: int, y: int, width: int, height: int) ->
 
     # Crop
     cropped = img[y : y + height, x : x + width]
+
+    # A crop that starts at the image's top edge has the crown against it: trim_whitespace leaves
+    # only TRIM_BORDER above the hair, and get_headshot_crop clamps its headroom at 0, so the
+    # avatar's hair was clipped at the top. Pad white above (and evenly at the sides, to keep the
+    # proportions) rather than cropping the head (validated 2026-07-29).
+    if y <= 0:
+        band = round(height * HEADSHOT_HEADROOM)
+        cropped = cv2.copyMakeBorder(
+            cropped, band, 0, band // 2, band - band // 2, cv2.BORDER_CONSTANT, value=(255, 255, 255)
+        )
 
     # Encode back to PNG
     success, encoded = cv2.imencode('.png', cropped)
