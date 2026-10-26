@@ -39,3 +39,11 @@
 {"rule": "Fox white charcoal costs at least as much in Ryoko Owari as in a neighboring clan's lands (10lb)", "row": "charcoal-white-far-10lb", "at_least": [["charcoal-white-regional-10lb", 1]], "why": "carriage and tariffs only add"}
 {"rule": "Fox white charcoal costs at least as much in Ryoko Owari as in a neighboring clan's lands (bale)", "row": "charcoal-white-far-bale", "at_least": [["charcoal-white-regional-bale", 1]], "why": "carriage and tariffs only add"}
 {"rule": "a cartload of Fox white charcoal delivered costs at least 20 of its bales", "row": "charcoal-white-regional-cart", "at_least": [["charcoal-white-regional-bale", 20]], "why": "carriage and tariffs only add"}
+{"rule": "a scribe's day is at least an unskilled day", "row": "wage-clerk-day", "at_least": [["wage-unskilled-day", 1]], "why": "literacy only adds"}
+{"rule": "an armed guard's day is at least an unskilled day", "row": "wage-caravan-guard-day", "at_least": [["wage-unskilled-day", 1]], "why": "danger only adds"}
+{"rule": "an actor's ordinary costume costs at least a plain cotton kimono", "row": "costume-ordinary", "at_least": [["kimono-cotton", 1]], "why": "a costume is at least the garment"}
+{"rule": "a fine silk costume costs at least a plain silk kimono", "row": "costume-silk", "at_least": [["kimono-silk", 1]], "why": "a costume is at least the garment"}
+{"rule": "a sickle costs at least its iron and charcoal", "row": "sickle-iron", "at_least": [["sickle-inputs", 1]], "why": "a price covers its inputs"}
+{"rule": "a smith's gross takings are at least his net income", "row": "smith-village-gross", "at_least": [["smith-village-net", 1]], "why": "costs only subtract"}
+{"rule": "a hand-copied leaf costs at least a sheet of paper", "row": "book-copy-leaf", "at_least": [["paper-large-sheet", 0.5]], "why": "half a large sheet makes a leaf; the writing adds"}
+{"rule": "a county troupe's year is at least 50 market days at the low end", "row": "troupe-county-year", "at_least": [["troupe-market-day", 25]], "why": "market days are half its year at least"}
