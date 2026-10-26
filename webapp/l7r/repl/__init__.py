@@ -128,7 +128,8 @@ COMMANDS: tuple[tuple[str, str], ...] = (
     ),
     (
         'add_to_conversation("Kenji")',
-        'NPCs join or leave mid-conversation: also remove_from_conversation("Souma")',
+        'NPCs join or leave mid-conversation: also remove_from_conversation("Souma"); an '
+        'untitled one needs its topic too: add_to_conversation("Souma", "stolen sheets")',
     ),
     ('move_oppose(souma)', "a player's oppose roll taxes the primary; this aims it elsewhere"),
     ('annotate()', 'say what each roll was for; only Etiquette is saved without it'),

@@ -529,8 +529,9 @@ sheet refuses case-insensitive duplicates. A member who joins is planned and re-
 one who leaves is re-PUT `present: false` (`discern.leave`) and an ask made before is still
 recorded.
 
-**Open question to the GM**: adding a member to an UNTITLED conversation is an error for now, since
-the link entry names the topic. Spec: `specs/230-multi-npc-conversations/`. Tests:
+**A title is required once a second NPC joins** (GM 2026-10-26): the newcomer's link entry names
+the topic, so `add_to_conversation` on an untitled conversation takes it by begin's rule -
+`add_to_conversation('Souma', 'stolen sheets')`, exactly one argument naming no character. Spec: `specs/230-multi-npc-conversations/`. Tests:
 `tests/test_rolls_members.py`, and `TestSettlingHooks` in `tests/test_repl_shell.py`.
 
 ## A title divides one conversation from the next

@@ -435,26 +435,41 @@ def add_to_conversation(
 ) -> None:
     """NPCs join the open conversation - any number (GM 2026-10-26). All-or-nothing:
     every name is resolved before anyone is added. A departed member named again comes
-    back. The join is marked in the primary's bio where it happened."""
+    back. The join is marked in the primary's bio where it happened.
+
+    A conversation opened with one NPC and no title must be GIVEN one here (GM
+    2026-10-26: a title is required once a second NPC joins, because the newcomer's
+    link entry names the topic): `add_to_conversation('Souma', 'stolen sheets')`, by
+    `begin_conversation`'s rule - exactly one argument naming no character. A titled
+    conversation takes none, so there every argument must name an NPC."""
     conv = _require()
     npcskills.settle_pending()
     if not names:
         raise TypeError('add_to_conversation("Souma") - say who joins')
-    if not conv.title:
-        # The link entry names the conversation's topic, and this one has none. What to
-        # do here is an open question to the GM (spec 230, round 2 of review).
-        raise ValueError(
-            "this conversation has no title, so there is no topic for the new member's link "
-            'entry. For now: end_conversation(), then begin_conversation(...) again with every '
-            'NPC and a title.'
-        )
     roster = characters()
     found: list[Mapping[str, object]] = []
+    titles: list[str] = []
     for name in names:
         match = match_character(name, roster)
-        if match.kind != 'unique':
+        if match.kind == 'unique':
+            found.append(match.character)
+        elif match.kind == 'none' and not conv.title:
+            titles.append(name)
+        else:
             raise ValueError(_no_match(name, match))
-        found.append(match.character)
+    if not conv.title and (len(titles) != 1 or not found or not titles[0].strip()):
+        # GM 2026-10-26: a title is REQUIRED once a second NPC joins - the link entry
+        # on the newcomer's page names the conversation's topic. So an untitled
+        # conversation takes it here, by `begin_conversation`'s own rule.
+        which = f' (naming no character: {", ".join(repr(t) for t in titles)})' if titles else ''
+        raise ValueError(
+            'this conversation has no title, and one is required once a second NPC joins: '
+            f"add_to_conversation('Souma', 'stolen sheets') - exactly one argument naming no "
+            f'character, which becomes the title{which}.'
+        )
+    if titles:
+        conv.title = ' '.join(titles[0].split())
+        print(f'  The conversation is now titled: {conv.title}')
     _no_repeats(found)
     clock = now or (lambda: datetime.now(UTC))
     reader = get_body or op.get_character_body

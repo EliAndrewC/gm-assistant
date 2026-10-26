@@ -1,6 +1,6 @@
 # Feature 230: conversations with several NPCs
 
-**Request**: [gm-request.md](gm-request.md) (2026-10-26, two messages). **Status**: implemented 2026-10-26; one open question to the GM (an untitled conversation gaining a member).
+**Request**: [gm-request.md](gm-request.md) (2026-10-26, two messages). **Status**: implemented 2026-10-26.
 **Cross-repository half**: <https://github.com/EliAndrewC/character-sheet/issues/6> (`/discern-honor`
 across several NPCs; contract agreed there 2026-10-26).
 
@@ -52,13 +52,14 @@ conversation block goes:
 
 It is written once, when the NPC becomes a member (at open, or at `add_to_conversation`), so it
 exists even if no roll is ever made, and it is never rewritten. The entry names the conversation's
-topic, and an UNTITLED conversation has none. **OPEN QUESTION FOR THE GM** (round 2 of review): what
-should happen when a member is added to a conversation with no title? Options: (a) give the title
-at add time (`add_to_conversation('Souma', 'stolen sheets')`); (b) adding to an untitled
-conversation is an error; (c) write the entry without a topic (e.g. by date); (d) require a title
-once a second NPC joins, by any means. **Until the GM answers, `add_to_conversation` on an untitled
-conversation is an error** that says why and how to work around it (end it and begin a titled
-one); every other case is unaffected. All of `add_to_conversation`'s arguments are NPCs. It is the only thing a
+topic, and an UNTITLED conversation has none. Put to the GM after review round 2 (options: a title
+at add time; an error; an entry with no topic; a title required once a second NPC joins), and
+**answered 2026-10-26: "I think that requiring a title once the second NPC joins is correct."** So a
+one-NPC conversation may stay untitled, and `add_to_conversation` on an untitled conversation must
+be given the title, by `begin_conversation`'s own rule: exactly one argument names no character,
+and it becomes the title (`add_to_conversation('Souma', 'stolen sheets')`). Without one - or with
+two - it is an error saying so, and nobody is added. A titled conversation takes no second title,
+so there every argument must name an NPC. It is the only thing a
 conversation writes to a non-primary member's bio.
 
 **Each member's GM-only notes** carry that member's own NPC-specific records, each in the existing

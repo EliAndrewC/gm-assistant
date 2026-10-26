@@ -378,13 +378,29 @@ class TestMembership:
         with pytest.raises(npcskills.MemberLeft):
             dice.xky(5, 3) - conv.handle('souma').tact
 
-    def test_adding_to_an_untitled_conversation_waits_for_the_gm(self, portal: Portal) -> None:
+    def test_an_untitled_conversation_needs_a_title_when_a_second_npc_joins(
+        self, portal: Portal
+    ) -> None:
         c = begin(portal, 'Hideki')
-        with pytest.raises(ValueError, match='no title'):
-            conv.add_to_conversation(
-                'Souma', characters=lambda: ROSTER, get_body=portal.get_body, update=portal.update
-            )
+        add = {'characters': lambda: ROSTER, 'get_body': portal.get_body, 'update': portal.update}
+        for names in (('Souma',), ('Souma', 'tea', 'cakes'), ('tea',), ('Souma', '  ')):
+            with pytest.raises(ValueError, match='one is required once a second NPC joins'):
+                conv.add_to_conversation(*names, **add)  # type: ignore[arg-type]
         assert len(c.members) == 1
+        conv.add_to_conversation('stolen sheets', 'Souma', **add)  # type: ignore[arg-type]
+        assert c.title == 'stolen sheets'
+        assert 'h4. Stolen sheets' in portal.bodies['s']['bio']
+
+    def test_a_titled_conversation_takes_no_second_title(self, portal: Portal) -> None:
+        begin(portal, 'Hideki', 'tea')
+        with pytest.raises(ValueError, match="no character called 'cakes'"):
+            conv.add_to_conversation(
+                'Souma',
+                'cakes',
+                characters=lambda: ROSTER,
+                get_body=portal.get_body,
+                update=portal.update,
+            )
 
     def test_a_line_of_questioning_splits_at_a_marker(self, portal: Portal) -> None:
         c = begin(portal, 'Hideki', 'tea')
