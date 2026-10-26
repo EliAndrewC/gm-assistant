@@ -12,7 +12,7 @@ import pytest
 
 from l7r.repl import dice, gmrolls, honor
 from l7r.repl.rolls import conversation as conv
-from l7r.repl.rolls import discern, hidden, npcskills, oppose, sheet, voidspent
+from l7r.repl.rolls import discern, hidden, members, npcskills, oppose, sheet, voidspent
 from l7r.repl.rolls.models import Conversation, Member, Roll
 
 ann = importlib.import_module('l7r.repl.rolls.annotate')
@@ -75,7 +75,7 @@ def clean(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     conv._open = None
     gmrolls.clear()
     npcskills._pending.clear()
-    conv.use_namespace(None)
+    members.use_namespace(None)
 
 
 @pytest.fixture
@@ -84,7 +84,7 @@ def portal() -> Portal:
 
 
 def begin(portal: Portal, *args: str, ns: dict[str, Any] | None = None) -> Conversation:
-    conv.use_namespace(ns)
+    members.use_namespace(ns)
     return conv.begin_conversation(
         *args,
         characters=lambda: ROSTER,
@@ -176,15 +176,15 @@ class TestHandles:
         ns: dict[str, Any] = {'souma': 'something of the GM s'}
         two(portal, ns)
         assert ns['souma'] == 'something of the GM s'
-        assert ns['tsuruchi_souma'].member_id == conv.handle('Souma').member_id == 's'
+        assert ns['tsuruchi_souma'].member_id == members.handle('Souma').member_id == 's'
         assert 'tsuruchi_souma' in capsys.readouterr().out
 
     def test_npc_finds_a_member_by_any_name_token(self, portal: Portal) -> None:
         two(portal)
-        assert conv.handle('Souma').member.id == 's'
-        assert conv.handle('Tsuruchi Souma').member.id == 's'
+        assert members.handle('Souma').member.id == 's'
+        assert members.handle('Tsuruchi Souma').member.id == 's'
         with pytest.raises(ValueError, match='not in this conversation'):
-            conv.handle('Kenji')
+            members.handle('Kenji')
 
 
 class TestWhoseRoll:
@@ -195,7 +195,7 @@ class TestWhoseRoll:
 
     def test_a_handle_rolls_for_its_member(self, portal: Portal) -> None:
         c = two(portal)
-        conv.handle('souma').tact(2, ask=lambda q: '3')
+        members.handle('souma').tact(2, ask=lambda q: '3')
         assert numbers(c) == {'hideki': {}, 'souma': {'tact': 2, 'air': 3}}
 
     def test_a_bare_tag_waits_for_the_statement_to_end(self, portal: Portal) -> None:
@@ -208,7 +208,7 @@ class TestWhoseRoll:
     @pytest.mark.parametrize('order', ['tag first', 'npc first', 'bound'])
     def test_every_order_lands_on_souma_alone(self, portal: Portal, order: str) -> None:
         c = two(portal)
-        souma = conv.handle('souma')
+        souma = members.handle('souma')
         if order == 'tag first':
             total = dice.xky(5, 3) - tact - souma
         elif order == 'npc first':
@@ -229,7 +229,7 @@ class TestWhoseRoll:
             gmrolls.clear()
             c = two(Portal())
             c.member('s').numbers.update({'air': 2, 'tact': 2})  # a disagreement to be asked
-            souma = conv.handle('souma')
+            souma = members.handle('souma')
             asked: list[str] = []
 
             def answer(question: str, asked: list[str] = asked) -> str:
@@ -252,13 +252,13 @@ class TestWhoseRoll:
         self, portal: Portal
     ) -> None:
         two(portal)
-        total = dice.xky(5, 3) - conv.handle('souma')
+        total = dice.xky(5, 3) - members.handle('souma')
         with pytest.raises(ValueError, match='already Tsuruchi Souma'):
-            total - conv.handle('hideki')
+            total - members.handle('hideki')
 
     def test_an_untagged_roll_can_belong_to_a_member(self, portal: Portal) -> None:
         two(portal)
-        total = dice.xky(5, 3) - conv.handle('souma')
+        total = dice.xky(5, 3) - members.handle('souma')
         assert total.entry.npc == 's'
         assert total.entry.tagged == ''
 
@@ -287,7 +287,7 @@ def roll(who: str, skill: str, total: int, minute: int, note: str = '') -> Roll:
 class TestMembership:
     def test_add_and_remove_take_any_number(self, portal: Portal) -> None:
         c = begin(portal, 'Hideki', 'tea')
-        conv.add_to_conversation(
+        members.add_to_conversation(
             'Souma',
             'Hida Kenji',
             characters=lambda: ROSTER,
@@ -296,13 +296,13 @@ class TestMembership:
             update=portal.update,
         )
         assert [m.handle for m in c.members] == ['hideki', 'souma', 'kenji']
-        conv.remove_from_conversation('Souma', 'Kenji', now=lambda: W)
+        members.remove_from_conversation('Souma', 'Kenji', now=lambda: W)
         assert [m.present for m in c.members] == [True, False, False]
 
     def test_adding_is_all_or_nothing(self, portal: Portal) -> None:
         c = begin(portal, 'Hideki', 'tea')
         with pytest.raises(ValueError, match='Nobody'):
-            conv.add_to_conversation(
+            members.add_to_conversation(
                 'Souma',
                 'Nobody',
                 characters=lambda: ROSTER,
@@ -314,7 +314,7 @@ class TestMembership:
     def test_the_markers_sit_where_it_happened(self, portal: Portal) -> None:
         c = begin(portal, 'Hideki', 'tea')
         c.rolls.append(roll('Tsuruchi Jimen', 'etiquette', 25, 1))
-        conv.add_to_conversation(
+        members.add_to_conversation(
             'Souma',
             characters=lambda: ROSTER,
             now=lambda: W + timedelta(minutes=2),
@@ -322,7 +322,7 @@ class TestMembership:
             update=portal.update,
         )
         c.rolls.append(roll('Tsuruchi Makoto', 'etiquette', 31, 3))
-        conv.remove_from_conversation('Hideki', now=lambda: W + timedelta(minutes=4))
+        members.remove_from_conversation('Hideki', now=lambda: W + timedelta(minutes=4))
         c.rolls.append(roll('Tsuruchi Jimen', 'law', 40, 5, note='the arrest'))
         assert conv.written_lines(c) == (
             'h4. Tea',
@@ -345,38 +345,42 @@ class TestMembership:
 
     def test_the_primary_leaving_stops_the_defaults(self, portal: Portal) -> None:
         c = two(portal)
-        conv.remove_from_conversation('Hideki', now=lambda: W)
+        members.remove_from_conversation('Hideki', now=lambda: W)
         with pytest.raises(npcskills.PrimaryLeft, match='souma.tact'):
             tact(2)
         dice.xky(5, 3) - tact
         with pytest.raises(npcskills.PrimaryLeft):
             npcskills.settle_pending()
         assert numbers(c) == {'hideki': {}, 'souma': {}}
-        conv.handle('souma').tact(2, ask=lambda q: '3')
+        members.handle('souma').tact(2, ask=lambda q: '3')
         assert numbers(c)['souma'] == {'tact': 2, 'air': 3}
 
     def test_a_departed_member_cannot_roll(self, portal: Portal) -> None:
         two(portal)
-        conv.remove_from_conversation('Souma', now=lambda: W)
+        members.remove_from_conversation('Souma', now=lambda: W)
         with pytest.raises(npcskills.MemberLeft, match='left the conversation'):
-            conv.handle('souma').tact(2)
+            members.handle('souma').tact(2)
 
     def test_a_departed_handle_still_marks_an_earlier_roll(self, portal: Portal) -> None:
         c = two(portal)
         earlier = dice.xky(5, 3)
-        conv.remove_from_conversation('Souma', now=lambda: datetime.now(UTC) + timedelta(hours=1))
+        members.remove_from_conversation(
+            'Souma', now=lambda: datetime.now(UTC) + timedelta(hours=1)
+        )
         npcskills.tags_by_name()['tact'].tag_roll(earlier)  # waits: the statement goes on
-        earlier - conv.handle('souma')
+        earlier - members.handle('souma')
         assert earlier.entry.npc == 's'
         assert numbers(c)['souma'] == {'air': 3, 'tact': 2}
 
     def test_a_departed_handle_cannot_mark_a_later_roll(self, portal: Portal) -> None:
         two(portal)
-        conv.remove_from_conversation('Souma', now=lambda: datetime.now(UTC) - timedelta(hours=1))
+        members.remove_from_conversation(
+            'Souma', now=lambda: datetime.now(UTC) - timedelta(hours=1)
+        )
         with pytest.raises(npcskills.MemberLeft, match='not in the conversation'):
-            dice.xky(5, 3) - conv.handle('souma')
+            dice.xky(5, 3) - members.handle('souma')
         with pytest.raises(npcskills.MemberLeft):
-            dice.xky(5, 3) - conv.handle('souma').tact
+            dice.xky(5, 3) - members.handle('souma').tact
 
     def test_an_untitled_conversation_needs_a_title_when_a_second_npc_joins(
         self, portal: Portal
@@ -385,16 +389,16 @@ class TestMembership:
         add = {'characters': lambda: ROSTER, 'get_body': portal.get_body, 'update': portal.update}
         for names in (('Souma',), ('Souma', 'tea', 'cakes'), ('tea',), ('Souma', '  ')):
             with pytest.raises(ValueError, match='one is required once a second NPC joins'):
-                conv.add_to_conversation(*names, **add)  # type: ignore[arg-type]
+                members.add_to_conversation(*names, **add)  # type: ignore[arg-type]
         assert len(c.members) == 1
-        conv.add_to_conversation('stolen sheets', 'Souma', **add)  # type: ignore[arg-type]
+        members.add_to_conversation('stolen sheets', 'Souma', **add)  # type: ignore[arg-type]
         assert c.title == 'stolen sheets'
         assert 'h4. Stolen sheets' in portal.bodies['s']['bio']
 
     def test_a_titled_conversation_takes_no_second_title(self, portal: Portal) -> None:
         begin(portal, 'Hideki', 'tea')
         with pytest.raises(ValueError, match="no character called 'cakes'"):
-            conv.add_to_conversation(
+            members.add_to_conversation(
                 'Souma',
                 'cakes',
                 characters=lambda: ROSTER,
@@ -412,7 +416,7 @@ class TestMembership:
             replace(first, line=1, note='the sheets'),
             replace(later, line=1, note='the sheets'),
         ]
-        conv.add_to_conversation(
+        members.add_to_conversation(
             'Souma',
             characters=lambda: ROSTER,
             now=lambda: W + timedelta(minutes=2),
@@ -431,7 +435,7 @@ class TestMembership:
 class TestNotes:
     def test_each_member_keeps_its_own_numbers_and_void(self, portal: Portal) -> None:
         c = two(portal)
-        conv.handle('souma').tact(2, npcskills.vp, ask=lambda q: '3')
+        members.handle('souma').tact(2, npcskills.vp, ask=lambda q: '3')
         tact(1, ask=lambda q: '2')
         conv._tick(
             c,
@@ -467,12 +471,12 @@ class TestOppose:
             )
         )
         hideki = tact(2, ask=lambda q: '3')
-        souma = conv.handle('souma').tact(2, ask=lambda q: '3')
+        souma = members.handle('souma').tact(2, ask=lambda q: '3')
         assert hideki is not None
         assert souma is not None
         assert hideki.entry.penalty == 6
         assert souma.entry.penalty == 0
-        conv.move_oppose(conv.handle('souma'))
+        conv.move_oppose(members.handle('souma'))
         assert hideki.entry.penalty == 0
         assert souma.entry.penalty == 6
 
@@ -566,7 +570,7 @@ class TestDiscern:
     def test_joining_plans_and_leaving_tells_the_sheet(self, portal: Portal) -> None:
         app = MiniSheet()
         c = with_discern(portal, app, 'Hideki', 'tea')
-        conv.add_to_conversation(
+        members.add_to_conversation(
             'Souma',
             characters=lambda: ROSTER,
             get_body=portal.get_body,
@@ -575,7 +579,7 @@ class TestDiscern:
         )
         assert [n['name'] for n in app.puts[-1]['npcs']] == ['Hideki', 'Souma']
         app.ask('s')
-        conv.remove_from_conversation(
+        members.remove_from_conversation(
             'Souma', discern_leave=lambda opened: discern.leave(opened, put=app.put)
         )
         assert [n['present'] for n in app.puts[-1]['npcs']] == [True, False]
@@ -618,7 +622,7 @@ class TestEdges:
         def broken(cid: str, **fields: Any) -> None:
             raise RuntimeError('portal down')
 
-        conv.use_namespace(None)
+        members.use_namespace(None)
         c = conv.begin_conversation(
             'Hideki',
             'Souma',
@@ -638,33 +642,33 @@ class TestEdges:
     ) -> None:
         c = two(portal)
         add = {'characters': lambda: ROSTER, 'get_body': portal.get_body, 'update': portal.update}
-        conv.add_to_conversation('Souma', **add)  # type: ignore[arg-type]
+        members.add_to_conversation('Souma', **add)  # type: ignore[arg-type]
         assert 'already in the conversation' in capsys.readouterr().out
-        conv.remove_from_conversation('Souma', now=lambda: W)
-        conv.remove_from_conversation('Souma', now=lambda: W)
+        members.remove_from_conversation('Souma', now=lambda: W)
+        members.remove_from_conversation('Souma', now=lambda: W)
         assert 'has already left' in capsys.readouterr().out
-        conv.add_to_conversation('Souma', now=lambda: W, **add)  # type: ignore[arg-type]
+        members.add_to_conversation('Souma', now=lambda: W, **add)  # type: ignore[arg-type]
         assert c.member('s').present
         assert [e.kind for e in c.events] == ['left', 'joined']
         with pytest.raises(TypeError):
-            conv.add_to_conversation()
+            members.add_to_conversation()
         with pytest.raises(TypeError):
-            conv.remove_from_conversation()
+            members.remove_from_conversation()
 
     def test_markers_alone_write_nothing(self, portal: Portal) -> None:
         c = two(portal)
-        conv.remove_from_conversation('Souma', now=lambda: W)
+        members.remove_from_conversation('Souma', now=lambda: W)
         assert conv.written_lines(c) == ()
 
     def test_nobody_left_at_all(self, portal: Portal) -> None:
         two(portal)
-        conv.remove_from_conversation('Hideki', 'Souma', now=lambda: W)
+        members.remove_from_conversation('Hideki', 'Souma', now=lambda: W)
         with pytest.raises(npcskills.PrimaryLeft, match='nobody is left'):
             tact(2)
 
     def test_a_handle_outside_a_conversation_and_its_errors(self, portal: Portal) -> None:
         two(portal)
-        souma = conv.handle('souma')
+        souma = members.handle('souma')
         with pytest.raises(AttributeError, match='no skill'):
             souma.flying  # noqa: B018
         with pytest.raises(TypeError, match='only a roll'):
@@ -697,7 +701,7 @@ class TestEdges:
         self, portal: Portal, capsys: pytest.CaptureFixture[str]
     ) -> None:
         two(portal)
-        conv.remove_from_conversation('Hideki', now=lambda: W)
+        members.remove_from_conversation('Hideki', now=lambda: W)
         dice.xky(5, 3) - tact
         conv.end_conversation(
             force=True,
@@ -734,7 +738,7 @@ class TestOpposeTargets:
 
         collect()
         assert c.rolls[-1].against == 'h'
-        conv.remove_from_conversation('Hideki', now=lambda: W)
+        members.remove_from_conversation('Hideki', now=lambda: W)
         collect()
         assert c.rolls[-1].against == '-'
 
@@ -761,7 +765,7 @@ class TestMemberAnnotate:
         self, portal: Portal, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         c = two(portal)
-        conv.handle('souma').tact(2, ask=lambda q: '3')
+        members.handle('souma').tact(2, ask=lambda q: '3')
         c.rolls.append(roll('Tsuruchi Jimen', 'manipulation', 30, 1))
         replies = iter(['the debt', ''])
         ann.annotate(c, ask=lambda q: next(replies), undoable=lambda q, a: (False, a(q)))
@@ -770,7 +774,7 @@ class TestMemberAnnotate:
 
     def test_with_the_primary_gone_a_typed_total_asks_whose(self, portal: Portal) -> None:
         c = two(portal)
-        conv.remove_from_conversation('Hideki', now=lambda: W)
+        members.remove_from_conversation('Hideki', now=lambda: W)
         c.rolls.append(roll('Tsuruchi Jimen', 'manipulation', 30, 1))
         asked: list[str] = []
         replies = iter(['t', '1', '7', '0', '0', 'the debt'])
@@ -787,7 +791,7 @@ class TestMemberAnnotate:
 class TestCoverageEdges:
     def test_the_member_question_with_nobody_or_a_bad_answer(self, portal: Portal) -> None:
         c = two(portal)
-        conv.remove_from_conversation('Hideki', now=lambda: W)
+        members.remove_from_conversation('Hideki', now=lambda: W)
         replies = iter(['9', '1'])
         menu = ann._Menu(
             ask=lambda q: next(replies),
@@ -797,13 +801,13 @@ class TestCoverageEdges:
             used=set(),
         )
         assert ann._which_member(menu).id == 's'
-        conv.remove_from_conversation('Souma', now=lambda: W)
+        members.remove_from_conversation('Souma', now=lambda: W)
         with pytest.raises(ValueError, match='nobody is left'):
             ann._which_member(menu)
 
     def test_closing_by_hand_with_the_primary_gone_refuses(self, portal: Portal) -> None:
         two(portal)
-        conv.remove_from_conversation('Hideki', now=lambda: W)
+        members.remove_from_conversation('Hideki', now=lambda: W)
         dice.xky(5, 3) - tact
         with pytest.raises(npcskills.PrimaryLeft):
             conv.end_conversation(
@@ -818,7 +822,7 @@ class TestCoverageEdges:
         self, portal: Portal
     ) -> None:
         c = two(portal)
-        conv.handle('souma').sincerity(3, ask=lambda q: '2')
+        members.handle('souma').sincerity(3, ask=lambda q: '2')
         assert hidden.entries(c, c.member('h')) == ()
         assert len(hidden.entries(c, c.member('s'))) == 1
 

@@ -10,7 +10,6 @@ from __future__ import annotations
 from l7r.repl.rolls.annotate import annotate
 from l7r.repl.rolls.conversation import (
     abandon_conversation,
-    add_to_conversation,
     begin_conversation,
     cancel_boost,
     cancel_oppose,
@@ -19,7 +18,6 @@ from l7r.repl.rolls.conversation import (
     conversation_status,
     end_conversation,
     move_oppose,
-    remove_from_conversation,
 )
 from l7r.repl.rolls.lines import (
     cancel_detected,
@@ -28,6 +26,7 @@ from l7r.repl.rolls.lines import (
     grilling,
     new_line_of_questioning,
 )
+from l7r.repl.rolls.members import add_to_conversation, remove_from_conversation
 from l7r.repl.rolls.models import Contest, Conversation, RecordingRule, Roll
 from l7r.repl.rolls.npcskills import build_tags, vp
 from l7r.repl.rolls.rules import contest, record, render_contest, render_open, round_down

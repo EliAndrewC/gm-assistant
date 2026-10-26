@@ -24,7 +24,8 @@ from l7r.repl import help_text, namespace
 from l7r.repl.dice import DiceTotal
 from l7r.repl.names import warm_caches
 from l7r.repl.rolls import console, npcskills
-from l7r.repl.rolls.conversation import close_open_conversation, use_namespace
+from l7r.repl.rolls.conversation import close_open_conversation
+from l7r.repl.rolls.members import use_namespace
 
 HISTORY = Path(os.environ.get('L7R_REPL_HISTORY', Path.home() / '.l7r_repl_history'))
 TITLE = 'L7R repl >>>'

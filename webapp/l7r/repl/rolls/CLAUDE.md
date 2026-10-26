@@ -51,7 +51,8 @@ portrait, and a conversation spanning several skills writes one line per skill.
 | `keys.py` | The two-press undo: one key read in cbreak mode BEFORE readline gets the line, then handed back as the line's first character. |
 | `discern.py` | Feature 212: `/discern-honor`. Decides at open what each PC with the knack is told (`plan`), hands the sheet app ONLY those told values (`payloads`), learns who asked (`poll`), records only them (`commit`), and undoes it on abandon (`roll_back`). Section below. |
 | `boost.py` | Feature 214: the Isawa Ishi 3rd Dan boost. Recognizes one (the sheet bot's two commands, a pasted card whose row is `spend_vp_xk1:isawa_ishi`, or typed `8 ishi`), aims it (the message command's jump link or row, else the Discord reply), and folds it into the target's RAW total or holds it. Section below. |
-| `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. Feature 230: the members (`add_to_conversation` / `remove_from_conversation`, handles, link entries, segmented `written_lines`, `move_oppose`). `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
+| `members.py` | Feature 230: everything about a conversation's members once it is open - handles at the prompt, link entries on the other members' bios (and their removal on abandon), `add_to_conversation` / `remove_from_conversation`, the join / leave marker lines. Split out of `conversation.py` at 1,345 lines (GM 2026-10-26); it reaches back into `conversation` only inside functions, because `conversation` imports it. |
+| `conversation.py` | The only stateful module: open, collect, close, write, plus the background watcher. Feature 230: `_classify`, segmented `written_lines`, per-member notes, `move_oppose`. `_tick` is one poll - collect, announce, maybe write - split out so the debounce is testable without threads. Boundaries are injected as callables, the way `discern_honor` takes `characters=` / `get_body=` / `update=`. |
 
 ## What a written line looks like, and the two orders that must stay different
 
@@ -516,9 +517,9 @@ primary is present it never asks). A departed member's handle raises `MemberLeft
 except marking one made while they were there (`npcskills.present_at`).
 
 **Handles** are the personal name in lower case, put into the prompt's namespace
-(`conversation.use_namespace`, registered by `shell.main`) and taken out at close. A name already
+(`members.use_namespace`, registered by `shell.main`) and taken out at close. A name already
 at the prompt, or two members with one personal name, get the full name in snake case
-(`tsuruchi_souma`) - never shadow the GM's own names. `conversation.handle("Souma")` is the
+(`tsuruchi_souma`) - never shadow the GM's own names. `members.handle("Souma")` is the
 internal lookup for tests and scripts; a public `npc()` was struck by the fidelity review.
 
 **Discern Honor covers every member** (GM ruling; character-sheet#6). The sheet's
