@@ -9,4 +9,4 @@
 - [x] T7 shell: displayhook + prompt hooks; one-shot path; `use_namespace(ns)`.
 - [x] T8 discern: the multi-NPC shape (plan / payloads / poll / commit / roll_back per member); `honor.discern_honor` per member.
 - [x] T9 docs: `rolls/CLAUDE.md` section, `COMMANDS` rows, module docstrings.
-- [ ] T10 gate green; push; tell character-sheet#6 the REPL switched. (No `MULTI_NPC` flag: the sheet shipped the shape before this side was written.)
+- [x] T10 gate green; push; tell character-sheet#6 the REPL switched. (No `MULTI_NPC` flag: the sheet shipped the shape before this side was written.)
