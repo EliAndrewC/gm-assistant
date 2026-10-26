@@ -43,12 +43,17 @@ removed (constitution XVIII: every guard has a test companion run by the gate).
 3. A session cannot end its turn while a `make done` it started in its clone is still running, or while its clone
    has commits that main lacks; the block message says exactly what to do. It never blocks twice in a row (no
    loop) and never blocks a session with no clone.
-4. Two sessions cannot both work in one clone: the existing claim backstop in `scripts/clone-sync-hooks.sh` already
-   blocks an edit in a clone claimed by another LIVE session (tested at `scripts/test-clone-sync-hooks.sh`, "claimed
-   by a LIVE other session -> blocked"). See Resolved Decisions.
+4. A session that works in a clone another LIVE session has claimed is told so, whether or not the tree is dirty:
+   the 2026-07-26 incident was a "crashed" session still editing an uncommitted file, and the existing claim backstop
+   runs only at a clean boundary, after the dirty-tree exit. It is a WARNING (never a block, so mid-task work is not
+   stranded), given once per session per other claimant, naming the other session and saying to ask the GM before
+   taking over.
 5. Writing a local container path (`/host-l7r-repo/`, `/gm-assistant/`, `/workspace/`) into setting content is
-   blocked by the house-style hook, with the public GitHub URL form (l7r's branch is `master`) in the message.
-   Operational docs (CLAUDE.md files, `docs/`, scripts, specs, skills, code) keep their real paths.
+   blocked, with the public GitHub URL forms in the message (l7r's branch is `master`). Setting content is this
+   repository's `setting/`, `campaigns/`, `cosmology/`, `hooks/` and `notes/`, and EVERY file under the l7r repo
+   (`setting/*.md` including `l7r.md` and `budgets.md`, `current/*.md` handouts). The rule checks text the session
+   is writing, so it does not inherit the house-style hook's exemption for the GM's own files; only SOURCE blocks
+   are skipped. Operational docs (CLAUDE.md files, `docs/`, scripts, specs, skills, code) keep their real paths.
 6. The `frontend-review` agent flags hardcoded catalog counts in card blurbs and section copy.
 7. A test prices Shizu's Shoda memorial design and fails when the price moves from the figure the player handout
    states, telling the session to re-price the handout (`current/shoda-shrine.md` in the l7r repo) and redeploy.
@@ -69,8 +74,8 @@ The GM vetted the Obsidian Portal page "Secret Libraries of the Fox"; its public
 - A Stop event fired while the hook's own block is being answered (`stop_hook_active`) is allowed through.
 - A clone with uncommitted edits but no unpushed commits: the turn-end hook does not block on that (out of the
   approved scope; the clone-sync hook already treats a dirty tree as mid-task work).
-- The house-style path rule must not fire on the GM's own writing (SOURCE blocks, `l7r.md` are already exempt from
-  the house-style hook) or on files that must quote the forbidden form to state the rule.
+- The path rule skips a SOURCE block inside the written text (the GM's words), and never applies to operational
+  files, which include every file that has to quote the forbidden form to state the rule.
 - The Shoda handout lives in the GM's repo and may be absent (another machine): the test still pins the recorded
   figure and skips only the handout cross-check.
 
@@ -116,7 +121,7 @@ Into tooling (User Story 2):
 - **FR-021** clone secrets + loud OP credentials failure + flyctl in container setup.
 - **FR-022** portrait steering lines + headshot padding in `art.py`.
 - **FR-023** turn-end (Stop) hook: running gate or unpushed clone commits.
-- **FR-024** another live session in the clone: already enforced (Resolved Decisions).
+- **FR-024** another live session in the clone: a warning that also fires on a dirty tree.
 - **FR-025** local container paths in setting content: house-style hook.
 - **FR-026** no hardcoded counts in blurbs: `frontend-review` rule.
 - **FR-027** Shoda design price pinned to the handout.
@@ -137,11 +142,6 @@ Then:
 
 ## Resolved Decisions
 
-- **Live-session clone sharing is already enforced (FR-024).** The audit proposed a new warning; on reading the hook,
-  the claim backstop added after the 2026-07-26 incident resolves a claim's session id to its PID and checks
-  `/proc`, which is exactly the case in the memory (a "crashed" session still running). A `/proc/<pid>/cwd` check
-  was considered and declined: a Claude process's cwd is where it was launched (main), not its clone, so it would
-  miss the case it targets. The memory is deleted with the existing test as its replacement.
 - **Turn-end hook scope**: the approved two conditions only (running gate, unpushed commits). Dirty trees are not
   blocked, because a session that stops to ask the GM a question mid-task legitimately has uncommitted work.
 - **Shoda test reads the handout when present**, pins the recorded total always.
@@ -151,3 +151,14 @@ Then:
 - `autoMemoryEnabled` is a Claude Code settings key (present in the installed 2.1.310 binary); a project-level
   `false` turns auto memory off for that project.
 - The diagram repository keeps its own copies of China-first and temple density; this feature does not edit it.
+
+## Review history
+
+- **Round 1 (spec-fidelity, 2026-10-26): CHANGES REQUIRED.** (1) FR-024 claimed the claim backstop already covers a
+  live session in the clone; it does not, because the hook exits on a dirty tree before reaching it, and the incident
+  was a dirty tree. Now a warning that fires dirty or clean. (2) FR-025 would have inherited the house-style hook's
+  `/host-l7r-repo` / `l7r.md` exemption and so never fired on `budgets.md`, the file where the GM first saw the
+  problem. Now applies to every l7r-repo file. Turn-end scope and the Shoda handout skip ruled legitimate.
+- **Round 2 (spec-fidelity, 2026-10-26): FAITHFUL (PASS).** Aside on the plan: a PreToolUse hook's stdout at exit 0
+  is not shown to the model, so the FR-024 warning must travel by a channel the model sees (the hook's JSON
+  `additionalContext`), and its test asserts that channel.
