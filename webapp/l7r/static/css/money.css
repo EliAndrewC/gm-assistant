@@ -273,7 +273,7 @@
 .koku-notes { max-width: var(--reading-max); margin-left: 0; }
 
 /* Landing */
-.money-tools { list-style: none; padding: 0 0 4rem; margin: 1rem 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1.25rem; }
+.money-tools { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1.25rem; }
 .money-tool {
   display: block;
   padding: 1.2rem 1.4rem;
@@ -288,6 +288,15 @@
 .money-tool__name { margin: 0 0 0.35rem; font-family: var(--font-display); font-size: 1.3rem; }
 .money-tool__blurb { margin: 0 0 0.6rem; color: var(--ink-soft); line-height: 1.45; }
 .money-tool__open { color: var(--vermillion-deep); font-weight: 600; }
+/* The landing's saying and its note on the records (GM 2026-10-26). The saying is Rokugani setting
+   flavor, captioned as such: no source for it as a Chinese or Japanese proverb was found. */
+.money-saying { max-width: var(--reading-max); margin: 0.5rem 0 1.5rem; padding: 0.2rem 0 0.2rem 1.2rem; border-left: 3px solid var(--hairline); }
+.money-saying__text { margin: 0; }
+.money-saying__text p { margin: 0; font-size: 1.15rem; line-height: 1.45; color: var(--ink-soft); }
+.money-saying__source { margin-top: 0.35rem; color: var(--ink-soft); font-size: 1rem; font-weight: 600; }
+.money-gaps { max-width: var(--reading-max); margin: 2.5rem 0 0; padding: 0 0 4rem; line-height: 1.55; }
+.money-gaps__title { margin: 0 0 0.5rem; font-family: var(--font-display); font-size: 1.3rem; }
+.money-gaps p { margin: 0 0 0.8rem; }
 
 /* The price sheets (feature 225). The contents bar scrolls away; each sheet's title and column
    headings stick under the app nav instead, so a reader mid-sheet sees where they are and what the

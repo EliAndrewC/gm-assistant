@@ -41,6 +41,23 @@ def test_landing_lists_the_tool(root: Root) -> None:
     assert "What's a koku worth?" in page
 
 
+def test_landing_carries_the_saying_and_the_note_on_the_records(root: Root) -> None:
+    """GM 2026-10-26: the saying is captioned as Rokugani, and the note says plainly that
+    women's unpaid work went unrecorded, and why that leaves figures thin."""
+    page = root.money().decode()
+    assert 'three hundred and sixty days' in page
+    assert 'A Rokugani farming proverb' in page
+    assert 'What the records leave out' in page
+    assert "men's lives better than women's" in page
+
+
+def test_wage_write_up_names_the_one_count_and_the_unpaid_days(root: Root) -> None:
+    page = root.money('koku').decode()
+    assert '310 to 330 working days' in page
+    assert 'Paid days only' in page
+    assert "most of it was women's work" in page
+
+
 def test_unknown_tool_is_a_404(root: Root) -> None:
     assert b'koku-form' not in root.money('nope')
 
