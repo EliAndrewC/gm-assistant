@@ -71,7 +71,8 @@ On every choice step a player can pick "Something else", type their own idea, an
    no people living there, never contradict a choice) plus the design. No setting corpus.
 3. The description appears in an editable box; pressing the button again writes a new one (replacing the box after
    confirmation if it was edited).
-4. A signed-out visitor sees no button, only a note to sign in. Generation is rate-limited per user.
+4. A signed-out visitor sees no button, only a note to sign in. A per-user guard stops only runaway or abusive
+   request loops (well above any player's retrying); it never blocks ordinary retries.
 5. Cost per description is recorded in the plan (measured), and is a fraction of a cent.
 
 ### User Story 5 - A picture, in the player's chosen style (Priority: P1)
@@ -85,12 +86,13 @@ On every choice step a player can pick "Something else", type their own idea, an
 3. The prompt is shown in an editable box before drawing. The player may edit it (e.g. where the stone guardians
    stand) and draw again; a "rebuild from my choices" control restores the generated prompt.
 4. Every press draws a new picture; the player can try again as often as they like, or change the style.
-5. Signed-out visitors cannot draw. Rate-limited per user.
+5. Signed-out visitors cannot draw. The same runaway-loop guard as US4.4, never a cap on ordinary retries.
 
 ### User Story 6 - Save the shrine as an Obsidian Portal wiki page (Priority: P1)
 
 **Acceptance**:
-1. With a description (and, optionally, a picture), a signed-in player or the GM presses **Create wiki page**. The app
+1. With a description and a picture (both required, as the GM said upload "will save off both the description and
+   the image"), a signed-in player or the GM presses **Create wiki page**. The app
    creates a public wiki page named after the shrine, tagged `shrine`, holding the picture, the description and a link
    back to this design in the shrine builder. The GM-only notes of the page hold the image style and prompt, so they
    can be reloaded.
@@ -118,10 +120,10 @@ On every choice step a player can pick "Something else", type their own idea, an
   still required. An Other on a step not in play is dropped like a pick.
 - **FR-005** (US3) Ledger: contract **Other work**; each Other is a line with optional GM price `gm_other_<step>`;
   totals name unpriced Others.
-- **FR-006** (US4) `POST /shrines/describe`: signed-in only, per-user rate limit, cheap model from config
+- **FR-006** (US4) `POST /shrines/describe`: signed-in only, a per-user runaway-loop guard (never a cap on retries), cheap model from config
   (`[shrines] text_model`), short fixed brief, returns text.
 - **FR-007** (US5) Every option carries `look:` (validated non-empty); `GET`/inline image prompt built from design +
-  style; `POST /shrines/draw` (signed-in, rate-limited) takes the (possibly edited) prompt and a style and returns a
+  style; `POST /shrines/draw` (signed-in, same guard) takes the (possibly edited) prompt and a style and returns a
   PNG.
 - **FR-008** (US6) `POST /shrines/wiki` (signed-in) creates or updates the OP wiki page; `GET /shrines/wiki?...`
   (anyone) returns the page's link, whether it matches, its description, picture URL, prompt and style.
@@ -138,6 +140,15 @@ On every choice step a player can pick "Something else", type their own idea, an
 - The description model is the cheapest Gemini Flash-Lite the project already uses (`gemini-3.1-flash-lite`);
   the image model is the one portraits use (`[gemini] image_model`), at 4:3.
 - Art styles are a short fixed list in `data/art.yaml`.
+- **"Instead" on a step others depend on** follows the one `when` grammar: e.g. "Something else / Instead" on the
+  Kind step means no listed kind, so the remains steps and the memorial wording do not apply. The player's own text
+  still reaches the description and the picture.
+- **"Matches"** compares the two designs after resolving both: every pick, the name, and every Other (`other_`,
+  `instead_`); `gm_` fields are ignored.
+- **Other text is capped at 300 characters**, because the whole design lives in the link.
+- **"Manually editing the prompt"** (message 2) is read as editing the description text and the image prompt; the
+  description's fixed brief is not player-editable.
+- **The picture on update**: Update keeps the page's current picture unless a new one was drawn this visit.
 
 ## Out of scope
 
