@@ -97,7 +97,7 @@
     },
     "housing": {
       "silver_g": 6.2591,
-      "label": "guess",
+      "label": "estimated",
       "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0265-what-did-it-cost-to-rent-a-room-or-a-house.html",
       "note": "Edo back tenement, 300-500 mon a month in 1804-1830 (an unsourced popular page), over a 9.93 m2 room"
     }

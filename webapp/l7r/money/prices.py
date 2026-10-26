@@ -136,7 +136,8 @@ PLAIN = (
 
 SOLIDITY = {
     'historical': 'researched',
-    'guess': 'guess',
+    'extrapolated': 'extrapolated',
+    'estimated': 'estimated',
     'deviation': 'departs from history',
 }
 

@@ -329,7 +329,8 @@ details[open] > .prices__row::before { transform: rotate(90deg); }
 .prices__name { line-height: 1.35; }
 .prices__badge { display: inline-block; min-width: 5.6rem; margin-right: 0.35rem; padding: 0 0.35rem; border-radius: 3px; font-size: 0.82rem; text-align: center; color: var(--ink); vertical-align: 0.05em; }
 .prices__badge--historical { background: var(--ink); color: var(--paper-raised); border: 1px solid var(--ink); }
-.prices__badge--guess, .prices__badge--deviation { border: 1px dashed var(--ink-soft); }
+.prices__badge--extrapolated { border: 1px solid var(--ink); }
+.prices__badge--estimated, .prices__badge--deviation { border: 1px dashed var(--ink-soft); }
 .prices__key .prices__badge { min-width: 0; }
 .prices__price { font-weight: 600; }
 .prices__per { font-weight: normal; color: var(--ink-faded); font-size: 0.9rem; }

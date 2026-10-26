@@ -99,7 +99,7 @@
     },
     "salt": {
       "silver_g": 0.1545,
-      "label": "guess",
+      "label": "extrapolated",
       "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0273-what-did-salt-cost.html",
       "note": "17.77 monme a koku (Mitsui, Kyoto, mean of 20 seasons); the price is attested, only a koku's weight is guessed (1.1 kg a liter, of diagram's 1.0-1.2)"
     },
@@ -123,7 +123,7 @@
     },
     "housing": {
       "silver_g": 7.6858,
-      "label": "guess",
+      "label": "estimated",
       "source": "https://github.com/EliAndrewC/diagram/blob/main/research/questions/0265-what-did-it-cost-to-rent-a-room-or-a-house.html",
       "note": "No Kyoto or Osaka rent was found. Edo back tenement, 300-500 mon a month in 1804-1830 (an unsourced popular page), at 15.9 g a kanmon, over a 9.93 m2 room"
     }

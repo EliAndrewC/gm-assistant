@@ -1,6 +1,6 @@
 ---
 name: money
-description: What things cost in Rokugan and what a sum of money is worth - prices in the coins a buyer would actually hand over, each with its basis and how solid it is (historical / deliberate deviation / guess), plus two dollar readings of a koku (goods dollars: what it BUYS, by a basket of goods; wage dollars: how much it MATTERS), and conversions of historical money (mon, monme, yen) into both and into Rokugani coin. Research questions go to the diagram repository by GitHub issue.
+description: What things cost in Rokugan and what a sum of money is worth - prices in the coins a buyer would actually hand over, each with its basis and how solid it is (researched / extrapolated / estimated / deliberate deviation), plus two dollar readings of a koku (goods dollars: what it BUYS, by a basket of goods; wage dollars: how much it MATTERS), and conversions of historical money (mon, monme, yen) into both and into Rokugani coin. Research questions go to the diagram repository by GitHub issue.
 argument-hint: <item or service> | <amount of koku/bu/zeni/sen> | <dollars>
 ---
 
@@ -90,7 +90,8 @@ firewood need a note.
 1. `price <words>`. If a row matches, give its figure in everyday coins, its koku value, both readings, its label and its
    source. A `historical` row resting on a `lead:` is **unverified** - say so.
 2. No row backed by research: **estimate** from named rows - materials, laborer-days of skilled or unskilled work, the
-   East Asian comparable - show the chain and label it a **guess**. Then, every time (feature 220): **log the
+   East Asian comparable - show the chain and label it **estimated**, or **extrapolated** when it carries a researched
+   price for a close relative over by a stated rule (another size, place or country). Then, every time (feature 220): **log the
    estimate**, add the synthesis row and its rules, **file a diagram issue** and link it. The steps and commands are in
    `calibration.md`.
 3. Never contradict the canon silently. If history and canon disagree, show both; the GM decides.
@@ -105,8 +106,9 @@ least the unskilled one, tavern sake at least retail - and `check` and the gate 
 never exempts a row; when sources disagree, widen the synthesis range or explain it, never drop the rule. When you add
 a row, add the rules that tie it to its inputs.
 
-Figures in whole sen; `label` is `historical`, `deviation` (departs from history on purpose), `guess`, or
-`comparative`; `source` is a diagram question URL, `canon:<file> "<section>"`, or `lead:<file>`. The field rules are in
+Figures in whole sen; `label` is `historical` (Researched), `extrapolated` (a researched price for a close relative
+carried over; it must cite that research), `estimated` (reasoned from the model, no research of its kind), `deviation`
+(departs from history on purpose), or `comparative` (GM 2026-10-26, feature 227, split the old `guess` in two); `source` is a diagram question URL, `canon:<file> "<section>"`, or `lead:<file>`. The field rules are in
 `webapp/l7r/money/ledger.py`'s docstring; `check` and the gate refuse a row without a label and source.
 
 **Comparative rows** (Regency England, medieval Lucca; GM ruling, diagram feature 391) are yardsticks players

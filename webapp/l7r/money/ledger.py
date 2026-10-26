@@ -2,15 +2,21 @@
 
 One JSON object per line of `data/ledger.jsonl`:
 
-    {"item": ..., "low": sen, "high": sen, "per": "year", "label": "guess",
+    {"item": ..., "low": sen, "high": sen, "per": "year", "label": "estimated",
      "source": "lead:...", "notes": ..., "tags": [...]}
 
 - `low`/`high` are whole sen (1 koku = 1,000 sen); equal for a point figure.
 - `per` is what the figure buys: "item", "day", "year", "month", "night", ...
-- `label` (the handoff's three): `historical` (history attests it), `deviation` (the setting
-  departs from history on purpose, and says so), `guess` (reasoned, not attested). A canon figure
-  nobody has checked against history is a `guess` with a `canon:` source; research moves it to
-  `historical` or, if the GM keeps it against the history, `deviation`. `comparative` (GM ruling,
+- `label`: `historical` (shown "Researched": the record prices this good itself, possibly in a
+  nearby place or period), `extrapolated` (no price for this exact item, but a researched price for
+  a close relative carried over by a stated rule: a unit conversion, a ratio the research gives,
+  scaling by size or distance, the same good in China; it must cite that research), `estimated`
+  (built from the model - materials, labor-days, neighboring goods - with no researched price of
+  its own kind), `deviation` (the setting departs from history on purpose, and says so). The GM
+  split the old `guess` into the middle two (feature 227): even a true guess here is reasoned, and
+  a carried-over research price is a different thing. A canon figure nobody has checked against
+  history is `estimated` with a `canon:` source; research moves it to `historical` or, if the GM
+  keeps it against the history, `deviation`. `comparative` (GM ruling,
   diagram feature 391): a figure from another society (Regency England, medieval Lucca) kept as a
   yardstick players recognize. It is never a Rokugani price or wage and never sets the value of a
   koku; output marks it so.
@@ -33,6 +39,7 @@ Rokugani range stays narrow on purpose; the note says how far history strayed fr
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -51,7 +58,9 @@ __all__ = [
     'swing_for',
 ]
 
-LABELS = ('historical', 'deviation', 'guess', 'comparative')
+LABELS = ('historical', 'deviation', 'extrapolated', 'estimated', 'comparative')
+# What an extrapolated row carries over: a research question as its source, or named in its notes.
+_CITES_RESEARCH = re.compile(r'/research/questions/|\b0\d{3}\b')
 LEDGER = DATA / 'ledger.jsonl'
 SWINGS = DATA / 'swings.jsonl'
 VERDICTS = ('steady', 'swung', 'sticky')
@@ -100,6 +109,14 @@ def problems(raw: dict[str, object]) -> list[str]:
         out.append('source must be an https:// URL, canon:..., lead:... or derived:...')
     if not str(raw.get('item', '')).strip() or not str(raw.get('per', '')).strip():
         out.append('item and per must be non-empty')
+    if raw.get('label') == 'extrapolated' and not _CITES_RESEARCH.search(
+        f'{raw.get("source", "")} {raw.get("notes", "")}'
+    ):
+        out.append(
+            'an extrapolated row must cite the research it carries over: a diagram question as its '
+            "source, or its number in the notes (e.g. '0279'); with no research of its kind it is "
+            'estimated'
+        )
     return out
 
 

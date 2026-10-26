@@ -141,7 +141,8 @@ def _price(args: argparse.Namespace, basis: _Basis) -> None:
     if not found:
         _say(
             f'no ledger row matches {" ".join(args.words)!r}: '
-            'derive from neighbors, label it a guess'
+            'derive from neighbors, label it estimated (or extrapolated, if it carries a '
+            'researched price for a close relative)'
         )
         return
     for row in found:

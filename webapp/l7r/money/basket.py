@@ -79,7 +79,9 @@ __all__ = [
 
 DATA = Path(__file__).parent / 'data'
 STANDARD = 'standard'
-LABELS = ('historical', 'guess')
+# The ledger's tiers (feature 227): Researched, Extrapolated (a researched price carried over by a
+# stated rule, as Kyoto's salt by a koku's weight), Estimated (reasoned, no research of its kind).
+LABELS = ('historical', 'extrapolated', 'estimated')
 MEANS = ('geometric', 'arithmetic')
 
 

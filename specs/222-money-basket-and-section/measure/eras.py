@@ -187,7 +187,7 @@ ERAS['kyoto-1745'] = {
         },
         'salt': {
             'silver_g': round(REF['salt'], 4),
-            'label': 'guess',
+            'label': 'extrapolated',
             'source': SALT,
             'note': "17.77 monme a koku (Mitsui, Kyoto, mean of 20 seasons); the price is attested, only a koku's weight is guessed (1.1 kg a liter, of diagram's 1.0-1.2)",
         },
@@ -211,7 +211,7 @@ ERAS['kyoto-1745'] = {
         },
         'housing': {
             'silver_g': round(REF['housing'], 4),
-            'label': 'guess',
+            'label': 'estimated',
             'source': RENT,
             'note': 'No Kyoto or Osaka rent was found. Edo back tenement, 300-500 mon a month in 1804-1830 (an unsourced popular page), at 15.9 g a kanmon, over a 9.93 m2 room',
         },
@@ -405,7 +405,7 @@ ERAS['edo-1818'] = mitsui_era(
     MIX + '. Housing is the guess the reference era borrows (Edo 1804-1830, an unsourced page). Priced at the Bunsei monme; 1818-1819 were Genbun.',
     {'housing': {
         'silver_g': round(400 * 12 * 1.35 / (6610 / 63.4) / ROOM_M2, 4),
-        'label': 'guess',
+        'label': 'estimated',
         'source': RENT,
         'note': 'Edo back tenement, 300-500 mon a month in 1804-1830 (an unsourced popular page), over a 9.93 m2 room',
     }},

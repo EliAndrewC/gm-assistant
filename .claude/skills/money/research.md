@@ -40,8 +40,8 @@ what is still open.
    | Verdict | Label |
    |---|---|
    | ATTESTED | `historical` |
-   | ATTESTED ONLY FOR (a place, period or class) | `historical`, with the scope in `notes`; a Rokugani row extrapolated beyond it stays `guess` |
-   | NOT ATTESTED / SILENT | `guess` (keep the lead; note the diagram file as searched) |
+   | ATTESTED ONLY FOR (a place, period or class) | `historical`, with the scope in `notes`; a Rokugani row carried beyond it is `extrapolated` |
+   | NOT ATTESTED / SILENT | `estimated`, or `extrapolated` if it carries a researched relative's price (keep the lead; note the diagram file as searched) |
 
 3. If the history contradicts the canon, change nothing in the canon: put both to the GM. If the GM keeps the canon,
    the row becomes `deviation` with the diagram file as its source.

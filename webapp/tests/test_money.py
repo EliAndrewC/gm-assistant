@@ -133,7 +133,14 @@ def test_wage_dollars_default_is_the_handoff_derivation() -> None:
 
 # --- ledger --------------------------------------------------------------------------------------
 
-GOOD = {'item': 'x', 'low': 1, 'high': 2, 'per': 'item', 'label': 'guess', 'source': 'lead:notes'}
+GOOD = {
+    'item': 'x',
+    'low': 1,
+    'high': 2,
+    'per': 'item',
+    'label': 'estimated',
+    'source': 'lead:notes',
+}
 
 
 def test_every_ledger_row_carries_label_and_source() -> None:
@@ -147,6 +154,8 @@ def test_every_ledger_row_carries_label_and_source() -> None:
     ('change', 'complaint'),
     [
         ({'label': 'attested'}, 'label must be'),
+        ({'label': 'extrapolated'}, 'must cite the research it carries over'),
+        ({'label': 'guess'}, 'label must be'),  # split into extrapolated and estimated (227)
         ({'source': ''}, 'source must be'),
         ({'source': 'my memory'}, 'source must be'),
         ({'low': 3}, 'low/high'),
@@ -174,7 +183,7 @@ def test_load_names_the_bad_line(tmp_path: Path) -> None:
 
 def test_row_verification_states() -> None:
     lead = ledger.Row('x', 1, 1, 'item', 'historical', 'lead:notes')
-    canon = ledger.Row('x', 1, 1, 'item', 'guess', 'canon:setting/l7r.md "Money"')
+    canon = ledger.Row('x', 1, 1, 'item', 'estimated', 'canon:setting/l7r.md "Money"')
     researched = ledger.Row(
         'x',
         1,
@@ -254,7 +263,7 @@ def test_cli_price(capsys: pytest.CaptureFixture[str]) -> None:
     assert 'goods $3.87 to $29.28 (whole basket $3.87 to $29.28); wage $66 to $498;' in out
     assert "a samurai's wakizashi: 1 koku 5 bu per item" in out
     out = run(capsys, 'price', 'land', 'tax')
-    assert '[guess]' in out
+    assert '[estimated]' in out
     assert 'notes:' in out
     assert 'derive from neighbors' in run(capsys, 'price', 'gladius')
 
@@ -277,8 +286,8 @@ def test_real_rules_hold() -> None:
 
 
 def test_violations_name_the_rule_and_rows() -> None:
-    silk = ledger.Row('silk', 2000, 3000, 'length', 'guess', 'lead:x', id='silk')
-    kimono = ledger.Row('kimono', 1500, 4000, 'item', 'guess', 'lead:x', id='kimono')
+    silk = ledger.Row('silk', 2000, 3000, 'length', 'estimated', 'lead:x', id='silk')
+    kimono = ledger.Row('kimono', 1500, 4000, 'item', 'estimated', 'lead:x', id='kimono')
     rule = rules.Rule('a kimono costs at least its silk', 'kimono', (('silk', 1.0),))
     assert rules.violations([rule], [silk, kimono]) == [
         'a kimono costs at least its silk: kimono starts at 1500 sen, below its floor of 2000 sen'
@@ -295,7 +304,7 @@ def test_duplicate_ids_are_refused(tmp_path: Path) -> None:
 
 
 def test_derived_rows_are_not_verified() -> None:
-    row = ledger.Row('x', 1, 1, 'item', 'guess', 'derived:questions.md#arrows', id='x')
+    row = ledger.Row('x', 1, 1, 'item', 'estimated', 'derived:questions.md#arrows', id='x')
     assert ledger.problems({**GOOD, 'source': 'derived:questions.md#arrows'}) == []
     assert not row.verified
 
@@ -312,7 +321,8 @@ def test_cli_marks_source_and_synthesis_rows(capsys: pytest.CaptureFixture[str])
     assert 'source row: synthesize before answering' in out
     out = run(capsys, 'price', 'stabling')
     assert (
-        'stabling a horse for the night: 1 zeni 2 sen to 2 zeni per night  [guess (derived)]' in out
+        'stabling a horse for the night: 1 zeni 2 sen to 2 zeni per night  [estimated (derived)]'
+        in out
     )
 
 
@@ -325,11 +335,13 @@ def test_parse_names_the_missing_coin() -> None:
 def test_swing_notes_load_and_the_specific_class_wins() -> None:
     """GM 2026-10-24 (diagram#15): a price says how far its good swung across periods, and why."""
     swings = ledger.load_swings()
-    salt = ledger.Row('salt', 1, 1, 'sho', 'guess', 'lead:x', tags=('food', 'salt'))
+    salt = ledger.Row('salt', 1, 1, 'sho', 'estimated', 'lead:x', tags=('food', 'salt'))
     assert (found := ledger.swing_for(salt, swings)) is not None
     assert found.cls == 'salt'
     assert 'monopoly' in found.note
-    assert ledger.swing_for(ledger.Row('a sword', 1, 1, 'item', 'guess', 'lead:x'), swings) is None
+    assert (
+        ledger.swing_for(ledger.Row('a sword', 1, 1, 'item', 'estimated', 'lead:x'), swings) is None
+    )
 
 
 @pytest.mark.parametrize(

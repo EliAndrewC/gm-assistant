@@ -53,8 +53,8 @@ def test_shrine_builder_lines_stay_off_but_the_fox_charcoal_is_fuel(
 def test_comparative_and_source_rows_are_never_rokugani_prices() -> None:
     base = {'item': 'x', 'low': 1, 'high': 2, 'per': 'item', 'source': 'lead:x', 'tags': ('food',)}
     assert not prices.eligible(Row(**{**base, 'label': 'comparative', 'id': 'c'}))  # type: ignore[arg-type]
-    assert not prices.eligible(Row(**{**base, 'label': 'guess'}))  # type: ignore[arg-type]
-    orphan = Row(**{**base, 'label': 'guess', 'id': 'o', 'tags': ('nothing',)})  # type: ignore[arg-type]
+    assert not prices.eligible(Row(**{**base, 'label': 'estimated'}))  # type: ignore[arg-type]
+    orphan = Row(**{**base, 'label': 'estimated', 'id': 'o', 'tags': ('nothing',)})  # type: ignore[arg-type]
     assert prices.unplaced([orphan]) == ['o']
     assert prices.sheet_for(orphan) is None
 
@@ -65,6 +65,13 @@ def test_items_read_in_coins_days_and_the_sheets_dollars(
     wages = {it.row.id: it for it in views['wages'].items}
     day = wages['wage-unskilled-day']
     assert (day.price, day.days, day.solidity) == ('1 zeni 3 sen', '1.0', 'researched')
+    fuel = {it.row.id: it for it in views['fuel'].items}
+    assert fuel['charcoal-white-bag'].solidity == 'extrapolated'  # the GM's example (227)
+    assert {it.solidity for v in views.values() for it in v.items} <= {
+        'researched',
+        'extrapolated',
+        'estimated',
+    }
     assert day.dollars == '$122'  # wage dollars: 13 sen of a $9,398 koku
     assert views['wages'].sheet.wage
     assert [it.row.id for it in views['wages'].items[:2]] == list(prices.FIRST)

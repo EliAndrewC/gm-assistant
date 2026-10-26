@@ -9,7 +9,7 @@ new item in it) and the **consistency rules** (`webapp/l7r/money/data/rules.json
 Answered prices are a synthesis: source rows may disagree (place, period, debased coin, a different koku) and keep
 their reasons, but what the skill answers with satisfies every rule; a note never exempts a row.
 
-Every first answer below is a **guess** derived from named rows, until the research marked "requested" comes back
+Every first answer below is an **estimate** derived from named rows, until the research marked "requested" comes back
 ([diagram#3](https://github.com/EliAndrewC/diagram/issues/3), [diagram#4](https://github.com/EliAndrewC/diagram/issues/4)).
 The yardstick throughout is the unskilled laborer's day, ~13 sen.
 

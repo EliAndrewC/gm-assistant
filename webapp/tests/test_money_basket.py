@@ -94,7 +94,7 @@ def test_the_reference_eras_new_goods_say_what_is_guessed(model: bk.Model) -> No
     assert ref.id == 'kyoto-1745'
     assert model.rice_ref == pytest.approx(1.49 * 1.725 / 3.11, abs=1e-4)
     assert ref.coins['monme'].silver_g == 1.725
-    for good, label in (('salt', 'guess'), ('fuel', 'historical'), ('housing', 'guess')):
+    for good, label in (('salt', 'extrapolated'), ('fuel', 'historical'), ('housing', 'estimated')):
         assert ref.goods[good].label == label
         assert ref.goods[good].note
 

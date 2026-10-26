@@ -37,7 +37,7 @@ price reasoned up from the model, which he would call *"Estimated"*, since even 
 ### User Story 2 - The ledger holds the tiers (Priority: P1)
 
 **Acceptance**:
-1. The label `guess` no longer exists in the ledger; each of its 167 rows is reclassified by its own basis, by the
+1. The label `guess` no longer exists in the ledger; each of its 175 rows is reclassified by its own basis, by the
    definitions above, not by its source field alone (a row sourced to a research page whose notes say the research is
    SILENT and the price is kept from the model is Estimated).
 2. An `extrapolated` row must cite the research it carries over (a research question page as its source, or one
@@ -48,9 +48,17 @@ price reasoned up from the model, which he would call *"Estimated"*, since even 
 
 - The shrine builder's lines are relabeled in the ledger like every row; the shrine builder does not show labels.
 - Canon figures nobody has checked against history (rent and tax caps, hay) are Estimated with a `canon:` source.
-- The era price files keep their own `historical`/`guess` labels (a separate scheme, not shown as badges); out of
-  scope.
+- The era price files' `guess` entries (two in `kyoto-1745.json`, one in `edo-1818.json`) are reclassified by the
+  same definitions, and the era labels use the new words: Kyoto 1745's salt is Extrapolated (its price is attested,
+  only a koku's weight is guessed); both housing entries are Estimated (they rest on an unsourced Edo rent).
 
 ## Success Criteria
 
 - **SC-001**: no `guess` label in the ledger; the gate passes; the live sheets show the three badges.
+
+## Review history
+
+- 2026-10-26, spec-fidelity round 1: CHANGES REQUIRED. (1) The era files' `guess` carve-out kept the vocabulary the GM
+  rejected inside the same money system: now reclassified too. (2) 175 rows, not 167. Ruled faithful: canon figures as
+  Estimated, and the check that an extrapolated row cites its research.
+- 2026-10-26, spec-fidelity round 2: FAITHFUL.
