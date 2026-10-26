@@ -66,6 +66,7 @@ def test_items_read_in_coins_days_and_the_sheets_dollars(
     assert (day.price, day.days, day.solidity) == ('1 zeni 3 sen', '1.0', 'researched')
     assert day.dollars == '$122'  # wage dollars: 13 sen of a $9,398 koku
     assert views['wages'].sheet.wage
+    assert [it.row.id for it in views['wages'].items[:2]] == list(prices.FIRST)
     food = views['food'].items
     assert [it.row.low for it in food] == sorted(it.row.low for it in food)  # cheapest first
     donation = next(it for it in views['entertainment'].items if it.row.low == 0)
@@ -79,7 +80,12 @@ def test_items_read_in_coins_days_and_the_sheets_dollars(
 
 def test_source_links_say_where_a_price_comes_from() -> None:
     q = 'https://github.com/EliAndrewC/diagram/blob/main/research/questions/0266-what.html'
-    assert '>research, question 266</a>' in prices.source_link(q)
+    assert '>research: What?</a>' in prices.source_link(q)
+    assert prices.research_title(q.replace('what', 'what-did-sake-cost')) == 'What did sake cost?'
+    assert prices.research_title('https://x/0300.html') == 'research'
+    assert prices.plain('SILENT; ATTESTED ONLY FOR Edo; NOT ATTESTED') == (
+        'unrecorded; recorded only for Edo; not recorded'
+    )
     assert '>source</a>' in prices.source_link('https://example.com/a?b=1&c=2')
     assert '&amp;c=2' in prices.source_link('https://example.com/a?b=1&c=2')
     est = prices.source_link('derived:webapp/l7r/money/data/estimates.jsonl#E0170')

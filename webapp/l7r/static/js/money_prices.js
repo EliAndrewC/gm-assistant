@@ -6,6 +6,13 @@
   function init() {
     var box = document.querySelector('[data-filter]');
     if (!box) return;
+    // Each sheet's heading sticks just under the app nav, whose height varies by width.
+    var nav = document.querySelector('.app-nav');
+    function navHeight() {
+      document.documentElement.style.setProperty('--prices-nav-h', (nav ? nav.offsetHeight : 0) + 'px');
+    }
+    navHeight();
+    window.addEventListener('resize', navHeight);
     var sheets = Array.prototype.slice.call(document.querySelectorAll('[data-sheet]'));
     var none = document.querySelector('[data-none]');
     box.addEventListener('input', function () {

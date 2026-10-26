@@ -438,6 +438,7 @@ class Root:
                     wage_dollars_per_koku(wage),
                 ),
                 source_link=money_prices.source_link,
+                plain=money_prices.plain,
             )
         if tool != 'koku':
             return self._render_404()

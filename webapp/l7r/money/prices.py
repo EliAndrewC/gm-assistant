@@ -35,6 +35,8 @@ __all__ = [
     'price',
     'sheet_for',
     'sheets',
+    'plain',
+    'research_title',
     'source_link',
     'unplaced',
 ]
@@ -53,8 +55,10 @@ SHEETS = (
     Sheet(
         'wages',
         'Wages and incomes',
-        'What work pays, by the day or the year, and what a maker or a troupe takes in. Read in '
-        'wage dollars: how much a sum matters to the person earning it.',
+        'What work pays, by the day or the year, and what a maker or a troupe takes in. Its '
+        'dollars are wage dollars, how much a sum matters to the earner: about twenty times a '
+        "goods dollar, so a laborer's day reads $122 here and an inn's night $4 on the next "
+        'sheet.',
         ('wage', 'income', 'troupe'),
         wage=True,
     ),
@@ -108,6 +112,17 @@ SHEETS = (
 )
 
 REPO = 'https://github.com/EliAndrewC/gm-assistant'
+# Rows that lead their sheet whatever their price: the laborer's day and year are the yardstick the
+# Days column counts in (design review, feature 225).
+FIRST = ('wage-unskilled-day', 'wage-unskilled-year')
+# The research record's verdict words, as plain English for a reader of the sheets.
+PLAIN = (
+    ('NOT ATTESTED', 'not recorded'),
+    ('ATTESTED ONLY FOR', 'recorded only for'),
+    ('ATTESTED', 'recorded'),
+    ('SILENT', 'unrecorded'),
+    ('diagram names', 'the research names'),
+)
 
 SOLIDITY = {
     'historical': 'researched',
@@ -173,14 +188,28 @@ def price(low: int, high: int) -> str:
     return _span(coins.everyday(low), coins.everyday(high))
 
 
+def plain(text: str) -> str:
+    """The record's verdict words (SILENT, ATTESTED ONLY FOR) in plain English."""
+    for word, said in PLAIN:
+        text = text.replace(word, said)
+    return text
+
+
+def research_title(url: str) -> str:
+    """A diagram research page's title from its file name: '0262-what-did-sake-cost.html' -> 'What
+    did sake cost?'."""
+    slug = url.rsplit('/', 1)[-1].removesuffix('.html')
+    words = slug.split('-')[1:]
+    return (' '.join(words).capitalize() + '?') if words else 'research'
+
+
 def source_link(source: str) -> str:
     """An item's source as HTML: a link for research, the canon's section, or the estimate it was
     derived from (on GitHub); a lead names its file."""
     if source.startswith('https://'):
-        label = 'diagram research' if '/research/questions/' in source else 'source'
-        m = re.search(r'/questions/(\d{4})-', source)
-        if m:
-            label = f'research, question {int(m.group(1))}'
+        label = 'source'
+        if re.search(r'/questions/\d{4}-', source):
+            label = f'research: {research_title(source)}'
         return f'<a class="koku-link" href="{escape(source)}">{escape(label)}</a>'
     kind, _, rest = source.partition(':')
     if kind == 'derived':
@@ -205,7 +234,12 @@ def sheets(
     for sheet in SHEETS:
         mine = sorted(
             (r for r in rows if eligible(r) and sheet_for(r) == sheet),
-            key=lambda r: (r.low, r.high, r.item),
+            key=lambda r: (
+                r.id not in FIRST,
+                FIRST.index(r.id) if r.id in FIRST else 0,
+                r.low,
+                r.high,
+            ),
         )
         per = wage_per_koku if sheet.wage else goods_per_koku
         items = tuple(

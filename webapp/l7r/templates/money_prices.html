@@ -25,10 +25,8 @@
 </section>
 
 <section class="container prices">
-  <div class="prices__intro detail-prose">
-    <p>A koku is 1,000 sen: 10 bu, each of 10 zeni, each of 10 sen. A range is the spread of the evidence or of the guess behind a price, not room to haggle. Each item says how solid it is: <strong>researched</strong> rests on the historical record, <strong>guess</strong> is reasoned from neighboring prices and waits for research. <strong>Days</strong> are an unskilled laborer's days of pay, about 13 sen a day. Dollars are goods dollars (what it buys today), and for wages, wage dollars (how much it matters); <a href="/money/koku">What's a koku worth?</a> explains both. Open an item for its basis and source.</p>
-    <p>Shrine-building costs are on the <a href="/shrines">shrine builder</a>.</p>
-  </div>
+  <p class="prices__intro">A koku is 1,000 sen (10 bu, 100 zeni). Open an item for its basis and source. Shrine-building costs are on the <a href="/shrines">shrine builder</a>.</p>
+  <p class="prices__key"><span class="prices__badge prices__badge--historical">Researched</span> from the historical record <span class="prices__badge prices__badge--guess">Guess</span> reasoned from neighboring prices, awaiting research &middot; <strong>Days</strong>: an unskilled laborer's days of pay (13 sen a day) &middot; <strong>goods $</strong>: what it buys today; <strong>wage $</strong>: how much it matters (<a href="/money/koku">why they differ</a>)</p>
 
   <nav class="prices__nav" aria-label="Price sheets">
     <ul>
@@ -40,21 +38,23 @@
 
   {% for v in sheets %}
     <section class="prices__sheet" id="{{ v.sheet.id }}" data-sheet>
-      <h2 class="prices__title">{{ v.sheet.title }}</h2>
+      <div class="prices__head">
+        <h2 class="prices__title">{{ v.sheet.title }}</h2>
+        <div class="prices__cols" aria-hidden="true"><span>Item</span><span>Price</span><span>Days</span><span>{{ 'Wage dollars' if v.sheet.wage else 'Goods dollars' }}</span></div>
+      </div>
       <p class="prices__blurb">{{ v.sheet.blurb }}</p>
-      <div class="prices__cols" aria-hidden="true"><span>Item</span><span>Price</span><span>Days</span><span>{{ 'Wage dollars' if v.sheet.wage else 'Goods dollars' }}</span></div>
       <ul class="prices__items">
         {% for it in v.items %}
           <li class="prices__item" data-item data-text="{{ (it.row.item ~ ' ' ~ it.row.notes ~ ' ' ~ it.row.tags|join(' '))|lower }}">
             <details>
               <summary class="prices__row">
-                <span class="prices__name">{{ it.row.item[:1]|upper ~ it.row.item[1:] }} <span class="prices__tag prices__tag--{{ it.row.label }}">{{ it.solidity }}{{ ', unverified' if it.unverified }}</span></span>
+                <span class="prices__name"><span class="prices__badge prices__badge--{{ it.row.label }}" title="{{ it.solidity }}{{ ', resting on an unverified lead' if it.unverified }}">{{ it.solidity|capitalize }}{{ '?' if it.unverified }}</span> {{ it.row.item[:1]|upper ~ it.row.item[1:] }}</span>
                 <span class="prices__price"><span class="prices__cell-label" aria-hidden="true">Price </span>{{ it.price }} <span class="prices__per">per {{ it.row.per }}</span></span>
                 <span class="prices__days"><span class="prices__cell-label" aria-hidden="true">Days </span>{{ it.days }}</span>
-                <span class="prices__dollars"><span class="prices__cell-label" aria-hidden="true">{{ 'Wage $ ' if v.sheet.wage else 'Goods $ ' }}</span>{{ it.dollars }}</span>
+                <span class="prices__dollars">{{ it.dollars }} <span class="prices__kind">{{ 'wage' if v.sheet.wage else 'goods' }}</span></span>
               </summary>
               <div class="prices__detail">
-                {% if it.row.notes %}<p>{{ it.row.notes }}</p>{% endif %}
+                {% if it.row.notes %}<p>{{ plain(it.row.notes) }}</p>{% endif %}
                 <p class="prices__source">Source: {{ source_link(it.row.source)|safe }}</p>
               </div>
             </details>
@@ -62,7 +62,7 @@
         {% endfor %}
       </ul>
       {% for s in v.swings %}
-        <p class="prices__swing"><strong>Across periods ({{ s.cls }}: {{ s.verdict }}).</strong> {{ s.note }} <a class="koku-link" href="{{ s.source }}">research</a></p>
+        <p class="prices__swing"><strong>Across periods ({{ s.cls }}: {{ s.verdict }}).</strong> {{ plain(s.note) }} <a class="koku-link" href="{{ s.source }}">research</a></p>
       {% endfor %}
     </section>
   {% endfor %}
