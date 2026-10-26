@@ -296,7 +296,17 @@ def resolve(
     elif found.void_points > 0:
         entry.void_points = found.void_points
         voidspent.note(conv, entry, found.void_points)
-        added = npcnumbers.fill(who.numbers, reading_without(reading, found.void_points))
+        spent = reading_without(reading, found.void_points)
+        if reading.skill not in who.numbers:
+            # ASK, never read the rank off the dice here (GM 2026-10-26: *"I do want the V
+            # answer to ask instead of recording a rank off the dice when none is on
+            # record"*). A pool the GM built around a void point is the least trustworthy
+            # place to infer a skill from - Fukushin's 4k4 recorded sincerity 0 unasked.
+            rank = _ask_number(
+                f"  {who.name}'s {reading.skill} rank? [{RANKS[0]}-{RANKS[1]}] > ", *RANKS, ask
+            )
+            spent = npcnumbers.Reading(spent.skill, spent.ring_name, spent.ring, rank)
+        added = npcnumbers.fill(who.numbers, spent)
         # It said "the record is unchanged" even when this filled a rank the record lacked
         # (found 2026-10-26: `xky(4, 4) - sincerity` with Air 3 on record and [v] wrote
         # sincerity 0 while saying nothing had changed). Say what was added.

@@ -462,6 +462,12 @@ roll's total was struck by the fidelity review. **A roll marked a MISTAKE spent 
 rolled again; filtered at render time). `abandon_conversation()` neither flushes nor rolls back,
 as for the other GM-only blocks.
 
+**The `[v]` "This roll spent a void point" answer ASKS for a rank the record lacks** (GM
+2026-10-26), rather than reading it off the dice: Fukushin's `xky(4, 4) - sincerity` with Air 3 on
+record was answered `[v]` and recorded sincerity 0 unasked, while printing "the record is
+unchanged". It now asks `<name>'s <skill> rank? [0-5]` - the called form's own question - and says
+what it recorded. A rank already on record is not asked about.
+
 `hidden.rewrite` removes the conversation's earlier lines as a MULTISET from the block's tail. It
 used a set, which deleted every identical copy - an older conversation's same-day untitled line
 included. Spec: `specs/217-void-spent-log/`.

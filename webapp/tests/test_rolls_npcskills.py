@@ -164,13 +164,15 @@ class TestDisagreement:
         assert total.entry.void_points == 1
         assert not total.entry.mistake
 
-    def test_this_roll_s_void_point_still_records_an_unknown_rank(
+    def test_this_roll_s_void_point_asks_for_an_unknown_rank(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        """It used to READ the rank off the dice (9k4 less the void point: 5). The GM ruled
+        2026-10-26 that it asks instead; the answer is what is recorded."""
         c = talking(air=3)
-        answers(monkeypatch, 'v')
+        answers(monkeypatch, 'v', '4')
         dice.xky(9, 4) - sincerity
-        assert c.numbers == {'air': 3, 'sincerity': 5}
+        assert c.numbers == {'air': 3, 'sincerity': 4}
 
     def test_the_previous_roll_spent_two(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
@@ -388,16 +390,28 @@ def test_stating_the_recorded_rank_just_rolls() -> None:
     assert total.entry.asked == (5, 3)
 
 
-def test_a_void_answer_says_when_it_records_a_new_rank(
+def test_a_void_answer_asks_for_a_rank_the_record_lacks(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Found 2026-10-26: `xky(4, 4) - sincerity` with Air 3 on record and no sincerity, answered
-    [v], recorded sincerity 0 while printing "the record is unchanged". 4k4 is Air 3 plus a void
-    point and no rank, so 0 is what the dice say - but the GM must be told it was recorded."""
+    """GM 2026-10-26: the [v] answer ASKS for a rank the record lacks rather than reading it off
+    the dice. Found on Fukushin: `xky(4, 4) - sincerity` with Air 3 on record, answered [v],
+    recorded sincerity 0 unasked and printed "the record is unchanged"."""
     c = talking(air=3)
-    answers(monkeypatch, 'v')
+    asked = answers(monkeypatch, 'v', '2')
     dice.xky(4, 4) - sincerity
-    assert c.numbers == {'air': 3, 'sincerity': 0}
+    assert c.numbers == {'air': 3, 'sincerity': 2}
+    assert "Fumitake's sincerity rank? [0-5]" in asked[-1]
     out = capsys.readouterr().out
-    assert 'recorded for Fumitake: sincerity 0' in out
+    assert 'recorded for Fumitake: sincerity 2' in out
     assert 'unchanged' not in out
+
+
+def test_a_void_answer_with_the_rank_on_record_asks_nothing_more(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    c = talking(air=3, sincerity=0)
+    asked = answers(monkeypatch, 'v')
+    dice.xky(4, 4) - sincerity
+    assert len(asked) == 1
+    assert c.numbers == {'air': 3, 'sincerity': 0}
+    assert 'the record is unchanged' in capsys.readouterr().out
