@@ -107,3 +107,4 @@ women's household work was almost never written down.
 - 2026-10-26, spec-fidelity round 1: CHANGES REQUIRED. (1) The GM's "different classes" (clerks, guards, servants) had
   no story although 0311 answers it: User Story 6 added. (2) Showing the calibration line on the page was not asked:
   dropped from FR-003; the findings are still recorded.
+- **Round 2 (spec-fidelity): FAITHFUL.** Both round-1 items resolved; User Story 7 (the proverb) judged a report of the requested research, not scope inflation.
