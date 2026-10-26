@@ -11,7 +11,7 @@
 - [x] T009 frontend-review rule
 - [x] T010 Shoda price test
 - [x] T011 guards.md, CLAUDE.md, autoMemoryEnabled false
-- [ ] T012 make done; push; delete memory files
+- [x] T012 make done; push; delete memory files
 
 ## Implementation notes
 - Fox libraries: the vetted OP page (public body and GM-only notes) converted from Textile and inserted under The Fox
