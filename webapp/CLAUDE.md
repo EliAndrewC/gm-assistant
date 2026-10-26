@@ -13,6 +13,7 @@ generate NPCs for the Rokugan setting of the Legend of the Five Rings RPG.
 
 ## Technical Constraints
 - **Configuration**: Use `ConfigObj`. Validation is in `chargen/configspec.ini`. Never hardcode constants that belong in config.
+- **Reading an INI file** (`development-secrets.ini` above all): `l7r.inifile.read_ini`, never `configparser` - it keeps the quotes the secrets file writes around values, so a quoted API key reaches Google with its quotes and is rejected as invalid (bit features 218 and 228). `tests/test_ini_reader.py` fails on any configparser import.
 
 ## Coding Style
 - Follow the existing pattern in `character.py` for class inheritance (`Samurai`, `Monk`, `Peasant`).

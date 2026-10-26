@@ -24,13 +24,13 @@ Reads consumer_key / consumer_secret from development-secrets.ini.
 from __future__ import annotations
 
 import argparse
-import configparser
 import sys
 from pathlib import Path
 from urllib.parse import parse_qs
 
 import requests
 from requests_oauthlib import OAuth1, OAuth1Session
+from l7r.inifile import read_ini
 
 REQUEST_TOKEN_URL = 'https://www.obsidianportal.com/oauth/request_token'
 AUTHORIZE_URL = 'https://www.obsidianportal.com/oauth/authorize'
@@ -42,12 +42,11 @@ def load_consumer_creds() -> tuple[str, str]:
     ini = Path(__file__).resolve().parent / 'development-secrets.ini'
     if not ini.exists():
         sys.exit(f'ERROR: {ini} not found')
-    parser = configparser.ConfigParser(interpolation=None)
-    parser.read(ini, encoding='utf-8')
-    if not parser.has_section('obsidian_portal'):
+    section = read_ini(ini).get('obsidian_portal')
+    if section is None:
         sys.exit('ERROR: [obsidian_portal] section missing')
-    ck = parser.get('obsidian_portal', 'consumer_key', fallback='').strip()
-    cs = parser.get('obsidian_portal', 'consumer_secret', fallback='').strip()
+    ck = section.get('consumer_key', '').strip()
+    cs = section.get('consumer_secret', '').strip()
     if not ck or not cs:
         sys.exit('ERROR: consumer_key / consumer_secret not populated')
     return ck, cs

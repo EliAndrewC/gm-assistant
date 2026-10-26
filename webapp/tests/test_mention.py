@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import asyncio
 import collections
-import configparser
 import contextlib
 import json
 import random
@@ -21,6 +20,7 @@ from typing import Any
 import pytest
 from configobj import ConfigObj
 
+from l7r.inifile import read_ini
 from l7r.mention import (
     bots,
     gateway,
@@ -1166,11 +1166,9 @@ class TestFleet:
         )
         if not bots.SECRETS.exists():  # pragma: no cover - present in every dev tree
             return
-        private = configparser.ConfigParser()
-        private.optionxform = str  # type: ignore[method-assign,assignment]
-        private.read(bots.SECRETS)
-        if private.has_section(bots.SECTION):
-            assert 'listener' not in private.options(bots.SECTION), (
+        private = read_ini(bots.SECRETS)
+        if bots.SECTION in private:
+            assert 'listener' not in private[bots.SECTION], (
                 'the listener application id is public; it belongs in '
                 'development-defaults.ini, not among the secrets'
             )

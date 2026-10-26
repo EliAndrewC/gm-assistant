@@ -29,7 +29,6 @@ endpoints land.
 
 from __future__ import annotations
 
-import configparser
 import json
 import re
 import urllib.error
@@ -40,6 +39,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from l7r.inifile import read_ini
 
 BASE_URL = 'https://l7r-character-sheet.fly.dev'
 SECRETS = Path(__file__).resolve().parents[3] / 'development-secrets.ini'
@@ -119,9 +120,8 @@ def query_token(path: Path | None = None) -> str:
     passed only while no token existed anywhere, and started failing the moment one
     did - which is exactly backwards from what a test should do.
     """
-    parser = configparser.ConfigParser()
-    parser.read(path or SECRETS)
-    return parser.get('character_sheet', 'roll_query_token', fallback='').strip()
+    secrets = read_ini(path or SECRETS)
+    return secrets.get('character_sheet', {}).get('roll_query_token', '').strip()
 
 
 def _get(url: str, token: str, timeout: float) -> Any:
@@ -137,9 +137,8 @@ def write_token(path: Path | None = None) -> str:
     that app promises it is read-only, and the write routes answer 401 to it. `path`
     resolves at call time for the reason `query_token` records.
     """
-    parser = configparser.ConfigParser()
-    parser.read(path or SECRETS)
-    return parser.get('character_sheet', 'gm_write_token', fallback='').strip()
+    secrets = read_ini(path or SECRETS)
+    return secrets.get('character_sheet', {}).get('gm_write_token', '').strip()
 
 
 def _send(method: str, url: str, token: str, body: Any, timeout: float) -> Any:

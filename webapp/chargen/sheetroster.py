@@ -20,7 +20,6 @@ in the same cache file under ``npcs`` and count as used like everyone else.
 
 from __future__ import annotations
 
-import configparser
 import json
 import logging
 import re
@@ -29,6 +28,8 @@ from collections.abc import Callable
 from pathlib import Path
 
 import requests
+
+from l7r.inifile import read_ini
 
 logger = logging.getLogger(__name__)
 
@@ -63,9 +64,8 @@ def query_token(path: Path | None = None) -> str:
     The same key ``l7r.repl.rolls.sheet.query_token`` reads; a test pins the two
     together. Not imported from there because that would pull the whole REPL
     namespace into the webapp at refresh time. ``path`` resolves at call time."""
-    parser = configparser.ConfigParser()  # exactly as the REPL client reads it
-    parser.read(path or SECRETS)
-    return parser.get('character_sheet', 'roll_query_token', fallback='').strip()
+    secrets = read_ini(path or SECRETS)  # exactly as the REPL client reads it
+    return secrets.get('character_sheet', {}).get('roll_query_token', '').strip()
 
 
 def parse_npcs(payload: object) -> list[str]:

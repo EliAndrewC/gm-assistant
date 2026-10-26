@@ -112,7 +112,6 @@ def _stitch_contact_sheet(paths: list[Path], out: Path) -> None:
 
 def _session_cookie_for_eli(discord_id: str = ELI) -> str | None:
     """Build a valid session cookie for the GM Eli (or `discord_id`), or None if not configured."""
-    import configparser
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -121,9 +120,9 @@ def _session_cookie_for_eli(discord_id: str = ELI) -> str | None:
     ini = Path(__file__).resolve().parent.parent / 'development-secrets.ini'
     if not ini.exists():
         return None
-    parser = configparser.ConfigParser(interpolation=None)
-    parser.read(ini, encoding='utf-8')
-    secret = parser.get('auth', 'session_secret', fallback='')
+    from l7r.inifile import read_ini
+
+    secret = read_ini(ini).get('auth', {}).get('session_secret', '')
     if not secret:
         return None
     return make_session_cookie(discord_id, secret)

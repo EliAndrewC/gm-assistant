@@ -175,7 +175,6 @@ AUDIT_SCRIPT = r"""
 
 
 def _session_cookie_for_eli(discord_id: str = ELI) -> str | None:
-    import configparser
     from pathlib import Path
 
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -184,9 +183,9 @@ def _session_cookie_for_eli(discord_id: str = ELI) -> str | None:
     ini = Path(__file__).resolve().parent.parent / 'development-secrets.ini'
     if not ini.exists():
         return None
-    parser = configparser.ConfigParser(interpolation=None)
-    parser.read(ini, encoding='utf-8')
-    secret = parser.get('auth', 'session_secret', fallback='')
+    from l7r.inifile import read_ini
+
+    secret = read_ini(ini).get('auth', {}).get('session_secret', '')
     return make_session_cookie(discord_id, secret) if secret else None
 
 

@@ -29,11 +29,12 @@ checked-in `development-defaults.ini`::
 
 from __future__ import annotations
 
-import configparser
 from dataclasses import dataclass
 from pathlib import Path
 
 from configobj import ConfigObj
+
+from l7r.inifile import read_ini
 
 #: `parents[2]` is `webapp/`, where the secrets live. NOT [3]: the sibling
 #: `l7r/repl/rolls/` package sits one directory deeper and uses [3] for the same
@@ -81,14 +82,10 @@ def load_fleet(path: Path | None = None, defaults: Path | None = None) -> Fleet:
     is reading a temp file while reading the real one passes for the wrong reason.
     That shape bit this project once already; see `sheet.query_token`.
     """
-    parser = configparser.ConfigParser()
-    # configparser lowercases option names by default. Discord application ids are
-    # digits so it would not bite in production, which is exactly why it is worth
-    # disabling: a silent case fold that only shows up on a non-numeric key is the
-    # kind of thing found at 2am rather than in a test.
-    parser.optionxform = str  # type: ignore[method-assign,assignment]
-    parser.read(path or SECRETS)
-    if not parser.has_section(SECTION):
+    # read_ini keeps keys in their own case (configparser folded them; application ids are
+    # digits, so it never bit, but a silent case fold on a non-numeric key would).
+    secrets = read_ini(path or SECRETS)
+    if SECTION not in secrets:
         raise NotConfigured(
             f'no [{SECTION}] section in {path or SECRETS}. It needs one '
             '`<application id> = <bot token>` line per bot that should answer when '
@@ -97,7 +94,7 @@ def load_fleet(path: Path | None = None, defaults: Path | None = None) -> Fleet:
         )
     tokens = {
         key: value.strip()
-        for key, value in parser.items(SECTION)
+        for key, value in secrets[SECTION].items()
         if key != 'listener' and value.strip()
     }
     # ConfigObj rather than configparser for this one, because the defaults file

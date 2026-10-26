@@ -96,7 +96,7 @@ Governed by [`.specify/memory/constitution.md`](.specify/memory/constitution.md)
 - Keep `pytest`/`ripgrep` scoped to the working dir (they would double-collect every clone).
 - Clone `CLAUDE.md` files are excluded from loading (`claudeMdExcludes` in `.claude/settings.json`), so every session reads MAIN's copy once instead of both - an edit to CLAUDE.md in your clone takes effect for sessions only after it is pushed.
 
-**Guards** - fourteen hooks and checks, each with a test companion run by the gate; the table, what is deliberately not enforced, and the four properties every new guard needs are in [`docs/guards.md`](docs/guards.md). A guideline that can be counted gets asserted at the STANDARD, not where the code sits.
+**Guards** - fifteen hooks and checks, each with a test companion run by the gate; the table, what is deliberately not enforced, and the four properties every new guard needs are in [`docs/guards.md`](docs/guards.md). A guideline that can be counted gets asserted at the STANDARD, not where the code sits.
 
 **Review subagents are pre-authorized** (`backstory-review`, `frontend-review`, `spec-fidelity`, `mention-context-review`) via `container-scripts/append-system-prompt.md`, because the default system prompt otherwise outranks this file; if one gets skipped, check `type claude` first. Run `mention-context-review` one category at a time, never in parallel (the GM's terminal has crashed on fan-out). Broad fan-out, `Workflow` and deep research still need an explicit request.
 

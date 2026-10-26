@@ -20,6 +20,7 @@
 | a spec is reviewed before implementation (XVI) | [`scripts/review-gate.sh`](../scripts/review-gate.sh), run by `sync-with-main.sh` at PUSH time |
 | no `-k` subset before the gate; no branches; no polling; batching | the pre-existing `gate`/`no-branch`/`no-poll`/`batching` hooks |
 | shared subagent instructions live in a definition, not repeated launch prompts | [`scripts/subagent-cache-hooks.sh`](../scripts/subagent-cache-hooks.sh) (general-purpose launches, once per session); `omitClaudeMd` on every definition by `webapp/tests/test_agent_definitions.py` |
+| INI files are read with ConfigObj (`l7r.inifile.read_ini`), never configparser | `webapp/tests/test_ini_reader.py`, which parses every tracked `.py` for a configparser import (2026-10-26: configparser keeps the quotes `development-secrets.ini` writes around values, so a quoted Gemini key was sent with its quotes and rejected as invalid - for the second time, after feature 218) |
 | a clone deploys main's secrets, never its own stale copy | [`scripts/deploy-secrets-hooks.sh`](../scripts/deploy-secrets-hooks.sh), run by `make prepare-deploy` (2026-10-18: a stale clone copy would have shipped production without the /look-up key) |
 
 **Deliberately NOT enforced**, because a guard that fires on correct work teaches a session to bypass

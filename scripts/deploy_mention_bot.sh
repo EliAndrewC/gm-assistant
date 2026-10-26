@@ -65,6 +65,8 @@ mkdir -p "$STAGE/webapp/l7r" "$STAGE/scripts"
 # descend, so the box got an l7r/mention with a missing import and crash-looped on
 # a green gate and a clean push. Anything under mention/ ships, always.
 cp -r "$REPO/webapp/l7r/mention" "$STAGE/webapp/l7r/mention"
+# The one INI reader (l7r/inifile.py): bots.py reads its secrets with it (2026-10-26).
+cp "$REPO/webapp/l7r/inifile.py" "$STAGE/webapp/l7r/"
 # The lookup package, its glossary and its baked data - but never the local
 # spend ledger or query log, which belong to whichever machine wrote them.
 cp -r "$REPO/webapp/l7r/lookup" "$STAGE/webapp/l7r/lookup"

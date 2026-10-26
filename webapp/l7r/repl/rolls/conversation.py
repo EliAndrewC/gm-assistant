@@ -27,6 +27,7 @@ from typing import Any
 
 from chargen import op
 from chargen.opsynth import MatchResult, match_character
+from l7r.inifile import read_ini
 from l7r.repl import gmrolls
 from l7r.repl import honor as honormod
 from l7r.repl.rolls import bio as biomod
@@ -128,13 +129,7 @@ def _players(result: sheet.SheetResult) -> dict[str, str]:
     """
     if result.characters:
         return {did: c.name for did, c in result.characters.items()}
-    import configparser
-
-    parser = configparser.ConfigParser()
-    parser.read(sheet.SECRETS)
-    if not parser.has_section('discord_players'):
-        return {}
-    return {did: name for did, name in parser.items('discord_players')}
+    return dict(read_ini(sheet.SECRETS).get('discord_players', {}))
 
 
 def _no_match(npc: str, match: MatchResult) -> str:

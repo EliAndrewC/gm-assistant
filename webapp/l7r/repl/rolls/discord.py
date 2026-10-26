@@ -24,7 +24,6 @@ TWO API FACTS THAT SHAPE THIS MODULE (research.md R9, both measured live):
 
 from __future__ import annotations
 
-import configparser
 import json
 import urllib.error
 import urllib.request
@@ -32,6 +31,8 @@ from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+from l7r.inifile import read_ini
 
 API = 'https://discord.com/api/v10'
 
@@ -77,9 +78,7 @@ def bot_token(path: Path | None = None) -> str:
     `path` resolves to `SECRETS` at call time, not as a bound default - see the
     note on `sheet.query_token` for the test that this pattern silently defeated.
     """
-    parser = configparser.ConfigParser()
-    parser.read(path or SECRETS)
-    token = parser.get('discord', 'bot_token', fallback='').strip()
+    token = read_ini(path or SECRETS).get('discord', {}).get('bot_token', '').strip()
     if not token:
         raise DiscordUnavailable(
             f'no [discord] bot_token in {path}. The bot reads with a BOT token, which '

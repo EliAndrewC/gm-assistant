@@ -870,24 +870,9 @@ def _load_secrets() -> dict[str, Any]:
     reading the same line, worked. Interpolation is off so a literal `%` (percent-encoded cookies)
     is just a character.
     """
-    from configobj import ConfigObj
+    from l7r.inifile import read_ini
 
-    path = _HERE.parent / 'development-secrets.ini'
-    if not path.exists():
-        return {}
-    config = ConfigObj(str(path), encoding='utf-8', interpolation=False)
-    result: dict[str, dict[str, str]] = {}
-    for section, values in config.items():
-        result[section] = {}
-        for key, value in values.items():
-            if not isinstance(value, str):
-                # ConfigObj reads an unquoted comma as a list; so would chargen's reader.
-                raise ValueError(
-                    f'development-secrets.ini [{section}] {key}: a value with a comma must be '
-                    f'written in quotes, e.g. {key} = "a, b"'
-                )
-            result[section][key] = value
-    return result
+    return dict(read_ini(_HERE.parent / 'development-secrets.ini'))
 
 
 def _auth_config() -> AuthConfig:
