@@ -306,6 +306,32 @@ class NamesApi:
         cherrypy.log(f'npc-numbers: sheet {sheet_id} {answer["status"]}: {answer["message"]}')
         return json.dumps(answer).encode('utf-8')
 
+    # GET /api/op-character?ref=<OP character URL, slug or name>  (gm-assistant#4)
+    @cherrypy.expose
+    def op_character(self, ref: str | None = None, **_ignored: Any) -> bytes:
+        denied = self._denied()
+        if denied is not None:
+            return denied
+        if not ref or not str(ref).strip():
+            return _json_error(
+                400, 'ref is required: an Obsidian Portal character URL, slug or name'
+            )
+        from l7r import opcharacter
+
+        calls = self._portal_calls()
+        try:
+            found = opcharacter.facts(
+                str(ref), characters=calls['characters'], get_body=calls['get_body']
+            )
+        except opcharacter.Ambiguous as e:
+            cherrypy.response.status = 409
+            return json.dumps({'error': str(e), 'candidates': e.candidates}).encode('utf-8')
+        except opcharacter.NotFound as e:
+            return _json_error(404, str(e))
+        except LookupError as e:
+            return _json_error(502, str(e))
+        return json.dumps(found).encode('utf-8')
+
     def _portal_calls(self) -> dict[str, Callable[..., Any]]:
         if self._portal is not None:
             return dict(self._portal)
