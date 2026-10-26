@@ -71,7 +71,7 @@ what is still open.
 | [EliAndrewC/diagram#16](https://github.com/EliAndrewC/diagram/issues/16) | gold, silver and copper as separate monies: legal against market rates, who paid in what, coin-dependent and sticky copper prices, who lost when rates moved (`requests/0015-three-metals.md`) | answered (0295, 0296); GM 2026-10-25: the ladder stays fixed, a premium by coin is negotiated in play |
 | [EliAndrewC/diagram#17](https://github.com/EliAndrewC/diagram/issues/17) | the goods-dollar koku as an index: like-for-like modern goods, housing, era coverage, which mean (`requests/0016-index-basis.md`) | answered (feature 420); applied in 223-224; closed 2026-10-25 |
 | [EliAndrewC/diagram#18](https://github.com/EliAndrewC/diagram/issues/18) | miso and soy sauce, and which goods the opening changed (`requests/0017-miso-and-the-opening.md`) | answered (0303, 0304); applied in 224; closed 2026-10-25 |
-| [EliAndrewC/diagram#19](https://github.com/EliAndrewC/diagram/issues/19) | books (buying, borrowing, copying), skilled wages (clerk, armed guard, cook, lady's maid), a smith's inputs, sales and income, entertainers' incomes, troupe size, costumes and instruments (`requests/0018-...`; E0169-E0193) | open |
+| [EliAndrewC/diagram#19](https://github.com/EliAndrewC/diagram/issues/19) | books (buying, borrowing, copying), skilled wages (clerk, armed guard, cook, lady's maid), a smith's inputs, sales and income, entertainers' incomes, troupe size, costumes and instruments (`requests/0018-...`; E0169-E0193) | answered 2026-10-26 by 0305-0308: 8 graded, 17 SILENT; tools and entertainment recipes adjusted; closed |
 
 ## Next candidates (not yet asked)
 

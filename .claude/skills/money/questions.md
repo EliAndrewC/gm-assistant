@@ -18,7 +18,9 @@ The yardstick throughout is the unskilled laborer's day, ~13 sen.
 **Recipe.** One wage sets a floor on another (the GM: *"if you can earn more money doing a different thing that is
 unskilled labor ... people will tend to move to the more lucrative profession"*). Unskilled ~13 sen a day is the floor;
 a skilled craftsman 17-34 sen (1.3-2.6x the unskilled day: Osaka carpenters ~1.8x their helpers, a village carpenter 2.6x the farm rate, Beijing ~2x; diagram 0275); a household servant is paid less in coin because board and lodging come with the
-post. A price made by labor is at least the labor-days in it times the wage.
+post. A price made by labor is at least the labor-days in it times the wage. Live-in posts by the year, with board (diagram 0307): a
+servant ~3 koku (a samurai house's 1828 contract, 3 ryo 2 bu), a rice-cooking manservant 2.3-2.6, a merchant clerk 2.6-4.7 by
+seniority (Mitsui, 160-330 monme), a shop manager up to ~45. A scribe by the day, a guard and a trained cook are unrecorded.
 **Rules**: skilled >= unskilled. Every craft good's price >= its labor share.
 
 ## Lodging
@@ -159,6 +161,10 @@ SILENT; Qing bought wine ran ~2x home-brew).
 **Recipe**: who pays (the audience, a patron, a temple, the village) decides the price more than the act does. Price a
 seat in laborer-days: one act ~0.1, the pit ~1, a box ~4-5 a head. Troupes were actors with their own or the theater's
 musicians (kabuki troupes ~43 players, puppet troupes ~26); acrobats formed their own troupes.
+Adjusted 2026-10-25: a performer's pay scales with the house's takings, and those with its city: Edo's stars took
+700-1,000 ryo (diagram 0308), so a domain capital of ~12,000 pays its star about a hundredth of that, ~8-11 koku, not a
+flat guess; touring troupes were hired by the visit (Shima, 18-20 players, ~2-4 ryo with board). Because calibration
+showed entertainment's typical miss at 3.23x (n=6): the star actor had been guessed at 20-100 koku without a scale.
 Adjusted 2026-10-19: city seats priced against the laborer's day, because calibration showed entertainment guesses
 running 1.98x high (n=5, typical miss 3.2x; diagram 0266) - the first answers priced the theater as a samurai luxury.
 **Rules**: box >= pit >= standing.
@@ -202,6 +208,10 @@ bought it, and a samurai's gift at the scale of *consideration* (bu). An ordinar
 maker (Sakai, Seki, Takefu, Tosa) survives.
 **Recipe** (worked metal): smith-days at the skilled rate + iron and steel + grinding and polish; a maker's name adds a
 premium. **Rules**: a knife >= half a skilled day; fine >= ordinary and >= two skilled days; a set >= its knives.
+Adjusted 2026-10-25: a plain farm tool is priced from its iron and a short forging, not from the kitchen knife; its iron
+is about a quarter of its price (a Beijing sickle 0.07 tael, ~10 sen, against 0.0225-0.027 tael a jin of iron; diagram
+0306), and in the itinerant smith's trade the farmer brought the charcoal. Because calibration showed tools guesses
+running 1.68x high (n=4, typical miss 1.89x): the sickle had been priced like a knife, 15-35 sen against ~10.
 
 ## Fuel
 
