@@ -306,7 +306,7 @@
           <h3 class="shrine-studio__title" id="shrine-studio-title">Picture and description</h3>
           <p class="shrine-studio__wiki" data-wiki-status role="status">Looking for this shrine's wiki page...</p>
           {% if not signed_in %}
-            <p class="shrine-studio__note"><a href="/auth/login">Sign in</a> to describe and draw your shrine, and to save it to the campaign wiki.</p>
+            <p class="shrine-studio__note"><a href="{{ login_href() }}" data-signin>Sign in</a> to describe and draw your shrine, and to save it to the campaign wiki.</p>
           {% endif %}
           <div class="shrine-studio__grid" data-studio-grid{% if not signed_in %} hidden{% endif %}>
             <div class="shrine-studio__col">

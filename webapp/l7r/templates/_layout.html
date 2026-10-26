@@ -55,7 +55,7 @@
       </div>
     {% else %}
       <div class="app-nav__user">
-        <a class="app-nav__user-signin" href="/auth/login">sign in</a>
+        <a class="app-nav__user-signin" href="{{ login_href() }}" data-signin>sign in</a>
       </div>
     {% endif %}
     </div>
