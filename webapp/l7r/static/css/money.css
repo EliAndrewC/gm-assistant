@@ -302,7 +302,7 @@
    screen at GM-200). --prices-nav-h is set by money_prices.js. */
 .prices { padding-bottom: 4rem; }
 .prices__intro { max-width: var(--reading-max); margin: 0 0 0.4rem; }
-.prices__key { max-width: var(--reading-max); margin: 0 0 1rem; font-size: 0.9rem; color: var(--ink-soft); line-height: 1.8; }
+.prices__key { list-style: none; padding: 0; max-width: var(--reading-max); margin: 0 0 1rem; color: var(--ink-soft); line-height: 1.7; }
 .prices__nav { padding: 0.5rem 0 0.7rem; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); margin-bottom: 1.25rem; }
 .prices__nav ul { list-style: none; margin: 0 0 0.5rem; padding: 0; display: flex; flex-wrap: wrap; gap: 0.2rem 1rem; }
 .prices__nav a { color: var(--vermillion-deep); font-size: 0.95rem; }
@@ -312,7 +312,8 @@
 .prices__none { color: var(--ink-faded); font-style: italic; }
 .prices__sheet { margin: 0 0 2.25rem; scroll-margin-top: calc(var(--prices-nav-h, 0px) + 0.5rem); }
 .prices__sheet[hidden], .prices__item[hidden] { display: none; }
-.prices__head { position: sticky; top: var(--prices-nav-h, 0px); z-index: 2; background: var(--paper); padding-top: 0.4rem; }
+.prices__head { position: sticky; top: var(--prices-nav-h, 0px); z-index: 2; background: var(--paper); padding-top: 0.35rem; box-shadow: 0 1px 0 var(--hairline), 0 3px 6px -4px var(--shadow-ink); }
+.prices__cols-sheet { font-weight: 600; color: var(--ink); }
 .prices__title { font-family: var(--font-display); font-size: 1.45rem; margin: 0 0 0.2rem; }
 .prices__blurb { margin: 0.4rem 0 0.3rem; color: var(--ink-soft); max-width: var(--reading-max); font-size: 0.95rem; }
 .prices__cols, .prices__row { display: grid; grid-template-columns: minmax(0, 1fr) 13rem 4.5rem 8.5rem; gap: 0 1rem; align-items: baseline; }
@@ -340,7 +341,8 @@ details[open] > .prices__row::before { transform: rotate(90deg); }
 .prices__source { color: var(--ink-faded); font-size: 0.9rem; word-break: break-word; }
 .prices__swing { max-width: var(--reading-max); margin: 0.7rem 0 0; font-size: 0.92rem; color: var(--ink-soft); }
 @media (max-width: 800px) {
-  .prices__cols { display: none; }
+  .prices__cols span:not(.prices__cols-sheet) { display: none; }
+  .prices__cols { display: block; padding-left: 0; }
   .prices__row { grid-template-columns: 1fr 1fr; gap: 0.15rem 0.75rem; }
   .prices__name { grid-column: 1 / -1; }
   .prices__price { grid-column: 1 / -1; }

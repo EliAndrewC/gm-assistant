@@ -75,7 +75,8 @@ def test_items_read_in_coins_days_and_the_sheets_dollars(
     assert donation.dollars.startswith('up to $')
     assert prices.price(13, 13) == '1 zeni 3 sen'
     assert prices.price(150, 1500) == '1 bu 5 zeni to 1 koku 5 bu'
-    assert any(s.cls == 'salt' for s in views['food'].swings)
+    assert any(s.cls == 'salt' for _, s in views['food'].swings)
+    assert [name for name, s in views['travel'].swings if s.cls == 'rent'] == ['lodging']
 
 
 def test_source_links_say_where_a_price_comes_from() -> None:
@@ -92,12 +93,10 @@ def test_source_links_say_where_a_price_comes_from() -> None:
     assert 'blob/main/webapp/l7r/money/data/estimates.jsonl' in est
     assert '>a logged estimate, E0170</a>' in est
     assert 'derived in the money skill' in prices.source_link('derived:.claude/skills/money/q.md#x')
-    assert prices.source_link('canon:setting/l7r.md "Money"') == (
-        'the setting notes, setting/l7r.md &quot;Money&quot;'
-    )
-    assert prices.source_link('lead:setting/weapons.txt') == (
-        'an unverified lead (setting/weapons.txt)'
-    )
+    assert prices.source_link('canon:setting/l7r.md "Money"') == 'the setting notes'
+    lead = prices.source_link('lead:setting/weapons.txt')
+    assert lead == "the GM's earlier notes, not yet checked against research"
+    assert 'weapons.txt' not in lead  # no file path shown to a reader
 
 
 def test_the_page_and_its_landing_card(root: Root) -> None:

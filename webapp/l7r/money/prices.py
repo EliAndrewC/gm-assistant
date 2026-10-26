@@ -164,7 +164,7 @@ class Item:
 class SheetView:
     sheet: Sheet
     items: tuple[Item, ...]
-    swings: tuple[Swing, ...]
+    swings: tuple[tuple[str, Swing], ...]  # each with the name it goes by on this sheet
 
 
 def _span(a: str, b: str) -> str:
@@ -222,8 +222,8 @@ def source_link(source: str) -> str:
         )
         return f'<a class="koku-link" href="{escape(url)}">{escape(text)}</a>'
     if kind == 'canon':
-        return escape(f'the setting notes, {rest}')
-    return escape(f'an unverified lead ({rest})')
+        return 'the setting notes'
+    return "the GM's earlier notes, not yet checked against research"
 
 
 def sheets(
@@ -255,7 +255,11 @@ def sheets(
             )
             for r in mine
         )
-        notes = tuple(dict.fromkeys(s for r in mine if (s := swing_for(r, list(swings)))))
+        found = dict.fromkeys(s for r in mine if (s := swing_for(r, list(swings))))
+        tags = [t for r in mine for t in r.tags]
+        # A class goes by the first of its tags this sheet's goods carry: the rent class reads
+        # "lodging" on the lodging sheet (design review).
+        notes = tuple((next(t for t in tags if t in s.tags), s) for s in found)
         if items:
             out.append(SheetView(sheet, items, notes))
     return out
