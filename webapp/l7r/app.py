@@ -11,6 +11,8 @@ Routes:
 - GET /dreams/<slug>   single worked dream-omen example
 - GET /api/names       JSON name suggestions for the character-sheet app's generated NPCs
                        (feature 213; bearer-token auth, `[character_sheet] names_token`)
+- POST /api/npc-numbers  a character-sheet NPC's built stats into its Obsidian Portal record's
+                       `NPC numbers:` block (feature 226; the same bearer token)
 - /chargen/*           mounted chargen Root (legacy)
 - /static/*            static assets
 
@@ -29,7 +31,7 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -211,15 +213,38 @@ def _clans_with_relics(relics: list[Relic]) -> list[str]:
 
 
 class NamesApi:
-    """`/api/*`: token-authenticated JSON for the character-sheet app (feature 213).
+    """`/api/*`: token-authenticated JSON for the character-sheet app (features 213 and 226).
 
     The session tool leaves `/api` open (mount config); THIS handler is the whole gate. The
     token is `[character_sheet] names_token`, INBOUND - the sheet app presents it to us - and is
-    read at request time through `token`, so a test (or a secrets change) reaches it.
+    read at request time through `token`, so a test (or a secrets change) reaches it. Both
+    routes take it: one caller, the sheet app, on one server (feature 226's spec declined a
+    second secret, which the GM would have had to copy into both apps by hand).
+
+    `portal` is the Obsidian Portal boundary `/api/npc-numbers` writes through - `characters`,
+    `get_body`, `update`, as `npcbackport.backport` takes them - `chargen.op` when not given.
     """
 
-    def __init__(self, token: Callable[[], str]) -> None:
+    def __init__(
+        self,
+        token: Callable[[], str],
+        portal: Mapping[str, Callable[..., Any]] | None = None,
+    ) -> None:
         self._token = token
+        self._portal = portal
+
+    def _denied(self) -> bytes | None:
+        """The gate, before any parsing and any Obsidian Portal call; None lets the caller in."""
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+        configured = self._token().strip()
+        if not configured:  # fail closed: no secret configured means nobody gets in
+            return _json_error(503, 'names API is not configured on this server')
+        header = cherrypy.request.headers.get('Authorization', '')
+        # Header only: a `token=` query parameter lands in **_ignored and counts for nothing.
+        if not sheetnames.token_matches(header, configured):
+            cherrypy.response.headers['WWW-Authenticate'] = 'Bearer'
+            return _json_error(401, 'missing or invalid bearer token')
+        return None
 
     # GET /api/names?count=N&peasant=true|false&avoid=A,B
     @cherrypy.expose
@@ -230,15 +255,9 @@ class NamesApi:
         avoid: str | list[str] | None = None,
         **_ignored: Any,
     ) -> bytes:
-        cherrypy.response.headers['Content-Type'] = 'application/json'
-        configured = self._token().strip()
-        if not configured:  # fail closed: no secret configured means nobody gets in
-            return _json_error(503, 'names API is not configured on this server')
-        header = cherrypy.request.headers.get('Authorization', '')
-        # Header only: a `token=` query parameter lands in **_ignored and counts for nothing.
-        if not sheetnames.token_matches(header, configured):
-            cherrypy.response.headers['WWW-Authenticate'] = 'Bearer'
-            return _json_error(401, 'missing or invalid bearer token')
+        denied = self._denied()
+        if denied is not None:
+            return denied
         # Auth before parsing and before the refresh: an unauthenticated caller can neither
         # probe the parameters nor make this app walk Obsidian Portal.
         try:
@@ -257,6 +276,60 @@ class NamesApi:
             avoid=sheetnames.parse_avoid(avoid),
         )
         return json.dumps({'names': picks}).encode('utf-8')
+
+    # POST /api/npc-numbers  {"name": str, "stats": {str: int}, "sheet_id": int?}
+    # (CherryPy's default dispatcher maps the `-` in the path to this method's `_`.)
+    @cherrypy.expose
+    def npc_numbers(self, **_ignored: Any) -> bytes:
+        denied = self._denied()
+        if denied is not None:
+            return denied
+        if cherrypy.request.method != 'POST':
+            cherrypy.response.headers['Allow'] = 'POST'
+            return _json_error(405, 'POST the NPC as JSON')
+        try:
+            name, stats, sheet_id = _backport_request(cherrypy.request.body.read())
+            from l7r import npcbackport
+
+            answer = npcbackport.backport(name, stats, **self._portal_calls())
+        except ValueError as e:
+            return _json_error(400, str(e))
+        logger.info('npc-numbers: sheet %s %s: %s', sheet_id, answer['status'], answer['message'])
+        return json.dumps(answer).encode('utf-8')
+
+    def _portal_calls(self) -> dict[str, Callable[..., Any]]:
+        if self._portal is not None:
+            return dict(self._portal)
+        from chargen import op
+
+        return {
+            'characters': op.existing_characters,
+            'get_body': op.get_character_body,
+            'update': op.update_character,
+        }
+
+
+_BACKPORT_FIELDS = frozenset({'name', 'stats', 'sheet_id'})
+
+
+def _backport_request(raw: bytes) -> tuple[str, dict[str, object], object]:
+    """``(name, stats, sheet_id)`` from an `/api/npc-numbers` body; ValueError says what's wrong."""
+    try:
+        body = json.loads(raw or b'null')
+    except ValueError:
+        raise ValueError('the body is not JSON') from None
+    if not isinstance(body, dict):
+        raise ValueError('the body must be a JSON object with "name" and "stats"')
+    unknown = sorted(set(body) - _BACKPORT_FIELDS)
+    if unknown:
+        raise ValueError(f'unknown fields: {", ".join(unknown)}')
+    name = body.get('name')
+    stats = body.get('stats')
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError('"name" must be the NPC\'s name')
+    if not isinstance(stats, dict) or not stats:
+        raise ValueError('"stats" must be an object of stat names to ranks')
+    return name.strip(), stats, body.get('sheet_id')
 
 
 def _json_error(status: int, message: str) -> bytes:

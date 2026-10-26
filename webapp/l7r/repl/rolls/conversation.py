@@ -633,7 +633,10 @@ def _write_notes(
         # cost the players' record (spec 207, Story 10). The numbers are snapshotted
         # first because the GM's thread can tag a roll while this one is writing.
         numbers = dict(conv.numbers)
-        notes = npcnumbers.render(str(record.get('game_master_info') or ''), numbers)
+        notes = str(record.get('game_master_info') or '')
+        # Merged over the FRESH block, not written over it: the character-sheet
+        # backport (feature 226) can add numbers while this conversation is open.
+        notes = npcnumbers.render(notes, {**npcnumbers.parse(notes), **numbers})
         notes = hidden.rewrite(notes, conv.hidden_written, secret)
         notes = hidden.rewrite(notes, conv.void_written, spends, voidspent.HEADING)
         try:

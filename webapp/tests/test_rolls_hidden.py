@@ -11,7 +11,7 @@ import pytest
 
 from l7r.repl import dice, gmrolls
 from l7r.repl.rolls import conversation as conv
-from l7r.repl.rolls import hidden, lines, npcskills, rules
+from l7r.repl.rolls import hidden, lines, npcnumbers, npcskills, rules
 from l7r.repl.rolls.models import Conversation, Roll
 
 W = datetime(2026, 9, 19, 1, 0, tzinfo=UTC)
@@ -203,6 +203,19 @@ class TestPersistence:
         calls = self.tick(c, record)
         assert [sorted(f) for f in calls] == [['game_master_info']]
         assert c.numbers_written == {'air': 3, 'tact': 2}
+
+    def test_numbers_written_since_the_conversation_opened_survive_a_tick(self) -> None:
+        # Feature 226: the character-sheet backport can write the block while a
+        # conversation with the same NPC is open; the tick used to render its own
+        # copy over it.
+        c = talking()
+        dice.xky(5, 3) - npcskills.build_tags()['tact']
+        record: dict[str, Any] = {
+            'bio': BIO,
+            'game_master_info': 'NPC numbers:\n- Earth 4\n- tact 1',
+        }
+        self.tick(c, record)
+        assert npcnumbers.parse(record['game_master_info']) == {'earth': 4, 'tact': 2, 'air': 3}
 
     def test_a_second_gm_only_write_is_debounced(self) -> None:
         c = talking()

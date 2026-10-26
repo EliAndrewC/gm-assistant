@@ -112,15 +112,19 @@ def render(gm_info: str, numbers: Mapping[str, int]) -> str:
     """`gm_info` with the block replaced, or appended when there was none.
 
     Rings first, capitalized, in the rules' order; then skills in the order they
-    were learned. With nothing to write the notes come back untouched - an empty
-    heading would be noise on every NPC the GM ever spoke to.
+    were learned; then any line of the old block that `parse` skipped, as the GM
+    typed it (feature 226: a write must not delete a hand-edited line). With
+    nothing to write the notes come back untouched - an empty heading would be
+    noise on every NPC the GM ever spoke to.
     """
     if not numbers:
         return gm_info
     lines, start, end = _split(gm_info)
     rings = [f'- {ring.capitalize()} {numbers[ring]}' for ring in RINGS if ring in numbers]
     skills = [f'- {name} {value}' for name, value in numbers.items() if name not in RINGS]
-    block = [HEADING, *rings, *skills]
+    old = lines[start + 1 : end] if start >= 0 else []
+    kept = [line for line in old if not _ENTRY.match(line.strip())]
+    block = [HEADING, *rings, *skills, *kept]
     if start < 0:
         while lines and not lines[-1].strip():
             lines.pop()

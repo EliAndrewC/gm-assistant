@@ -37,6 +37,14 @@ class TestBlock:
         text = 'NPC numbers:\n- Air 3\n- tact: two\n- law 1'
         assert nn.parse(text) == {'air': 3, 'law': 1}
 
+    def test_a_hand_edited_line_survives_a_write(self) -> None:
+        # Feature 226: `render` used to rebuild the block from the parsed numbers alone,
+        # so any write deleted a line the GM had typed that `parse` skips.
+        text = 'NPC numbers:\n- Air 3\n- tact 2 (when drunk)\n- law 1\n\nLater.'
+        assert nn.render(text, {'air': 4, 'law': 1}) == (
+            'NPC numbers:\n- Air 4\n- law 1\n- tact 2 (when drunk)\n\nLater.'
+        )
+
     def test_trailing_blank_lines_are_not_stacked(self) -> None:
         assert nn.render('Honor: 3.0\n\n\n', {'air': 3}) == 'Honor: 3.0\n\nNPC numbers:\n- Air 3'
 
