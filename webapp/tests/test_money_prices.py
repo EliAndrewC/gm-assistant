@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+from pathlib import Path
 
 import pytest
 
@@ -81,11 +82,16 @@ def test_items_read_in_coins_days_and_the_sheets_dollars(
 
 def test_source_links_say_where_a_price_comes_from() -> None:
     q = 'https://github.com/EliAndrewC/diagram/blob/main/research/questions/0266-what.html'
-    assert '>research: What?</a>' in prices.source_link(q)
-    assert prices.research_title(q.replace('what', 'what-did-sake-cost')) == 'What did sake cost?'
+    link = prices.source_link(q)
+    assert 'href="/research/q/what.html"' in link  # the toolkit's own record (GM 2026-10-26)
+    assert 'github.com' not in link
+    assert prices.research_url('https://example.com/x') == 'https://example.com/x'
     assert prices.research_title('https://x/0300.html') == 'research'
+    assert prices.plain('A scribe: SILENT (0307). In 1736 (0305; two sources) diagram 0266.') == (
+        'A scribe: unrecorded. In 1736 (two sources) the research.'
+    )
     assert prices.plain('SILENT; ATTESTED ONLY FOR Edo; NOT ATTESTED') == (
-        'unrecorded; recorded only for Edo; not recorded'
+        'Unrecorded; recorded only for Edo; not recorded'
     )
     assert '>source</a>' in prices.source_link('https://example.com/a?b=1&c=2')
     assert '&amp;c=2' in prices.source_link('https://example.com/a?b=1&c=2')
@@ -93,7 +99,13 @@ def test_source_links_say_where_a_price_comes_from() -> None:
     assert 'blob/main/webapp/l7r/money/data/estimates.jsonl' in est
     assert '>a logged estimate, E0170</a>' in est
     assert 'derived in the money skill' in prices.source_link('derived:.claude/skills/money/q.md#x')
-    assert prices.source_link('canon:setting/l7r.md "Money"') == 'the setting notes'
+    canon = prices.source_link('canon:setting/l7r.md "Rent and taxes"')
+    assert (
+        'href="https://github.com/EliAndrewC/l7r/blob/master/setting/l7r.md#rent-and-taxes"'
+        in canon
+    )
+    assert '>the setting notes</a>' in canon
+    assert prices.canon_url('setting/budgets.md').endswith('/blob/master/setting/budgets.md')
     lead = prices.source_link('lead:setting/weapons.txt')
     assert lead == "the GM's earlier notes, not yet checked against research"
     assert 'weapons.txt' not in lead  # no file path shown to a reader
@@ -110,3 +122,69 @@ def test_the_page_and_its_landing_card(root: Root) -> None:
     assert 'Across periods (salt: swung).' in page
     assert 'Shrine builder:' not in page
     assert 'href="/money/prices"' in root.money().decode()
+
+
+def test_research_titles_come_from_the_record(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import gzip
+
+    q = 'https://github.com/EliAndrewC/diagram/blob/main/research/questions/0307-x-y.html'
+    monkeypatch.setattr(prices, 'SITE', tmp_path)
+    prices.research_title.cache_clear()
+    assert prices.research_title(q) == 'X y?'  # no bundle: from the file name
+    prices.research_title.cache_clear()
+    (tmp_path / 'x-y.html.gz').write_bytes(
+        gzip.compress(b'<title>What did a clerk, a guard &amp; a cook earn? - Money</title>')
+    )
+    assert prices.research_title(q) == 'What did a clerk, a guard & a cook earn?'
+    prices.research_title.cache_clear()
+    (tmp_path / 'x-y.html.gz').unlink()
+    (tmp_path / 'x-y.html').write_text('<p>no title</p>')
+    assert prices.research_title(q) == 'X y?'
+    prices.research_title.cache_clear()
+
+
+def test_every_cited_research_page_exists_in_the_record() -> None:
+    """A research link must open a page (0257's slug was wrong in eras.py until 2026-10-26)."""
+    import json
+    import re
+
+    if not prices.SITE.exists():
+        pytest.skip('no bundled research record (make prepare-deploy builds it)')
+    data = Path(prices.__file__).parent / 'data'
+    text = '\n'.join(
+        p.read_text()
+        for p in [
+            data / 'ledger.jsonl',
+            data / 'swings.jsonl',
+            *sorted((data / 'eras').glob('*.json')),
+        ]
+    )
+    urls = set(
+        re.findall(
+            r'https://github\.com/EliAndrewC/diagram/blob/main/research/questions/[^"#\s]+', text
+        )
+    )
+    assert urls
+    have = {p.name.removesuffix('.gz') for p in prices.SITE.iterdir()}
+    missing = sorted(u for u in urls if prices.research_url(u).rsplit('/', 1)[1] not in have)
+    assert missing == [], json.dumps(missing, indent=1)
+
+
+def test_every_canon_section_cited_is_one_heading_of_its_file() -> None:
+    """A canon link opens its section: the heading exists once (GitHub numbers repeats)."""
+    import re
+
+    root = Path('/host-l7r-repo')
+    if not root.exists():
+        pytest.skip('the setting notes are not mounted')
+    cited = {
+        (m.group(1), m.group(2))
+        for r in ledger.load()
+        if (m := re.match(r'canon:(\S+)\s+"(.+)"', r.source))
+    }
+    assert cited
+    for path, heading in cited:
+        heads = re.findall(r'^#+\s+(.+?)\s*$', (root / path).read_text(), re.M)
+        assert [prices.anchor(h) for h in heads].count(prices.anchor(heading)) == 1, heading

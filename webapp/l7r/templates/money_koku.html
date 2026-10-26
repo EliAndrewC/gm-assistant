@@ -155,7 +155,7 @@
                       <ol class="koku-cites">
                         {% for e in row.candidates %}
                           {% set p = e.goods[row.good.id] %}
-                          <li data-era="{{ e.id }}"{% if e not in row.eras %} hidden{% endif %}><span class="koku-cites__era">{{ e.title }}</span>: {{ '%.2f' % (p.silver_g / e.goods['rice'].silver_g) }} kg of rice a {{ row.good.unit }}.{% if p.borrowed %} <em>{{ p.borrowed }}, so it repeats another period's figure and counts only when no other weighted period records it.</em>{% elif p.note %} {{ p.note[:1]|upper ~ p.note[1:] }}.{% endif %} <a class="koku-link" href="{{ p.source }}">{{ source_label(p.source) }}</a></li>
+                          <li data-era="{{ e.id }}"{% if e not in row.eras %} hidden{% endif %}><span class="koku-cites__era">{{ e.title }}</span>: {{ '%.2f' % (p.silver_g / e.goods['rice'].silver_g) }} kg of rice a {{ row.good.unit }}.{% if p.borrowed %} <em>{{ p.borrowed }}, so it repeats another period's figure and counts only when no other weighted period records it.</em>{% elif p.note %} {{ plain(p.note) }}.{% endif %} <a class="koku-link" href="{{ research_url(p.source) }}">{{ source_label(p.source) }}</a></li>
                         {% endfor %}
                       </ol>
                     {% endif %}

@@ -259,7 +259,9 @@ def test_each_good_cites_the_periods_its_rokugani_price_rests_on(root: Root) -> 
     fish = page[page.index('data-good="fish"') :]
     fish = fish[: fish.index('</ol>')]
     assert 'Canton 1830-1839</span>: ' in fish
-    assert 'research, question 288' in fish
+    assert 'research: What did a year' in fish  # 0288's title, from the record
+    china = 'what-did-a-years-necessities-and-a-days-labor-cost-in-china-era-by-era'
+    assert f'href="/research/q/{china}.html"' in fish
     assert 'early Meiji period, after 1868, so it repeats another period' in fish
     assert 'Bassino & Ma, Table 3' in fish  # Kyoto 1745's fish, a borrowed price: listed, hidden
     assert re.search(r'<li data-era="kyoto-1745" hidden>', fish)

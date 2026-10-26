@@ -17,26 +17,33 @@ offerings before paper (shrine paper is an offering).
 
 from __future__ import annotations
 
+import gzip
+import html
 import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from html import escape
 
 from l7r.money import coins
 from l7r.money.ledger import Row, Swing, swing_for
 from l7r.money.readings import laborer_days
+from l7r.research import RESEARCH_DIR
 
 __all__ = [
     'SHEETS',
     'Item',
     'Sheet',
     'SheetView',
+    'anchor',
+    'canon_url',
     'eligible',
     'price',
     'sheet_for',
     'sheets',
     'plain',
     'research_title',
+    'research_url',
     'source_link',
     'unplaced',
 ]
@@ -112,6 +119,9 @@ SHEETS = (
 )
 
 REPO = 'https://github.com/EliAndrewC/gm-assistant'
+SETTING = 'https://github.com/EliAndrewC/l7r'
+QUESTION = re.compile(r'/research/questions/\d{4}-([^/#?]+?)\.html')
+SITE = RESEARCH_DIR / 'q'  # the bundled research record's question pages
 # Rows that lead their sheet whatever their price: the laborer's day and year are the yardstick the
 # Days column counts in (design review, feature 225).
 FIRST = ('wage-unskilled-day', 'wage-unskilled-year')
@@ -188,29 +198,76 @@ def price(low: int, high: int) -> str:
     return _span(coins.everyday(low), coins.everyday(high))
 
 
+# A research question's number in a note ('(0307)', 'diagram 0266', '0303: ...'): useful in the
+# ledger and the skill, noise on a page whose item already links the page (GM 2026-10-26). Question
+# numbers start with 0 and years never do, so '1736' survives.
+_Q = r'(?:diagram )?0\d{3}(?:(?:, | and |-)0\d{3})*'
+NUMBERS = (
+    (re.compile(rf'\s*\({_Q}\)'), ''),  # 'day (0307).' -> 'day.'
+    (re.compile(rf'\({_Q}[;,:]\s*'), '('),  # '(0305; two sources)' -> '(two sources)'
+    (re.compile(rf'[;,]\s*{_Q}\)'), ')'),  # '(Morisada, 0275)' -> '(Morisada)'
+    (re.compile(rf'(^|(?<=[.;] )){_Q}:\s*'), ''),  # '0303: no source' -> 'no source'
+    (re.compile(_Q), 'the research'),
+)
+
+
 def plain(text: str) -> str:
-    """The record's verdict words (SILENT, ATTESTED ONLY FOR) in plain English."""
+    """A note for a reader: the record's verdict words (SILENT, ATTESTED ONLY FOR) in plain English,
+    and no research question numbers."""
     for word, said in PLAIN:
         text = text.replace(word, said)
-    return text
+    for pattern, said in NUMBERS:
+        text = pattern.sub(said, text)
+    return text[:1].upper() + text[1:]
 
 
+def anchor(heading: str) -> str:
+    """GitHub's anchor for a Markdown heading: 'Rent and taxes' -> 'rent-and-taxes'."""
+    kept = re.sub(r'[^\w\- ]', '', heading.strip().lower())
+    return kept.replace(' ', '-')
+
+
+def canon_url(rest: str) -> str:
+    """A canon source ('setting/l7r.md "Rent and taxes"') as its section of the rendered file on
+    GitHub (GM 2026-10-26). The setting notes live in the GM's l7r repository, branch master."""
+    m = re.match(r'(\S+)(?:\s+"(.+)")?', rest.strip())
+    path, heading = (m.group(1), m.group(2)) if m else (rest.strip(), None)
+    url = f'{SETTING}/blob/master/{path}'
+    return f'{url}#{anchor(heading)}' if heading else url
+
+
+def research_url(url: str) -> str:
+    """A diagram research question's page in this toolkit's own research record (GM 2026-10-26):
+    '.../questions/0307-what-did-a-clerk-earn.html' -> '/research/q/what-did-a-clerk-earn.html'.
+    Any other URL is returned as it is."""
+    m = QUESTION.search(url)
+    return f'/research/q/{m.group(1)}.html' if m else url
+
+
+@lru_cache(maxsize=256)
 def research_title(url: str) -> str:
-    """A diagram research page's title from its file name: '0262-what-did-sake-cost.html' -> 'What
-    did sake cost?'."""
-    slug = url.rsplit('/', 1)[-1].removesuffix('.html')
-    words = slug.split('-')[1:]
-    return (' '.join(words).capitalize() + '?') if words else 'research'
+    """A research page's title as the record gives it ('What did a clerk, a guard or a skilled
+    servant earn?'), read from the bundled site; from the file name when the bundle is absent."""
+    m = QUESTION.search(url)
+    if not m:
+        return 'research'
+    for path in (SITE / f'{m.group(1)}.html.gz', SITE / f'{m.group(1)}.html'):
+        if path.exists():
+            raw = gzip.decompress(path.read_bytes()) if path.suffix == '.gz' else path.read_bytes()
+            t = re.search(rb'<title>(.*?)(?: - [^<]*)?</title>', raw, re.S)
+            if t:
+                return html.unescape(t.group(1).decode()).strip()
+    return m.group(1).replace('-', ' ').capitalize() + '?'
 
 
 def source_link(source: str) -> str:
     """An item's source as HTML: a link for research, the canon's section, or the estimate it was
     derived from (on GitHub); a lead names its file."""
     if source.startswith('https://'):
-        label = 'source'
-        if re.search(r'/questions/\d{4}-', source):
+        if QUESTION.search(source):
             label = f'research: {research_title(source)}'
-        return f'<a class="koku-link" href="{escape(source)}">{escape(label)}</a>'
+            return f'<a class="koku-link" href="{escape(research_url(source))}">{escape(label)}</a>'
+        return f'<a class="koku-link" href="{escape(source)}">source</a>'
     kind, _, rest = source.partition(':')
     if kind == 'derived':
         path, _, anchor = rest.partition('#')
@@ -222,7 +279,8 @@ def source_link(source: str) -> str:
         )
         return f'<a class="koku-link" href="{escape(url)}">{escape(text)}</a>'
     if kind == 'canon':
-        return 'the setting notes'
+        url = canon_url(rest)
+        return f'<a class="koku-link" href="{escape(url)}">the setting notes</a>'
     return "the GM's earlier notes, not yet checked against research"
 
 

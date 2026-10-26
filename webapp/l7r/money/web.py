@@ -23,12 +23,12 @@ from __future__ import annotations
 
 import json
 import math
-import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
 from l7r.money import basket as bk
+from l7r.money import prices
 from l7r.money.readings import LABORER_KOKU_YEAR, Wage, wage_dollars_per_koku
 
 __all__ = [
@@ -190,10 +190,9 @@ def sig3(x: float) -> str:
 
 
 def source_label(url: str) -> str:
-    """A footnote's link text: the diagram research question's number, else the source's name."""
-    m = re.search(r'/research/questions/(\d{4})-', url)
-    if m:
-        return f'research, question {int(m.group(1))}'
+    """A footnote's link text: the research page's title, else the source's name."""
+    if prices.QUESTION.search(url):
+        return f'research: {prices.research_title(url)}'
     if 'bassino_and_ma' in url:
         return 'Bassino & Ma, Table 3'
     return 'source'

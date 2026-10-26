@@ -513,6 +513,7 @@ class Root:
                 ),
                 source_link=money_prices.source_link,
                 plain=money_prices.plain,
+                research_url=money_prices.research_url,
             )
         if tool != 'koku':
             return self._render_404()
@@ -540,6 +541,8 @@ class Root:
             sen=lambda silver: money_web.sen(silver, model, koku_kg),
             sig3=money_web.sig3,
             source_label=money_web.source_label,
+            research_url=money_prices.research_url,
+            plain=money_prices.plain,
             data_json=money_web.page_json(model, koku_kg, wage),
             wage=wage,
             wage_per_koku=wage_dollars_per_koku(wage),

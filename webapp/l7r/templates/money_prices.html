@@ -64,7 +64,7 @@
         {% endfor %}
       </ul>
       {% for name, s in v.swings %}
-        <p class="prices__swing"><strong>Across periods ({{ name }}: {{ s.verdict }}).</strong> {{ plain(s.note) }} <a class="koku-link" href="{{ s.source }}">research</a></p>
+        <p class="prices__swing"><strong>Across periods ({{ name }}: {{ s.verdict }}).</strong> {{ plain(s.note) }} <a class="koku-link" href="{{ research_url(s.source) }}">research</a></p>
       {% endfor %}
     </section>
   {% endfor %}
