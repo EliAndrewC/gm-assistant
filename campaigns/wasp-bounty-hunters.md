@@ -421,3 +421,11 @@ Note the order in which this information has been presented.  Considerable time 
 ## Notes
 
 (AI-generated context, cross-references, and supplementary notes will be added here as the project develops.)
+
+### Player character sheets
+
+Each PC's sheet is `https://l7r-character-sheet.fly.dev/characters/N` (the page title is "L7R - <name>").
+
+- **Shizu** is the table's name for Tsuruchi Shizukanaken ([#10](https://l7r-character-sheet.fly.dev/characters/10)); use the full name in setting prose.
+- **Tadashi** is Asako Tadashi ([#14](https://l7r-character-sheet.fly.dev/characters/14)), who has Commerce and holds the money for Shoda's forest memorial, keeping what is left over.
+- Others: 1 Tsuruchi Sadakichi, 2 Tsuruchi Hidemasa, 3 Tsuruchi Jimen, 8 Tsuruchi Toshihiro, 16 Tsuruchi Makoto.

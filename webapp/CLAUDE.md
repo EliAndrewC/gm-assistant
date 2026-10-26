@@ -21,6 +21,13 @@ generate NPCs for the Rokugan setting of the Legend of the Five Rings RPG.
 - Ensure `to_dict()` is updated if new character attributes are added.
 - Use single quotes for strings and triple-double-quotes for docstrings.
 
+## Bulk generation belongs in chat, not on a screen
+
+The toolkit is for browsing and single-item work. "Make N of these with judgment applied" is a Claude Code
+conversation, where the GM can steer each item, so a bulk need gets a shorthand in the relevant skill (`/chargen`
+documents generating a set in one request), never a toolkit page. The chargen section's "Generate a ministry roster"
+page (six cards, per-card art, bulk upload) was deleted for exactly this reason (GM 2026-08-08).
+
 ## Synthesize Backstory (shipped)
 
 The chargen "Synthesize Backstory" button turns a generated character's traits

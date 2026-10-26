@@ -81,6 +81,10 @@ prices in `[lookup_prices]` (both configuration because they differ by model and
 choice rule (spec, Story 7): the cheapest tier whose correctness is within 5 points of the best
 measured, with no more invented answers on the unanswerable questions than the best tier.
 
+The default is `gemini-3.1-flash-lite`. `gemini-3.5-flash-lite` scored 97% on a 149-entry glossary but 87% on the
+full ~500-entry one (it starts answering "the notes don't cover it"), so do not switch to it to save money without
+rerunning the evaluation on the full glossary (`specs/218-lookup-command/eval/RESULTS.md`).
+
 ## How to test
 
 ```

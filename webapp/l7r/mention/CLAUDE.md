@@ -191,6 +191,20 @@ Each speaking bot needs **Send Messages** in the guild; the listener needs the *
 privileged intent. Both are Discord configuration, not code - and a bot's permissions widen IN PLACE
 on its managed role, with no kick and no re-invite.
 
+## The live Discord server (measured 2026-08-31)
+
+- Live guild `745421621829042297` "L7R"; scratch guild `1543009570157236274` "Robot Role Call".
+- `@everyone` in both already grants View, Send, Embed Links, Attach Files, Read History and External Emojis, so a
+  bot's own role barely matters in public channels.
+- **`#case-of-the-mondays` and `#a-team` are private**: `@everyone` is denied View, with per-member allows plus one
+  allow for the `L7R GM Assistant` managed role. Joining the guild does not get a bot in. **Every new bot needs its
+  own allow-view overwrite on both channels**, or it never hears the games.
+- **The developer portal's install link adds slash commands only, never the bot user** (both applications'
+  `install_params` are `scopes: [applications.commands], permissions: 0`). Add a bot with an explicit
+  `https://discord.com/oauth2/authorize?client_id=...&scope=bot+applications.commands&permissions=N`, or fix the
+  Installation tab's defaults first. Permissions widen in place on the managed role, with no re-invite.
+- A bot-token REST call without a `User-Agent: DiscordBot (...)` header gets 403 from Cloudflare.
+
 ## Deployment
 
 It runs on the GM's always-on AWS Lightsail box, NOT on fly.io - a machine that never scales to

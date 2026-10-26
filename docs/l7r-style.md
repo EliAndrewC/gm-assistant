@@ -53,6 +53,16 @@ These conventions govern any edit to `/host-l7r-repo/setting/l7r.md` - both copy
 - Applies to all compound usages too: "Imperial domain" (not "Imperial demesne"), "personal domain" (not "personal demesne"), "Hantei lands" rather than "Hantei demesne", etc.
 - Silently fix `demesne` → `domain` in any text being edited.
 
+**Italicize imported real-world terms, not Rokugan's own words** (GM):
+
+- **Italicize** real-world foreign terms that the analytical voice *imports* to explain Rokugan: *kokudaka*, *genmai* and the other rice-state terms, the Chinese units (*shi*, *dan*, *mu*, *jin*, *dou*, *sheng*, *tan*), and historical comparison systems like *sankin kotai*, *chigyo*, *bakufu*, *tenryo*, *sekisho*, *publicani*, *jagir*, *timar*, *muyi*, *likin*, *yi*. For a romaji and kanji pair, italicize the romaji and leave the kanji roman: *muyi* (募役).
+- **Do not italicize** Rokugan's own vocabulary, even where it is real Japanese: koku, daimyo, samurai, yoriki, karo, ashigaru, heimin, hinin, burakumin, gempukku, shugenja, ronin, bushi, Yassa, Kyuden/Shiro/Shinden. Naturalized English loanwords (catty, picul) and proper nouns (Tang, Tokugawa, Hunan) stay roman too.
+- The line is usage: the characters say "koku"; the author cites *kokudaka*. When italicizing a repeated term, skip occurrences already wrapped (`(?<!\*)\bterm\b(?!\*)`) so you do not make accidental bold, use word boundaries (short units collide with substrings), and **never format inside fenced code or preformatted blocks**.
+
+**"Tax farming", not "corruption"** (GM):
+
+- Where officials keep a sanctioned share of what they collect (rank stipends, tier revenue splits, ministerial income), the term is "tax farming", the historically precise one; "corruption" assumes a modern norm of clean public service. Reserve "corruption" for covert wrongdoing (unauthorized bribes, falsified records, embezzlement against the daimyo) and for the Shadowlands taint. Do not sweep-replace: a character's personal "petty corruption" is not tax farming.
+
 **Capitalize "Family" and "Clan" as institutions**:
 
 - **Family** (capital F) when it means the institutional house/alliance within a Clan: named Families (`Hida Family`, `Matsu Family`, `Yasuki Family`), the `Family daimyo`, the `Family` kick-up layer, `Family capital`/`Family seat`, the kick-up recipients (`Family, Clan, and Imperial`), and the `Imperial Families` (Hantei, Seppun, Otomo, Miya). Lowercase `family` for the generic/relatives sense: `the daimyo's family`, `family members`, `family households`, `farm/merchant/samurai families`, `family name` (surname), `birth family`, `family connections`.
@@ -79,6 +89,14 @@ These conventions govern any edit to `/host-l7r-repo/setting/l7r.md` - both copy
 - A rejected idea may appear ONLY in-universe, as lore the world itself carries: a character citing another legend ("beyond the mountains they tell that those a tiger eats walk before it and break the hunters' snares - no one has ever said that of a bear"), a rival school's reading, a folk variant. That makes the world larger; a changelog makes it smaller.
 - GM-facing guidance is still welcome in GM-only notes when it is about RUNNING the material ("the trip shows no sign of the bear, because a sign gives the players something to chase"), because that is advice about the game, not history of the draft.
 - This is the opposite of the repository rule to record declined alternatives, and deliberately so: that rule governs engineering docs (specs, skill docs, code comments) where the next session needs to know an option was priced. It never applies to setting content. Worked example of the violation: the "Decisions, and the alternatives declined" section first published on the `bears-of-the-kitsune-mori` wiki page, since removed.
+
+**Obsidian Portal: link to the L7R Toolkit** (GM: *"This is in general a good way to cross-reference entries in obsidian portal with things like already-generated relics"*):
+
+- When an OP record (bio, GM-only notes, wiki page) mentions an item that has its own page in the Toolkit (<https://l7r-gm-assistant.fly.dev/>, e.g. `/relics/<slug>`), wrap the first natural mention in each field in a Textile link: `"Fox-Fire Lantern":https://l7r-gm-assistant.fly.dev/relics/fox-fire-lantern`. Check the URL answers 200 first. The link goes one way only, OP to Toolkit.
+- Never invent a mention to host a link; if one would help, propose the sentence to the GM.
+- OP fields are Textile (`"text":URL`), the Toolkit is Markdown/HTML; mixing them breaks the link.
+
+**References between files**: never write a local container path (`/host-l7r-repo/...`, `/gm-assistant/...`, `/workspace/...`) into setting content; it means nothing on GitHub. Use `https://github.com/EliAndrewC/l7r/blob/master/<path>` (l7r's branch is `master`) or `https://github.com/EliAndrewC/gm-assistant/blob/main/<path>`, or a relative link between files in the same directory. Enforced by `scripts/house-style-hooks.sh` for edits made with the editing tools.
 
 **Process**:
 

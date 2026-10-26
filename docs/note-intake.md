@@ -24,6 +24,7 @@ When the GM pastes raw campaign notes into the chat - actions a character took a
 - Preserve meaning and voice. The GM's register is laconic and matter-of-fact; don't add flowery elaboration, don't smooth into marketing tone, don't introduce claims or implications the source didn't make.
 - If a fragment is too cryptic to interpret with confidence, stop and ask rather than guess.
 - **Tone matches `l7r.md` at both destinations.** Read nearby sections of `l7r.md` to calibrate before writing to either `l7r.md` itself or to OP. Don't shift register based on audience - what's good for `l7r.md` is good for the wiki/character bio too.
+- For OP destinations: link any item that has a Toolkit page (see "Obsidian Portal: link to the L7R Toolkit" in [`l7r-style.md`](l7r-style.md)).
 - For OP destinations: convert to Textile (not Markdown). Match nearby pages' conventions (`\r\n` line endings, `bq).` for blockquotes, `[[wiki-slug]]` for internal links).
 - **Silently correct known GM-typos** in any text you write or any existing wiki/character content you happen to be editing:
   - "Chancellary" → "Chancellery"

@@ -286,6 +286,30 @@ elsewhere in the Empire the same phrase names a gardener - mind the context.
 Plainer words are also used for a monk in a position of authority: Surveyor,
 Judge, Reviewer, Examiner.
 
+## Temples in Cities (L7R canon)
+
+L7R deliberately runs about 2-5 times history's clergy density (Edo danka temples had one or two priests, Song/Ming
+urban monasteries a few dozen, Song clergy ~0.2-0.4% of the population): a liberty for a Fortune-saturated setting
+(GM 2026-07-20).
+
+- **Most cities have TWO major temple complexes**, one per clan patron Fortune, plus a handful of small shrines. More
+  is the exception: an especially large city, a pilgrimage city, or a city that changed hands between clans and kept
+  the old ruler's temple (Tango, Lion to Crane, has three; its Lion-era Temple of Bishamon is a converted samurai
+  estate in the samurai neighborhood).
+- **Monks per complex**: 50+ in a domain capital (~12,000 inhabitants), 15-30 in a provincial city (~3,000).
+- **Initiates are ~2x the monks**, but only a few live inside (~5-10 provincial, ~10-20 capital); the rest are
+  laborers, merchants and servants engaged in religious study, living in ordinary houses.
+- **Monks live inside the precinct.** The temple neighborhood is LAY households serving the temple (~40-80 houses
+  around a provincial city's two temples; a pilgrimage city inverts to 10:1 lay or more, the monzen-machi pattern),
+  with at most a retired abbot's hermitage or a small daughter chapel.
+- **The temple sells its own sacred goods** (amulets, charms, talismans, incense, lamp oil: a revenue stream, the
+  Chinese "oil-lamp and incense income", the Japanese omamori bestowed for an offering), so there is no third-party
+  religious-goods shop. Lay commerce at the gate is food and drink (teahouses, the main draw), secular souvenir
+  stalls, funeral trades by the graveyard (coffin makers, grave-marker stonecutters, joss-paper makers) and service
+  trades (gate fortune-tellers, the temple's retained carpenter and gilder families).
+- **Small shrines sit at meaningful thresholds**, not only near the temples: a wharf shrine to Ebisu, a bridge, gate
+  or well shrine.
+
 ## Generation Preferences
 
 (To be developed through iteration with the GM. This section will capture what the GM likes and dislikes about generated temple content, and why.)
