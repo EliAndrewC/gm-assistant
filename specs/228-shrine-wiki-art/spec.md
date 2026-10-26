@@ -153,3 +153,12 @@ On every choice step a player can pick "Something else", type their own idea, an
 ## Out of scope
 
 - Storing anything on fly.io; a gallery of shrines; deleting wiki pages from the builder.
+
+## Review history
+
+- **2026-10-26, spec-fidelity round 1 (against `request.md`, verbatim): CHANGES REQUIRED.** (1) The per-user rate limit
+  could cap the retries the GM asked for ("as many tries as they want") - now a runaway-loop guard only, never a cap
+  on ordinary retries. (2) The picture had been made optional on upload, though the GM said upload "will save off both"
+  - now required. Non-blocking: record "Instead" on a step others depend on, what "matches" compares, the 300-character
+  cap, and the reading of "manually editing the prompt" as decisions - done.
+- **2026-10-26, spec-fidelity round 2: FAITHFUL.** Deploying to fly.io belongs in the plan (it is there).
