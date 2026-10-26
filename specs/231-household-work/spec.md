@@ -62,7 +62,17 @@ women's household work was almost never written down.
    account (0316) and the sources historians use instead.
 2. The landing page's "What the records leave out" links to it.
 
-### User Story 6 - The proverb's real halves (Priority: P3)
+### User Story 6 - Can the sources count home work, class by class? (Priority: P2)
+
+**Acceptance**:
+1. A direct answer to the GM's main question, class by class, each with its verdict and research link:
+   - **Farm household:** one holding is counted (the Seiryoki); no source splits the year by member (0312).
+   - **City laborer, single or with a family:** the sources cannot tell them apart (User Story 4.2).
+   - **Live-in servant, apprentice or clerk:** no household of their own to work for; leave home on the two yabuiri
+     days; a side trade not recorded (0311).
+   - **Porter, guard, footman:** what they did on days off is not recorded (0311).
+
+### User Story 7 - The proverb's real halves (Priority: P3)
 
 **Acceptance**:
 1. Beside the Rokugani proverb's history: the 360-day form was not found; its halves are attested (早起三朝當一工,
@@ -75,9 +85,7 @@ women's household work was almost never written down.
   from it. A test fails if a figure lacks either.
 - **FR-002**: Research figures that are prices (baths, sushi, the Bunsei budgets) enter the ledger by the intake rule
   (`research.md`), with their labels.
-- **FR-003**: Findings are recorded for estimates E0194-E0218 by `calibration.md` step 4, before the page is built; the
-  calibration report's `household` line is shown on the page, so a reader sees how far our guesses were from the
-  research.
+- **FR-003**: Findings are recorded for estimates E0194-E0218 by `calibration.md` step 4 before the page is built.
 - **FR-004**: The page uses the Money section's explainers (`_money_terms.html`) where a term needs one.
 - **FR-005**: The page passes the DOM audit and the frontend review at GM, GM-200 and mobile.
 
@@ -86,8 +94,7 @@ women's household work was almost never written down.
 - A comparative source (Mannering's wool, Buck's China of the 1920s) appears only labeled comparative, never as a
   Rokugani figure.
 - A figure derived by the research project's arithmetic (the 512 hemp days) is shown as derived, with its inputs.
-- Three research files (0312-0314) were not on diagram's main when the answer came; the page is built only from files
-  verified on main.
+- Every figure comes from a research file verified on diagram's main (0311-0317, all there at aa9bbeb).
 
 ## Success Criteria
 
@@ -96,3 +103,7 @@ women's household work was almost never written down.
 - **SC-002**: The calibration report grades the household estimates that the research can grade.
 
 ## Review history
+
+- 2026-10-26, spec-fidelity round 1: CHANGES REQUIRED. (1) The GM's "different classes" (clerks, guards, servants) had
+  no story although 0311 answers it: User Story 6 added. (2) Showing the calibration line on the page was not asked:
+  dropped from FR-003; the findings are still recorded.
