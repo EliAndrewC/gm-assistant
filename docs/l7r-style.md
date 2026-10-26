@@ -2,7 +2,7 @@
 
 *Project reference, split out of [`../CLAUDE.md`](../CLAUDE.md) so it is loaded on demand rather than in every session's context. CLAUDE.md keeps the short always-on version of these rules and points here for the full spec.*
 
-**Load this file when:** you are about to edit `/host-l7r-repo/setting/l7r.md`, or write prose into an Obsidian Portal wiki page or character record. These conventions govern every such edit. (The few that apply to ALL generated content - hyphens, American spellings, caste-sense of "people", "domain" not "demesne", gender-neutral office-holders - are restated in CLAUDE.md and always apply.)
+**Load this file when:** you are about to edit `/host-l7r-repo/setting/l7r.md`, write prose into an Obsidian Portal wiki page or character record, or name an example NPC or place in a reference doc, a skill or `budgets.md`. These conventions govern every such edit. (The few that apply to ALL generated content - hyphens, American spellings, caste-sense of "people", "domain" not "demesne", gender-neutral office-holders - are restated in CLAUDE.md and always apply.)
 
 ---
 
@@ -52,6 +52,17 @@ These conventions govern any edit to `/host-l7r-repo/setting/l7r.md` - both copy
 - L7R uses `domain` for the territory administered by a daimyo, governor, or magistrate at any tier - never `demesne` (the medieval European term).
 - Applies to all compound usages too: "Imperial domain" (not "Imperial demesne"), "personal domain" (not "personal demesne"), "Hantei lands" rather than "Hantei demesne", etc.
 - Silently fix `demesne` → `domain` in any text being edited.
+
+**Villages have shrines, not temples** (GM):
+
+- The religious site of a village or hamlet is a Shinto shrine: "village shrine", "Shrine to Benten", "Shrine to Bishamon", never "Temple to X". Temples, with their monastic organization, belong to towns and cities (see the `/temple` skill).
+- The GM expects to make this slip himself ("temple to Benten"): silently correct it to "shrine", as with `demesne` -> `domain`.
+
+**No name collisions between documents** (GM, July 2026):
+
+- Before naming a new example NPC or place in `budgets.md`, a skill or a reference doc, grep `l7r.md`, `budgets.md` and the campaign files for the candidate and pick one that does not collide (the `/name` and `/place-names` pools are good sources).
+- Why: `budgets.md`'s worked county-magistrate example was "Hida no Reiji Hikai of Seitoyama County", which collided with the Kage bounty's "county magistrate of Seitoyama (Kakita Hikai)". The GM first said to leave it, then reversed, because he does not like naming conflicts between documents even where ~10,000 counties could explain one; the example became Hida no Reiji Kazuma of Harima County.
+- Exception: "Kage" ("shadow") is a common bandit alias, so several unrelated bandits called Kage are intended, not a collision.
 
 **Italicize imported real-world terms, not Rokugan's own words** (GM):
 
