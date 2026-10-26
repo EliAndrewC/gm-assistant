@@ -38,8 +38,10 @@
   `chargen/art.py`). Ink and woodblock both drew the rope gate, the stone foxes, the moss, the head mound, the bamboo
   box and the stream. The woodblock picture also drew stone lanterns nobody chose, so the framing now says "show only
   what is listed".
-- **The keys**: `[gemini] api_key` came back `API_KEY_INVALID`; the `[lookup]` key works for both models, so the
-  shrine builder reads `[shrines] gemini_api_key` (set to that key in main's development-secrets.ini) first.
+- **The key**: `[gemini] api_key` first came back `API_KEY_INVALID`. The key was fine: the secrets file writes it in
+  quotes, ConfigObj (chargen) strips them and configparser (`app._load_secrets`) did not, so the webapp sent the quotes
+  too. `_load_secrets` now strips one pair of matching quotes. (A `[shrines] gemini_api_key` workaround briefly existed
+  and was removed.)
 - **Obsidian Portal**: create (with an upload through `op.upload_image`), read back, update, and delete all worked
   against the live campaign on a throwaway page, "Shrine builder test page delete me", which was then deleted. The two
   test pictures stay in the campaign's file assets (ids 1593656, 1593657).

@@ -421,6 +421,28 @@ def test_load_secrets_parses_sections_without_interpolation(
     assert app_module._load_secrets() == {'obsidian_portal': {'cookie': 'abc%20def'}}
 
 
+def test_load_secrets_strips_quotes_like_configobj(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """chargen reads this file with ConfigObj, which drops surrounding quotes; the webapp must read
+    the same line the same way (a quoted Gemini key once reached Google with its quotes,
+    2026-10-26)."""
+    from l7r import app as app_module
+
+    (tmp_path / 'development-secrets.ini').write_text(
+        '[gemini]\napi_key = "AIza-1"\nsingle = \'two\'\nmixed = "three\'\nbare = four\nlone = "\n',
+        encoding='utf-8',
+    )
+    monkeypatch.setattr(app_module, '_HERE', tmp_path / 'l7r')
+    assert app_module._load_secrets()['gemini'] == {
+        'api_key': 'AIza-1',
+        'single': 'two',
+        'mixed': '"three\'',
+        'bare': 'four',
+        'lone': '"',
+    }
+
+
 def test_resolve_default_pool_dir_uses_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
     from l7r.app import _resolve_default_pool_dir
 

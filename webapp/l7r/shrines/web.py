@@ -102,9 +102,8 @@ class ShrineServices:
         return str(self._secrets().get(section, {}).get(name, '') or default).strip()
 
     def _key(self) -> str:
-        """`[shrines] gemini_api_key`, else the webapp's `[gemini] api_key`. Its own setting because
-        on 2026-10-26 the `[gemini]` key was rejected as invalid while the bot's worked."""
-        return self._setting('shrines', 'gemini_api_key') or self._setting('gemini', 'api_key')
+        """The webapp's `[gemini] api_key`, the one chargen's portraits use."""
+        return self._setting('gemini', 'api_key')
 
     def _calls(self) -> Mapping[str, Callable[..., Any]]:
         if self._portal is not None:

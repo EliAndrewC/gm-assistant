@@ -25,7 +25,7 @@ from l7r.shrines.access import CostAccess
 from l7r.shrines.web import PUBLIC_URL, Guard, ShrineServices
 from tests.test_shrines import DEFAULT_FRAMING, price_words
 
-SECRETS = {'gemini': {'api_key': 'old'}, 'shrines': {'gemini_api_key': 'k'}}
+SECRETS = {'gemini': {'api_key': 'k'}}
 EM, EN = chr(0x2014), chr(0x2013)
 QUERY = 'shrine_name=The+Fox+Rest&kind=kami&form=hokora&bell=suzu&other_bell=a+conch'
 
@@ -334,7 +334,7 @@ def test_describe_sends_the_brief_and_the_design(catalog: Catalog) -> None:
 
     svc = services(catalog, text_call=text_call)
     assert svc.describe('u', {'query': QUERY}) == (200, {'text': 'A path - then a shrine - quiet.'})
-    assert seen['key'] == 'k'  # the shrine builder's own key wins over [gemini]
+    assert seen['key'] == 'k'
     assert seen['model'] == 'gemini-3.1-flash-lite'
     assert seen['system'] == describe.BRIEF
     assert 'own words, as well: a conch' in seen['prompt']
@@ -356,7 +356,7 @@ def test_describe_failures(catalog: Catalog) -> None:
     assert svc.describe('u', {})[0] == 429
 
 
-def test_describe_falls_back_to_the_webapp_key(
+def test_describe_calls_gemini_by_default(
     catalog: Catalog, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     seen: dict[str, Any] = {}
@@ -366,9 +366,8 @@ def test_describe_falls_back_to_the_webapp_key(
         return SimpleNamespace(text='ok')
 
     monkeypatch.setattr('l7r.lookup.gemini.generate', generate)
-    svc = services(catalog, secrets={'gemini': {'api_key': 'old'}})
-    assert svc.describe('u', {'query': QUERY})[0] == 200
-    assert seen['key'] == 'old'
+    assert services(catalog).describe('u', {'query': QUERY})[0] == 200
+    assert seen['key'] == 'k'
 
 
 def test_draw(catalog: Catalog, monkeypatch: pytest.MonkeyPatch) -> None:

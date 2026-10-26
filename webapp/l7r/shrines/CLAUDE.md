@@ -88,7 +88,8 @@ wizard in one pass. Don't reintroduce `voids`/`only_with`-style side channels: e
   fly.io; a drawn picture stays in the browser until saved). Describe, draw and save need a sign-in;
   anyone can see the wiki status and a saved page's text and picture. The page is found by the
   shrine's NAME and tag `shrine`, and "matches" compares the two designs after resolving both. The
-  key is `[shrines] gemini_api_key` (the `[gemini] api_key` was found invalid on 2026-10-26). The
+  key is the webapp's `[gemini] api_key` (written in quotes in the secrets file: `_load_secrets`
+  strips them, as ConfigObj does - a quoted key once reached Google with its quotes). The
   per-user guard (120 descriptions, 60 pictures an hour) only stops runaway loops: the GM wants
   players to retry as often as they like.
 - **Nothing pre-selected, and no fixed order** (FR-023): every step starts empty, Next waits for a

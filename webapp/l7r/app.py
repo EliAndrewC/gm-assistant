@@ -876,8 +876,17 @@ def _load_secrets() -> dict[str, Any]:
     parser.read(path, encoding='utf-8')
     result: dict[str, dict[str, str]] = {}
     for section in parser.sections():
-        result[section] = dict(parser.items(section))
+        result[section] = {k: _unquote(v) for k, v in parser.items(section)}
     return result
+
+
+def _unquote(value: str) -> str:
+    """Drop one pair of matching surrounding quotes, as ConfigObj (chargen's reader of this same
+    file) does. configparser keeps them, so `api_key = "AIza..."` reached Google with its quotes
+    and was rejected as invalid (2026-10-26), while chargen's art, reading the same line, worked."""
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in '"\'':
+        return value[1:-1]
+    return value
 
 
 def _auth_config() -> AuthConfig:
