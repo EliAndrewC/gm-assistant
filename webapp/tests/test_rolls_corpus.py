@@ -36,7 +36,11 @@ FIXTURE = Path(__file__).parent / 'fixtures' / 'discord' / 'messages.json'
 #: vocabulary: the two new rolls are `43 athletics` and `38 Athletics`, both real
 #: and both silently dropped until then. No other message's parse changed, and no
 #: new ambiguity appeared - checked by sweeping the corpus with and without the knacks.
-EXPECTED_ROLLS = 125
+#: 125 -> 129 on 2026-10-27, when skill-first rolls were read (GM: "out of an
+#: abundance of caution"): `Eti 32 so 15`, and one message holding `Sneaking@2
+#: 10->8 10->3 4 3 +5 = 43`, `Investigation@2 9 7 +10 = 26` and `Interrogation@3 6 6
+#: 4 3 +5 = 24` - all real, none read before. No other message's parse changed.
+EXPECTED_ROLLS = 129
 
 
 @pytest.fixture(scope='module')

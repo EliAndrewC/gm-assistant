@@ -38,7 +38,7 @@ import re
 from datetime import datetime
 
 from l7r.repl.rolls.models import Roll
-from l7r.repl.rolls.skills import AmbiguousSkill, UnknownSkill, match_skill
+from l7r.repl.rolls.skills import AmbiguousSkill, UnknownSkill, is_skill, match_skill
 
 #: A total below this is not treated as a roll. The lowest total actually observed
 #: in the corpus is 10 (`10 heraldry, what do I know about Shiro Reiji?`), while
@@ -123,6 +123,46 @@ _PHRASE = re.compile(
 _AT_FIRST = re.compile(r'@\s*(?P<total>\d{1,3})\s*(?P<skill>[A-Za-z][A-Za-z]{2,19})\b', re.I)
 
 
+#: Feature-free addition (GM 2026-10-27, "out of an abundance of caution"): rolls
+#: written SKILL FIRST. A sweep of 2,577 real messages found them - `Sneaking@2
+#: 10->8 10->3 4 3 +5 = 43`, `Heraldry 36 @ 0`, `The dice don't like me today
+#: Manipulation@4 25`, `Eti 32 so 15` - beside lines that must stay silent: pool
+#: notation (`Interrogation 7k4 +5`), advancement (`Law: 2 -> 3`), a list of other
+#: people's rolls (`eti: 13, 19, 20`) and a joke (`Always Etiquette 15 means I'm
+#: underestimated`). So a skill-first roll needs EVIDENCE: the skill opens its line,
+#: or it carries a rank. Without a rank, the word must also be the skill's full name
+#: or a short abbreviation that is not an English word, because `his` resolves to
+#: history and `act` to acting. The total is the number after the LAST `=` when the
+#: player wrote arithmetic (summed when they stopped at `65+5`), else the first
+#: number - refused when it is a pool (`7k4`), a die being rerolled (`10->9`) or the
+#: start of a list. It runs LAST, over text the other passes have blanked, so
+#: `34 Manipulation @4 10->5 ... = 65 Intimidation@5` stays two number-first rolls.
+_SKILL_WORD = re.compile(r'(?<![\w@])(?P<skill>[A-Za-z]{3,20})\b')
+_AFTER_SKILL = re.compile(
+    r'[^\S\n]*' + _RANK.format('r1', 'r1b') + r'?[^\S\n]*[:=]?[^\S\n]*(?P<rest>[^;\n]*)', re.I
+)
+_FIRST_TOTAL = re.compile(
+    r'(?P<total>\d{1,3})(?![\d.]|[^\S\n]*(?:-+>|→|>|k\d|,[^\S\n]*\d))'
+    r'[^\S\n]*' + _RANK.format('r2', 'r2b') + '?',
+    re.I,
+)
+_SUM = re.compile(r'[^\S\n]*(?P<sum>\d{1,3}(?:[^\S\n]*\+[^\S\n]*\d{1,3})*)(?![\d.])')
+#: English words that resolve to a skill as abbreviations. Never read skill-first.
+_NOT_SKILL_WORDS = frozenset(
+    {'his', 'her', 'hers', 'act', 'acts', 'man', 'par', 'sin', 'att', 'bra'}
+)
+#: The longest abbreviation read skill-first with no rank (`eti`, `inv`, `manip`).
+_BARE_ABBREVIATION = 5
+
+#: Number-first with the sum left undone: `10->9 10->5 10->5 7 9=65+5 Interrogation@3`.
+#: The skill must carry a rank: `= 27 + 15 Acting` may name where the 15 came from.
+_UNSUMMED = re.compile(
+    r'=[^\S\n]*(?P<sum>\d{1,3}(?:[^\S\n]*\+[^\S\n]*\d{1,3})+)[^\S\n]*'
+    r'(?P<skill>[A-Za-z][A-Za-z]{2,19})[^\S\n]*' + _RANK.format('r2', 'r2b'),
+    re.I,
+)
+
+
 class Unparsed(ValueError):
     """A message that looks like a roll but could not be read with confidence."""
 
@@ -193,6 +233,17 @@ def parse_message(
         if pattern is _PHRASE:
             clean = ''.join(' ' if i in claimed else ch for i, ch in enumerate(clean))
 
+    for match in _UNSUMMED.finditer(clean):
+        if match.start('skill') in claimed:
+            continue
+        skill = _resolve(match.group('skill'), vocabulary, problems)
+        total = sum(int(n) for n in re.findall(r'\d+', match.group('sum')))
+        rank = _rank_of(match)
+        if skill is None or total < MIN_TOTAL or rank is None or rank > MAX_RANK:
+            continue
+        claimed.update(range(match.start(), match.end()))
+        rolls.append(_typed(character, skill, total, message_id, when, rank))
+
     for match in _AT_FIRST.finditer(clean):
         if match.start() in claimed:
             continue
@@ -219,7 +270,76 @@ def parse_message(
             )
         )
 
+    clean = ''.join(' ' if i in claimed else ch for i, ch in enumerate(clean))
+    rolls.extend(_skill_first(clean, vocabulary, character, message_id, when))
     return rolls, problems
+
+
+def _typed(
+    character: str, skill: str, total: int, message_id: str, at: datetime, rank: int | None
+) -> Roll:
+    return Roll(
+        character=character,
+        skill=skill,
+        total=total,
+        source='typed',
+        message_id=message_id,
+        at=at,
+        rank=rank,
+    )
+
+
+def _skill_first(
+    clean: str, vocabulary: tuple[str, ...], character: str, message_id: str, at: datetime
+) -> list[Roll]:
+    """Rolls written skill first - see `_SKILL_WORD` for the evidence each one needs.
+
+    An unresolved or ambiguous word is skipped SILENTLY here: every word in a line is
+    tried, and a sentence is full of words that abbreviate nothing or several things.
+    """
+    found: list[Roll] = []
+    for line in clean.split('\n'):
+        position = 0
+        while (word := _SKILL_WORD.search(line, position)) is not None:
+            position = word.end()
+            name = word.group('skill').lower()
+            if name in _NOT_SKILL_WORDS or not is_skill(name, vocabulary):
+                continue
+            after = _AFTER_SKILL.match(line, word.end())
+            if after is None:  # pragma: no cover - every group in it is optional
+                continue
+            total, rank, used = _skill_first_total(after)
+            opens_line = not line[: word.start()].strip()
+            bare_ok = name in vocabulary or len(name) <= _BARE_ABBREVIATION
+            if total < MIN_TOTAL or (rank is not None and rank > MAX_RANK):
+                continue
+            if rank is None and not (opens_line and bare_ok):
+                continue
+            found.append(
+                _typed(character, match_skill(name, vocabulary), total, message_id, at, rank)
+            )
+            # A plain total ends where it does, so `Investigation 39 @ 2, Sneaking 35 @4`
+            # reads on to the second roll; arithmetic runs to the end of its segment.
+            position = used
+    return found
+
+
+def _skill_first_total(after: re.Match[str]) -> tuple[int, int | None, int]:
+    """(total, rank, where the roll ends) for the text after a skill; total 0 if none."""
+    rest = after.group('rest')
+    if '=' in rest:
+        summed = _SUM.match(rest.rsplit('=', 1)[1])
+        total = sum(int(n) for n in re.findall(r'\d+', summed.group('sum'))) if summed else 0
+        return total, _rank_of(after), after.end()
+    first = _FIRST_TOTAL.match(rest)
+    if first is None:
+        return 0, None, after.end()
+    rank = _rank_of(after)
+    return (
+        int(first.group('total')),
+        rank if rank is not None else _rank_of(first),
+        after.start('rest') + first.end(),
+    )
 
 
 def _resolve(word: str, vocabulary: tuple[str, ...], problems: list[str]) -> str | None:

@@ -182,3 +182,72 @@ class TestRollFields:
     def test_defaults_the_timestamp_when_none_given(self, vocabulary: tuple[str, ...]) -> None:
         rolls, _ = parse_message('38 Etiquette @3', vocabulary)
         assert rolls[0].at.tzinfo is not None
+
+
+class TestSkillFirst:
+    """GM 2026-10-27: read rolls written skill first, and a sum left undone. Every
+    positive here is a real message from a sweep of 2,577; so is every negative,
+    except the GM's own shapes and the invented negatives marked as such."""
+
+    @pytest.mark.parametrize(
+        ('text', 'expected'),
+        [
+            ('Eti 32 so 15', [('etiquette', 32, None)]),
+            ('Etiquette 25 so 15', [('etiquette', 25, None)]),
+            ('Etiquette 14 / 15', [('etiquette', 14, None)]),
+            ('Sneaking@2 10->8 10->3 4 3 +5 = 43', [('sneaking', 43, 2)]),
+            ('Interrogation@3 6 6 4 3 +5 = 24', [('interrogation', 24, 3)]),
+            ("The dice don't like me today Manipulation@4 25", [('manipulation', 25, 4)]),
+            ('History 25-10=15 : have there been shugenja rulers', [('history', 15, None)]),
+            (
+                'Acting 28 @ 5 (As Tomio The Merchant); Investigation 27 @ 0',
+                [('acting', 28, 5), ('investigation', 27, 0)],
+            ),
+            ('Heraldry 36 @ 0', [('heraldry', 36, 0)]),
+            (
+                'Investigation 39 @ 2, Sneaking 35 @4',
+                [('investigation', 39, 2), ('sneaking', 35, 4)],
+            ),
+            # The GM's own shapes.
+            ('sincerity 32@4', [('sincerity', 32, 4)]),
+            ('Interrogation@3: 10->9 10->5 10->5 7 9=65+5=70', [('interrogation', 70, 3)]),
+            ('Interrogation@3: 10->9 10->5 10->5 7 9=65+5', [('interrogation', 70, 3)]),
+            ('10->9 10->5 10->5 7 9=65+5 Interrogation@3', [('interrogation', 70, 3)]),
+            # What the number-first pass already read is never summed again.
+            ('= 20 + 15 Acting@2', [('acting', 15, 2)]),
+            # A number-first roll keeps its reading; skill-first never re-reads it.
+            (
+                '10->2 9 7 6 = 34 Manipulation @4 10->5 10->6 8 8 8 +10 = 65 Intimidation@5',
+                [('manipulation', 34, 4), ('intimidation', 65, 5)],
+            ),
+        ],
+    )
+    def test_reads(
+        self, text: str, expected: list[tuple[str, int, int | None]], vocabulary: tuple[str, ...]
+    ) -> None:
+        assert parse(text, vocabulary) == expected
+
+    @pytest.mark.parametrize(
+        'text',
+        [
+            "Always Etiquette 15 means I'm underestimated",  # a joke: mid-line, no rank
+            'Which one is likely the most sketchy? Underworld 28 to guess',  # accepted miss
+            'Intimidation 8k4 +15',
+            'Interrogation 7k4 +5',
+            '  Bayushi no Daika Koharu tact: 6k4',
+            'Law: 2 -> 3',
+            'Etiquette: 25 (v), 31, 24',
+            'eti: 13, 19, 20',
+            'Impeding a lawful investigation: 1. Taking Shoda from where he was',
+            # Invented: what the evidence rules are for.
+            'His 20 men held the bridge',  # `his` resolves to history
+            'Investment 20 koku in the venture',  # a long abbreviation with no rank
+            'Interrogation@3 10->9 10->5',  # rerolled dice, no total yet
+            'Interrogation@3 = then we talk',  # arithmetic with no number after it
+            'Interrogation@7 35',  # no rank above five
+            '10 9 8 = 27+15 Acting',  # with no rank, the 15 may name a bonus's source
+            '= 6 + 2 Acting@2',  # a sum below the floor
+        ],
+    )
+    def test_stays_silent(self, text: str, vocabulary: tuple[str, ...]) -> None:
+        assert parse(text, vocabulary) == []

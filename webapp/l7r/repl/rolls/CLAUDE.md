@@ -624,6 +624,13 @@ silently, a plain skill the sheet leaves out is 0 (the sheet omits zero ranks), 
 the roster does not carry - keeps what was typed. A roster entry with NO skills is an unknown sheet,
 not a character with every skill at 0, and changes nothing.
 
+**Skill-first rolls are read, with evidence** (GM 2026-10-27). `Heraldry 36 @ 0`, `Sneaking@2
+10->8 10->3 4 3 +5 = 43`, `Eti 32 so 15` and a number-first sum left undone (`...=65+5
+Interrogation@3`) all read now; the rules and the sweep of 2,577 real messages behind them are in
+`parse.py` beside `_SKILL_WORD`. **Do not relax the evidence rule** (the skill opens its line, or
+carries a rank): last night's `Always Etiquette 15 means I'm underestimated` is a joke, and nothing
+lexical tells it from `Underworld 28 to guess`, which is therefore an accepted miss.
+
 **The typed path is primary, not a fallback.** 204 image posts against ~99 typed, split by PLAYER
 rather than by group: two Monday players and one Tuesday player type almost everything. It is the
 path that still PARSES with no endpoint at all - though see below, it cannot attribute without
