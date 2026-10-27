@@ -7,6 +7,7 @@ app, or Obsidian Portal.
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,7 @@ import pytest
 from l7r.repl.rolls import conversation as conv
 from l7r.repl.rolls import discord as discord_mod
 from l7r.repl.rolls import sheet
+from l7r.repl.rolls.models import Boost
 from l7r.repl.rolls.skills import load_skills
 
 OPENED = datetime(2026, 8, 12, 1, 53, tzinfo=UTC)
@@ -655,3 +657,126 @@ class TestForwardedRolls:
             originals={'50': {'author': {'id': '2'}}},
         )
         assert [(r.character, r.total) for r in got.rolls] == [('Tetsuro', 30)]
+
+
+def edited(
+    base: dict[str, Any], content: str, at: str = '2026-08-12T01:58:00+00:00'
+) -> dict[str, Any]:
+    return {**base, 'content': content, 'edited_timestamp': at}
+
+
+class TestEditedRolls:
+    """2026-10-27: Shizukanaken edits `41 interrogation@3` to `50@3` for a forgotten
+    bonus, or edits a roll DOWN after rerolling 10s while impaired."""
+
+    def test_an_edited_total_follows_the_edit_and_keeps_the_annotation(
+        self, words: tuple[str, ...]
+    ) -> None:
+        open_one()
+        posted = message('1', '1', '41 interrogation@3')
+        got = collect_with([posted], words, who=PLAYERS)
+        got.rolls[0] = replace(got.rolls[0], note='where the letters went')
+        collect_with([edited(posted, '50 interrogation@3')], words, who=PLAYERS)
+        roll = got.rolls[0]
+        assert (roll.total, roll.rank, roll.note) == (50, 3, 'where the letters went')
+
+    def test_the_corrected_total_is_what_gets_written(self, words: tuple[str, ...]) -> None:
+        open_one()
+        posted = message('1', '1', '34 etiquette')
+        got = collect_with([posted], words, who=PLAYERS)
+        assert conv.written_lines(got) == ('Jimen etiquette: 30',)
+        collect_with([edited(posted, '27 etiquette')], words, who=PLAYERS)
+        assert conv.written_lines(got) == ('Jimen etiquette: 25',)
+
+    def test_an_edit_down_says_so(self, words: tuple[str, ...], capsys: Any) -> None:
+        open_one()
+        posted = message('1', '1', '70 interrogation@3')
+        collect_with([posted], words, who=PLAYERS)
+        collect_with([edited(posted, '45 interrogation@3')], words, who=PLAYERS)
+        assert 'Jimen: interrogation 70@3 -> 45@3 (edited)' in capsys.readouterr().out
+
+    def test_an_unedited_message_is_not_read_again(self, words: tuple[str, ...]) -> None:
+        open_one()
+        posted = message('1', '1', '41 tact')
+        got = collect_with([posted], words, who=PLAYERS)
+        collect_with([posted], words, who=PLAYERS)
+        assert [r.total for r in got.rolls] == [41]
+
+    def test_an_edit_that_leaves_the_roll_alone_changes_nothing(
+        self, words: tuple[str, ...], capsys: Any
+    ) -> None:
+        open_one()
+        posted = message('1', '1', '41 tact')
+        got = collect_with([posted], words, who=PLAYERS)
+        capsys.readouterr()
+        collect_with([edited(posted, '41 tact, for the record')], words, who=PLAYERS)
+        assert [r.total for r in got.rolls] == [41]
+        assert '(edited)' not in capsys.readouterr().out
+
+    def test_an_ishi_boost_stays_on_top(self, words: tuple[str, ...]) -> None:
+        open_one()
+        posted = message('1', '1', '13 tact')
+        got = collect_with([posted], words, who=PLAYERS)
+        got.rolls[0] = replace(got.rolls[0], total=21, boost=8)
+        collect_with([edited(posted, '18 tact')], words, who=PLAYERS)
+        assert (got.rolls[0].total, got.rolls[0].boost) == (26, 8)
+
+    def test_a_skill_edited_out_is_kept_and_reported(self, words: tuple[str, ...]) -> None:
+        open_one()
+        posted = message('1', '1', '41 tact')
+        got = collect_with([posted], words, who=PLAYERS)
+        collect_with([edited(posted, 'never mind')], words, who=PLAYERS)
+        assert [r.total for r in got.rolls] == [41]
+        assert got.unresolved == [
+            'Jimen tact 41 was edited out of its message - still kept; annotate() can discard it'
+        ]
+
+    def test_a_skill_the_edit_adds_is_a_new_roll(self, words: tuple[str, ...]) -> None:
+        open_one()
+        posted = message('1', '1', '41 tact')
+        got = collect_with([posted], words, who=PLAYERS)
+        collect_with([edited(posted, '41 tact, 30 sincerity')], words, who=PLAYERS)
+        assert [(r.skill, r.total) for r in got.rolls] == [('tact', 41), ('sincerity', 30)]
+
+    def test_a_misspelling_fixed_by_the_edit_is_read_as_new(self, words: tuple[str, ...]) -> None:
+        open_one()
+        posted = message('1', '1', '41 interogashun@3')
+        got = collect_with([posted], words, who=PLAYERS)
+        assert got.rolls == []
+        collect_with([edited(posted, '41 interrogation@3')], words, who=PLAYERS)
+        assert [(r.skill, r.total) for r in got.rolls] == [('interrogation', 41)]
+
+    def test_a_discarded_roll_still_follows_its_edit(self, words: tuple[str, ...]) -> None:
+        open_one()
+        posted = message('1', '1', '30 tact')
+        got = collect_with([posted], words, who=PLAYERS)
+        got.rolls[0] = replace(got.rolls[0], discarded=True)
+        collect_with([edited(posted, '35 tact')], words, who=PLAYERS)
+        assert (got.rolls[0].total, got.rolls[0].discarded) == (35, True)
+
+    def test_a_dice_card_is_the_sheet_apps_total(self, words: tuple[str, ...]) -> None:
+        open_one()
+        card = message('1', '1', 'my roll', attachments=[{'content_type': 'image/png'}])
+        recorded = (
+            sheet.RecordedRoll(
+                'Jimen', 'etiquette', 38, '1', datetime(2026, 8, 12, 1, 54, tzinfo=UTC), 3
+            ),
+        )
+        got = collect_with([card], words, rolls=recorded, who=PLAYERS)
+        collect_with([edited(card, '20 etiquette')], words, rolls=recorded, who=PLAYERS)
+        assert [(r.total, r.source) for r in got.rolls] == [(38, 'recorded')]
+
+    def test_an_edited_image_or_boost_message_is_not_read_again(
+        self, words: tuple[str, ...]
+    ) -> None:
+        got = open_one()
+        image = message('1', '1', 'look', attachments=[{'content_type': 'image/png'}])
+        assert not conv.revise(
+            got, edited(image, 'look!'), words, {}, {}, lambda i: sheet.Ceilings()
+        )
+        at = datetime(2026, 8, 12, 1, 54, tzinfo=UTC)
+        got.boosts.append(Boost(character='Tadashi', total=8, message_id='2', at=at))
+        boost = message('2', '1', '8 ishi')
+        assert not conv.revise(
+            got, edited(boost, '9 ishi'), words, {}, {}, lambda i: sheet.Ceilings()
+        )

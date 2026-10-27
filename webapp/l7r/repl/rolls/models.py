@@ -331,6 +331,9 @@ class Conversation:
     #: Every Discord message id collected, so a forward of a message this conversation
     #: already read (from one watched channel into another) is not read twice.
     consumed: set[str] = field(default_factory=set)
+    #: Each collected message's `edited_timestamp` as last read ('' = never edited), so
+    #: a player's later correction of a typed roll is noticed (`conversation.revise`).
+    edited: dict[str, str] = field(default_factory=dict)
     #: Each roller's sheet ceilings, by sheet id, fetched once per conversation.
     ceilings: dict[int, Ceilings] = field(default_factory=dict)
     #: What the GM said the conversation is about - `begin_conversation("Otsuki",

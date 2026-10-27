@@ -330,18 +330,26 @@ def collect(
     conv = conversation or _require()
     words = vocabulary if vocabulary is not None else load_skills()
     messages: list[dict[str, Any]] = []
+    edits: list[dict[str, Any]] = []
     for channel_id in conv.channels:
         try:
-            page = fetch(channel_id, conv.last_seen.get(channel_id) or conv.opened_at)
+            # The WHOLE conversation every poll, not just what is new, because a player
+            # who EDITS a typed roll (a forgotten bonus, a reroll they were not entitled
+            # to) changes a message already read. Measured 2026-10-27: a Monday session
+            # was 53 messages - one page, 0.45 s - and three of its rolls were edited.
+            page = fetch(channel_id, conv.opened_at)
         except discord.DiscordUnavailable as exc:
             note = f'{_label(channel_id)}: {exc}'
             if note not in conv.unresolved:
                 conv.unresolved.append(note)
             continue
-        page = settled(page, now())
-        for message in page:
+        for message in settled(page, now()):
             message['_channel_id'] = channel_id
-        messages.extend(page)
+            mid = str(message['id'])
+            if mid not in conv.consumed:
+                messages.append(message)
+            elif _edited(message) != conv.edited.get(mid, ''):
+                edits.append(message)
     # One channel being unreadable must not hide another's rolls, so the loop above
     # continues rather than returning - and the merged stream is re-sorted, because
     # each channel arrives in its own order.
@@ -355,10 +363,16 @@ def collect(
         note = f'recorded rolls unavailable ({from_sheet.reason})'
         if note not in conv.unresolved:
             conv.unresolved.append(note)
+    for message in edits:
+        conv.edited[str(message['id'])] = _edited(message)
+        if revise(conv, message, words, who, sheet_ids, ceilings):
+            messages.append(message)
+    messages.sort(key=lambda m: discord.parse_timestamp(m['timestamp']))
 
     for posted in messages:
         conv.last_seen[str(posted.get('_channel_id') or '')] = str(posted['id'])
         conv.consumed.add(str(posted['id']))
+        conv.edited[str(posted['id'])] = _edited(posted)
         unwrapped = unforward(conv, posted, fetch_original)
         if unwrapped is None:
             continue
@@ -412,33 +426,113 @@ def collect(
                     f'image from {discord.author_name(message)} at {at:%H:%M:%S} '
                     'could not be resolved'
                 )
-        for roll in found:
-            if not roll.attributed:
-                conv.unresolved.append(
-                    f'{roll.skill} {roll.total} from '
-                    f'{discord.author_name(message) or "an unknown poster"} - no '
-                    'character known for that Discord account'
-                )
-                continue
-            sheet_id = sheet_ids.get(roll.character.strip().lower(), 0)
-            if oppose.is_oppose(roll) and (conv.ever_multi or not conv.primary.present):
-                # Feature 230: the primary's by default; nobody's while they are away.
-                aimed = conv.primary.id if conv.primary.present else oppose.NOBODY
-                roll = replace(roll, against=aimed)
-            conv.rolls.append(attach(conv, _held(conv, roll, sheet_id, ceilings)))
-            if oppose.is_oppose(roll):
-                # Feature 208. HERE rather than in `_tick`, because
-                # `new_line_of_questioning` collects too and the GM's rolls must be
-                # right whichever path saw the oppose roll first. Collection lags the
-                # message by up to a poll, so the NPC may already have rolled under
-                # this penalty without the tool knowing - `settle` prices those now.
-                for change in oppose.settle(conv, gmrolls.recent()):
-                    say(f'  = {change.describe(conv.owner(change.entry).name)}')
+        _take(conv, found, message, sheet_ids, ceilings)
         if boosted is not None:
             say(boostmod.place(conv, boosted))
             if boosted.applied_to is not None:
                 after_boost(conv, boosted.applied_to)
     return conv
+
+
+def _take(
+    conv: Conversation,
+    found: Sequence[Roll],
+    message: Mapping[str, Any],
+    sheet_ids: Mapping[str, int],
+    ceilings: Callable[[int], sheet.Ceilings],
+) -> None:
+    """Add a message's rolls to the conversation, or report the ones nobody owns."""
+    for roll in found:
+        if not roll.attributed:
+            conv.unresolved.append(
+                f'{roll.skill} {roll.total} from '
+                f'{discord.author_name(message) or "an unknown poster"} - no '
+                'character known for that Discord account'
+            )
+            continue
+        sheet_id = sheet_ids.get(roll.character.strip().lower(), 0)
+        if oppose.is_oppose(roll) and (conv.ever_multi or not conv.primary.present):
+            # Feature 230: the primary's by default; nobody's while they are away.
+            aimed = conv.primary.id if conv.primary.present else oppose.NOBODY
+            roll = replace(roll, against=aimed)
+        conv.rolls.append(attach(conv, _held(conv, roll, sheet_id, ceilings)))
+        if oppose.is_oppose(roll):
+            # Feature 208. HERE rather than in `_tick`, because
+            # `new_line_of_questioning` collects too and the GM's rolls must be
+            # right whichever path saw the oppose roll first. Collection lags the
+            # message by up to a poll, so the NPC may already have rolled under
+            # this penalty without the tool knowing - `settle` prices those now.
+            for change in oppose.settle(conv, gmrolls.recent()):
+                say(f'  = {change.describe(conv.owner(change.entry).name)}')
+
+
+def _edited(message: Mapping[str, Any]) -> str:
+    return str(message.get('edited_timestamp') or '')
+
+
+def revise(
+    conv: Conversation,
+    message: Mapping[str, Any],
+    words: tuple[str, ...],
+    who: Mapping[str, str],
+    sheet_ids: Mapping[str, int],
+    ceilings: Callable[[int], sheet.Ceilings],
+) -> bool:
+    """A message already read was EDITED: bring its typed rolls up to date.
+
+    The GM (2026-10-27): a player who forgot a bonus edits `interrogation 41@3` to
+    `50@3`, or one who should not have rerolled 10s edits it down. The roll keeps
+    everything the GM gave it - note, line, outcome, contest - and only its total and
+    rank follow the edit, with any Ishi boost still added on top. What a total feeds
+    (an oppose penalty, the private interrogation comparison) is re-run, and the next
+    write re-renders the record. A skill the edit no longer names is KEPT and
+    reported, never deleted; a skill it newly names is added. A dice card's total is
+    the sheet app's, so an image-joined roll is left alone.
+
+    True when the message gave nothing before and should be read as if new - a
+    misspelled skill fixed by the edit.
+    """
+    mid = str(message['id'])
+    mine = [i for i, r in enumerate(conv.rolls) if r.message_id == mid]
+    if not mine:
+        return not discord.has_image(message) and all(b.message_id != mid for b in conv.boosts)
+    typed = [i for i in mine if conv.rolls[i].source == 'typed']
+    if not typed:
+        return False
+    found, _ = parse_message(
+        str(message.get('content') or ''),
+        words,
+        character=who.get(discord.author_id(message), ''),
+        message_id=mid,
+        at=discord.parse_timestamp(message['timestamp']),
+    )
+    now: dict[str, list[Roll]] = {}
+    for roll in found:
+        if roll.attributed:
+            now.setdefault(roll.skill, []).append(roll)
+    for index in typed:
+        old = conv.rolls[index]
+        if not now.get(old.skill):
+            note = (
+                f'{rules.personal_name(old.character)} {old.skill} {old.total} was edited out '
+                'of its message - still kept; annotate() can discard it'
+            )
+            say(f'  ? {note}')
+            conv.unresolved.append(note)
+            continue
+        new = now[old.skill].pop(0)
+        total = new.total + old.boost
+        rank = new.rank if new.rank is not None else old.rank
+        if (total, rank) == (old.total, old.rank):
+            continue
+        conv.rolls[index] = replace(old, total=total, rank=rank)
+        was = f'{old.total}' + (f'@{old.rank}' if old.rank is not None else '')
+        is_ = f'{total}' + (f'@{rank}' if rank is not None else '')
+        say(f'  ~ {old.character}: {old.skill} {was} -> {is_} (edited)')
+        if not old.discarded:
+            after_boost(conv, index)
+    _take(conv, [r for rolls in now.values() for r in rolls], message, sheet_ids, ceilings)
+    return False
 
 
 #: The message types only an application posts: a slash command's reply (20) and a
@@ -508,10 +602,11 @@ def settled(page: list[dict[str, Any]], now: datetime) -> list[dict[str, Any]]:
 
 
 def after_boost(conv: Conversation, index: int) -> None:
-    """What a boost changes beyond its own roll (feature 214, FR-010 / FR-011), and
-    what taking one back changes: an oppose roll's penalty is re-derived from the
-    new total, and an interrogation roll's private comparison is re-run - the same
-    calls a newly collected roll of either kind gets."""
+    """What a boost changes beyond its own roll (feature 214, FR-010 / FR-011), what
+    taking one back changes, and what a player's edit to the roll changes: an oppose
+    roll's penalty is re-derived from the new total, and an interrogation roll's
+    private comparison is re-run - the same calls a newly collected roll of either
+    kind gets."""
     roll = conv.rolls[index]
     if oppose.is_oppose(roll):
         announce_oppose(conv, roll)

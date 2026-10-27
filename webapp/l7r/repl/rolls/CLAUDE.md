@@ -601,6 +601,20 @@ the forwarder was not the roller. A forward of a message the conversation alread
 (`Conversation.consumed`) is skipped, so a roll forwarded between two watched channels is one roll.
 Fixture: `tests/fixtures/discord/forward.json` (the real message, trimmed).
 
+**An EDITED typed roll follows the edit** (GM 2026-10-27). A player who forgot a bonus edits
+`41 interrogation@3` to `50@3`; one who should not have rerolled 10s edits it down. So every poll
+re-reads the WHOLE conversation from `opened_at`, not just what is new (measured: a Monday session
+is 53 messages, one page, 0.45 s - and three of that night's rolls had been edited), and a message
+whose `edited_timestamp` moved goes to `conversation.revise`: the roll keeps everything the GM gave
+it (note, line, outcome, contest) and only its total and rank change, with any Ishi boost kept on
+top; the oppose penalty and private interrogation comparison are re-run (`after_boost`), the
+watcher prints `~ Jimen: interrogation 41@3 -> 50@3 (edited)`, and the next debounced write
+re-renders the record. A skill the edit no longer names is KEPT and reported, never deleted; one it
+newly names is added; a message that gave nothing (a misspelled skill) is read as new. A dice
+card's total is the sheet app's, so an image-joined roll ignores edits. **Accepted limitation**: an
+edit after `end_conversation()` is not seen - nothing is collecting - so the GM fixes that by hand.
+Tests: `TestEditedRolls` in `tests/test_rolls_conversation.py`.
+
 **The typed path is primary, not a fallback.** 204 image posts against ~99 typed, split by PLAYER
 rather than by group: two Monday players and one Tuesday player type almost everything. It is the
 path that still PARSES with no endpoint at all - though see below, it cannot attribute without
