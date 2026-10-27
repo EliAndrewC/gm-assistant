@@ -25,6 +25,7 @@ TWO API FACTS THAT SHAPE THIS MODULE (research.md R9, both measured live):
 from __future__ import annotations
 
 import json
+import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Mapping, Sequence
@@ -88,24 +89,47 @@ def bot_token(path: Path | None = None) -> str:
     return token
 
 
+#: How many times a rate-limited read is tried before it is reported. Measured
+#: 2026-10-27: paging a year of history back to back drew `429 ... retry_after: 0.3`
+#: after a few dozen pages. A poll re-reads the whole conversation, so a session past
+#: 100 messages pages back to back too; a short wait and a retry is all it needs.
+RATE_LIMIT_TRIES = 3
+#: The longest a retry waits, whatever Discord asks: the watcher must keep polling.
+RATE_LIMIT_MAX_WAIT = 5.0
+_sleep = time.sleep
+
+
 def _fetch(url: str, token: str, timeout: float) -> Any:
     request = urllib.request.Request(
         url, headers={'Authorization': f'Bot {token}', 'User-Agent': USER_AGENT}
     )
+    for attempt in range(RATE_LIMIT_TRIES):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                return json.load(response)
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode('utf-8', 'replace')[:200]
+            if exc.code == 429 and attempt + 1 < RATE_LIMIT_TRIES:
+                _sleep(min(_retry_after(detail), RATE_LIMIT_MAX_WAIT))
+                continue
+            if exc.code == 403:
+                raise DiscordUnavailable(
+                    f'403 from Discord for {url}. The bot is in the server but cannot see '
+                    'this channel: a private channel needs the bot added to its own '
+                    'permission overrides, which a server-level grant does not reach.'
+                ) from exc
+            raise DiscordUnavailable(f'{exc.code} from Discord: {detail}') from exc
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            raise DiscordUnavailable(f'could not reach Discord: {exc}') from exc
+    raise AssertionError('unreachable: the last try returns or raises')  # pragma: no cover
+
+
+def _retry_after(body: str) -> float:
+    """Discord's `retry_after` seconds from a 429 body; one second when it gives none."""
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            return json.load(response)
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode('utf-8', 'replace')[:200]
-        if exc.code == 403:
-            raise DiscordUnavailable(
-                f'403 from Discord for {url}. The bot is in the server but cannot see '
-                'this channel: a private channel needs the bot added to its own '
-                'permission overrides, which a server-level grant does not reach.'
-            ) from exc
-        raise DiscordUnavailable(f'{exc.code} from Discord: {detail}') from exc
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise DiscordUnavailable(f'could not reach Discord: {exc}') from exc
+        return float(json.loads(body).get('retry_after', 1.0))
+    except ValueError, AttributeError, TypeError:
+        return 1.0
 
 
 def messages_since(

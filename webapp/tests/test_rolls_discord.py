@@ -134,10 +134,55 @@ class TestFetchErrors:
             discord._fetch('https://x', 't', 1.0)
 
     def test_other_http_errors_carry_the_code(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        error = urllib.error.HTTPError('u', 429, 'Too Many', {}, None)  # type: ignore[arg-type]
+        error = urllib.error.HTTPError('u', 500, 'Broken', {}, None)  # type: ignore[arg-type]
         monkeypatch.setattr(urllib.request, 'urlopen', self._raise(error))
+        with pytest.raises(discord.DiscordUnavailable, match='500'):
+            discord._fetch('https://x', 't', 1.0)
+
+    @staticmethod
+    def _limited(body: bytes) -> urllib.error.HTTPError:
+        import io
+
+        return urllib.error.HTTPError('u', 429, 'Too Many', {}, io.BytesIO(body))  # type: ignore[arg-type]
+
+    def test_a_rate_limit_waits_as_asked_and_retries(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        waits: list[float] = []
+        monkeypatch.setattr(discord, '_sleep', waits.append)
+        answers: list[Any] = [
+            self._limited(b'{"message": "You are being rate limited.", "retry_after": 0.3}'),
+            self._limited(b'{"retry_after": 60}'),
+        ]
+
+        class Fake:
+            def read(self) -> bytes:
+                return b'[]'
+
+            def __enter__(self) -> Fake:
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+        def opener(*args: Any, **kwargs: Any) -> Any:
+            if answers:
+                raise answers.pop(0)
+            return Fake()
+
+        monkeypatch.setattr(urllib.request, 'urlopen', opener)
+        assert discord._fetch('https://x', 't', 1.0) == []
+        assert waits == [0.3, discord.RATE_LIMIT_MAX_WAIT]
+
+    def test_a_rate_limit_that_persists_is_reported(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        waits: list[float] = []
+        monkeypatch.setattr(discord, '_sleep', waits.append)
+
+        def opener(*args: Any, **kwargs: Any) -> Any:
+            raise self._limited(b'not json')
+
+        monkeypatch.setattr(urllib.request, 'urlopen', opener)
         with pytest.raises(discord.DiscordUnavailable, match='429'):
             discord._fetch('https://x', 't', 1.0)
+        assert waits == [1.0] * (discord.RATE_LIMIT_TRIES - 1)
 
     def test_a_transport_failure_is_reported(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(urllib.request, 'urlopen', self._raise(urllib.error.URLError('down')))
