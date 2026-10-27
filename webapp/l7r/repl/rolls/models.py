@@ -288,10 +288,10 @@ class Conversation:
     """The one piece of mutable state in the feature. At most one is open.
 
     `npc` is the matched Obsidian Portal record, so it carries the id the write
-    needs. `last_seen` maps channel id -> newest message already consumed, which
-    makes polling incremental and has to be PER CHANNEL: a conversation watches
-    every monitored channel at once, and one cursor shared between them would let
-    a busy channel drag the others past unread messages.
+    needs. `last_seen` maps channel id -> newest message read in that channel. It
+    no longer drives polling: since 2026-10-27 every poll re-reads the conversation
+    from `opened_at`, so a player's EDIT to a roll already read is seen, and
+    `consumed` is what keeps a message from being read twice.
     """
 
     npc: Mapping[str, object]

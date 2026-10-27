@@ -351,9 +351,8 @@ def collect(
             elif _edited(message) != conv.edited.get(mid, ''):
                 edits.append(message)
     # One channel being unreadable must not hide another's rolls, so the loop above
-    # continues rather than returning - and the merged stream is re-sorted, because
-    # each channel arrives in its own order.
-    messages.sort(key=lambda m: discord.parse_timestamp(m['timestamp']))
+    # continues rather than returning. The merged stream is sorted below, after any
+    # edited message to be read as new has joined it.
 
     from_sheet = recorded(conv.opened_at)
     cast = roster()
