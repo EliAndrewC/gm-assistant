@@ -17,7 +17,7 @@ import pytest
 from l7r.repl.rolls import conversation as conv
 from l7r.repl.rolls import discord as discord_mod
 from l7r.repl.rolls import sheet
-from l7r.repl.rolls.models import Boost
+from l7r.repl.rolls.models import Boost, Roll
 from l7r.repl.rolls.skills import load_skills
 
 OPENED = datetime(2026, 8, 12, 1, 53, tzinfo=UTC)
@@ -780,3 +780,69 @@ class TestEditedRolls:
         assert not conv.revise(
             got, edited(boost, '9 ishi'), words, {}, {}, lambda i: sheet.Ceilings()
         )
+
+
+SHIZU = {
+    '3': sheet.SheetCharacter(
+        name='Tsuruchi Shizukanaken ',
+        discord_id='3',
+        skills={'sincerity': 1, 'interrogation': 3},
+        sheet_id=10,
+    )
+}
+
+
+class TestSheetRanks:
+    """2026-10-27: Shizukanaken posted `sincerity 32@4` with ONE rank in Sincerity, and
+    it was recorded as typed. The sheet knows his ranks, as it knows his Withdrawn cap."""
+
+    def _collect(self, messages: list[dict[str, Any]], words: tuple[str, ...]) -> Any:
+        return conv.collect(
+            fetch=lambda cid, cursor, **k: messages,
+            recorded=lambda *a, **k: sheet.SheetResult(),
+            roster=lambda *a, **k: sheet.SheetResult(characters=SHIZU),
+            vocabulary=words,
+            ceilings=lambda i: sheet.Ceilings(),
+        )
+
+    def test_a_wrong_rank_is_recorded_as_the_sheets(
+        self, words: tuple[str, ...], capsys: Any
+    ) -> None:
+        open_one()
+        got = self._collect([message('1', '3', '32 sincerity@4')], words)
+        assert [(r.skill, r.total, r.rank) for r in got.rolls] == [('sincerity', 32, 1)]
+        assert (
+            'Shizukanaken sincerity: posted @4, the sheet says 1 - recorded @1'
+            in capsys.readouterr().out
+        )
+
+    def test_a_missing_rank_is_filled_in_silently(
+        self, words: tuple[str, ...], capsys: Any
+    ) -> None:
+        open_one()
+        got = self._collect([message('1', '3', '37 interrogation')], words)
+        assert got.rolls[0].rank == 3
+        assert 'posted @' not in capsys.readouterr().out
+
+    def test_a_skill_the_sheet_leaves_out_is_rank_0(self, words: tuple[str, ...]) -> None:
+        open_one()
+        got = self._collect([message('1', '3', '20 heraldry@2')], words)
+        assert got.rolls[0].rank == 0
+
+    def test_an_edit_cannot_put_the_wrong_rank_back(self, words: tuple[str, ...]) -> None:
+        open_one()
+        posted = message('1', '3', '32 sincerity@1')
+        got = self._collect([posted], words)
+        self._collect([edited(posted, '35 sincerity@4')], words)
+        assert (got.rolls[0].total, got.rolls[0].rank) == (35, 1)
+
+    def test_a_knack_keeps_what_was_typed(self) -> None:
+        at = datetime(2026, 8, 12, 1, 54, tzinfo=UTC)
+        typed = Roll('Tsuruchi Shizukanaken', 'oppose social', 30, 'typed', '1', at, rank=3)
+        assert conv.sheet_rank(typed, SHIZU['3']).rank == 3
+
+    def test_a_sheet_with_no_ranks_is_unknown_not_all_zero(self) -> None:
+        at = datetime(2026, 8, 12, 1, 54, tzinfo=UTC)
+        typed = Roll('Jimen', 'tact', 30, 'typed', '1', at, rank=3)
+        assert conv.sheet_rank(typed, PLAYERS['1']).rank == 3
+        assert conv.sheet_rank(typed, None).rank == 3

@@ -615,6 +615,15 @@ card's total is the sheet app's, so an image-joined roll ignores edits. **Accept
 edit after `end_conversation()` is not seen - nothing is collecting - so the GM fixes that by hand.
 Tests: `TestEditedRolls` in `tests/test_rolls_conversation.py`.
 
+**A typed rank is the SHEET's, whatever was typed** (GM 2026-10-27). Shizukanaken posted
+`32 sincerity@4` with one rank in Sincerity; the sheet roster (read every poll, so current) knows
+his ranks, as it knows his Withdrawn cap. `conversation.sheet_rank` sets the rank from
+`SheetCharacter.skills` on every typed roll, new or edited: a wrong rank is corrected aloud
+(`! Shizukanaken sincerity: posted @4, the sheet says 1 - recorded @1`), a missing one is filled in
+silently, a plain skill the sheet leaves out is 0 (the sheet omits zero ranks), and a knack - which
+the roster does not carry - keeps what was typed. A roster entry with NO skills is an unknown sheet,
+not a character with every skill at 0, and changes nothing.
+
 **The typed path is primary, not a fallback.** 204 image posts against ~99 typed, split by PLAYER
 rather than by group: two Monday players and one Tuesday player type almost everything. It is the
 path that still PARSES with no endpoint at all - though see below, it cannot attribute without

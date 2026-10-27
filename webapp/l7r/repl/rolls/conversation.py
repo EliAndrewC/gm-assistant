@@ -17,6 +17,7 @@ conversation was opened against the wrong NPC.
 
 from __future__ import annotations
 
+import functools
 import re
 import threading
 import time
@@ -48,7 +49,7 @@ from l7r.repl.rolls import (
 )
 from l7r.repl.rolls.models import Conversation, Member, RecordingRule, Roll
 from l7r.repl.rolls.parse import parse_message
-from l7r.repl.rolls.skills import load_skills
+from l7r.repl.rolls.skills import load_skills, rules_skills
 
 #: How close in time a recorded roll must sit to the Discord message that shows it.
 #: Generous on purpose: a player rolls on the sheet, looks at it, copies the image
@@ -357,14 +358,14 @@ def collect(
     from_sheet = recorded(conv.opened_at)
     cast = roster()
     who = _players(cast)
-    sheet_ids = {c.name.strip().lower(): c.sheet_id for c in cast.characters.values() if c.sheet_id}
+    sheets = {c.name.strip().lower(): c for c in cast.characters.values()}
     if not from_sheet.available:
         note = f'recorded rolls unavailable ({from_sheet.reason})'
         if note not in conv.unresolved:
             conv.unresolved.append(note)
     for message in edits:
         conv.edited[str(message['id'])] = _edited(message)
-        if revise(conv, message, words, who, sheet_ids, ceilings):
+        if revise(conv, message, words, who, sheets, ceilings):
             messages.append(message)
     messages.sort(key=lambda m: discord.parse_timestamp(m['timestamp']))
 
@@ -425,7 +426,7 @@ def collect(
                     f'image from {discord.author_name(message)} at {at:%H:%M:%S} '
                     'could not be resolved'
                 )
-        _take(conv, found, message, sheet_ids, ceilings)
+        _take(conv, found, message, sheets, ceilings)
         if boosted is not None:
             say(boostmod.place(conv, boosted))
             if boosted.applied_to is not None:
@@ -437,7 +438,7 @@ def _take(
     conv: Conversation,
     found: Sequence[Roll],
     message: Mapping[str, Any],
-    sheet_ids: Mapping[str, int],
+    sheets: Mapping[str, sheet.SheetCharacter],
     ceilings: Callable[[int], sheet.Ceilings],
 ) -> None:
     """Add a message's rolls to the conversation, or report the ones nobody owns."""
@@ -449,7 +450,9 @@ def _take(
                 'character known for that Discord account'
             )
             continue
-        sheet_id = sheet_ids.get(roll.character.strip().lower(), 0)
+        found_sheet = sheets.get(roll.character.strip().lower())
+        sheet_id = found_sheet.sheet_id if found_sheet else 0
+        roll = sheet_rank(roll, found_sheet)
         if oppose.is_oppose(roll) and (conv.ever_multi or not conv.primary.present):
             # Feature 230: the primary's by default; nobody's while they are away.
             aimed = conv.primary.id if conv.primary.present else oppose.NOBODY
@@ -465,6 +468,39 @@ def _take(
                 say(f'  = {change.describe(conv.owner(change.entry).name)}')
 
 
+@functools.cache
+def _plain_skills() -> frozenset[str]:
+    return frozenset(rules_skills())
+
+
+def sheet_rank(roll: Roll, character: sheet.SheetCharacter | None) -> Roll:
+    """`roll` with the rank its roller's sheet gives, whatever the player typed.
+
+    The GM (2026-10-27): Shizukanaken posted `sincerity 32@4` with one rank in
+    Sincerity - *"we know what his character is"* - the same reasoning as applying
+    Withdrawn's cap for him. The sheet roster is read every poll, so its ranks are
+    current. A skill missing from the sheet is rank 0 (the sheet leaves zero ranks
+    out); a knack, which the roster does not carry, keeps what was typed, and so
+    does every roll when the roster gave no ranks at all. A rank
+    typed wrong is corrected aloud; one not typed at all is filled in silently.
+    """
+    if character is None or not character.skills:
+        # No ranks at all is an unknown sheet, not a character with every skill at 0.
+        return roll
+    if roll.skill in character.skills:
+        rank = character.skills[roll.skill]
+    elif roll.skill in _plain_skills():
+        rank = 0
+    else:
+        return roll
+    if roll.rank is not None and roll.rank != rank:
+        say(
+            f'  ! {rules.personal_name(roll.character)} {roll.skill}: posted @{roll.rank}, '
+            f'the sheet says {rank} - recorded @{rank}'
+        )
+    return replace(roll, rank=rank)
+
+
 def _edited(message: Mapping[str, Any]) -> str:
     return str(message.get('edited_timestamp') or '')
 
@@ -474,7 +510,7 @@ def revise(
     message: Mapping[str, Any],
     words: tuple[str, ...],
     who: Mapping[str, str],
-    sheet_ids: Mapping[str, int],
+    sheets: Mapping[str, sheet.SheetCharacter],
     ceilings: Callable[[int], sheet.Ceilings],
 ) -> bool:
     """A message already read was EDITED: bring its typed rolls up to date.
@@ -519,7 +555,7 @@ def revise(
             say(f'  ? {note}')
             conv.unresolved.append(note)
             continue
-        new = now[old.skill].pop(0)
+        new = sheet_rank(now[old.skill].pop(0), sheets.get(old.character.strip().lower()))
         total = new.total + old.boost
         rank = new.rank if new.rank is not None else old.rank
         if (total, rank) == (old.total, old.rank):
@@ -530,7 +566,7 @@ def revise(
         say(f'  ~ {old.character}: {old.skill} {was} -> {is_} (edited)')
         if not old.discarded:
             after_boost(conv, index)
-    _take(conv, [r for rolls in now.values() for r in rolls], message, sheet_ids, ceilings)
+    _take(conv, [r for rolls in now.values() for r in rolls], message, sheets, ceilings)
     return False
 
 
