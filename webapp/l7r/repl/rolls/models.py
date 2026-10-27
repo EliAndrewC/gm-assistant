@@ -328,6 +328,9 @@ class Conversation:
     #: posted a paw-print picture 90 s after their `/etiquette` card, the join's 300 s
     #: window matched the same recorded roll again, and Yudai was written twice.
     joined: set[tuple[str, str, int, str]] = field(default_factory=set)
+    #: Every Discord message id collected, so a forward of a message this conversation
+    #: already read (from one watched channel into another) is not read twice.
+    consumed: set[str] = field(default_factory=set)
     #: Each roller's sheet ceilings, by sheet id, fetched once per conversation.
     ceilings: dict[int, Ceilings] = field(default_factory=dict)
     #: What the GM said the conversation is about - `begin_conversation("Otsuki",

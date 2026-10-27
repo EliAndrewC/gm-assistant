@@ -324,6 +324,7 @@ def collect(
     vocabulary: tuple[str, ...] | None = None,
     ceilings: Callable[[int], sheet.Ceilings] = sheet.roll_ceilings,
     now: Callable[[], datetime] = lambda: datetime.now(UTC),
+    fetch_original: Callable[[str, str], Mapping[str, Any]] = discord.fetch_message,
 ) -> Conversation:
     """Read everything posted since the last poll and fold it into the conversation."""
     conv = conversation or _require()
@@ -355,8 +356,13 @@ def collect(
         if note not in conv.unresolved:
             conv.unresolved.append(note)
 
-    for message in messages:
-        conv.last_seen[str(message.get('_channel_id') or '')] = str(message['id'])
+    for posted in messages:
+        conv.last_seen[str(posted.get('_channel_id') or '')] = str(posted['id'])
+        conv.consumed.add(str(posted['id']))
+        unwrapped = unforward(conv, posted, fetch_original)
+        if unwrapped is None:
+            continue
+        message = unwrapped
         who_posted = who.get(discord.author_id(message), '')
         at = discord.parse_timestamp(message['timestamp'])
         found, problems = parse_message(
@@ -433,6 +439,61 @@ def collect(
             if boosted.applied_to is not None:
                 after_boost(conv, boosted.applied_to)
     return conv
+
+
+#: The message types only an application posts: a slash command's reply (20) and a
+#: message command's (23). A forward's snapshot keeps the type but not the author.
+_APP_MESSAGE_TYPES = frozenset({20, 23})
+
+#: Who a forwarded roll is "from" in the unresolved list when its original is gone.
+UNKNOWN_FORWARDER = 'a forward whose original could not be read'
+
+
+def unforward(
+    conv: Conversation,
+    message: dict[str, Any],
+    fetch_original: Callable[[str, str], Mapping[str, Any]],
+) -> dict[str, Any] | None:
+    """What a FORWARDED message forwarded, read as if it had been posted here.
+
+    2026-10-26: Tadashi rolled `/etiquette` in #general, forwarded it into the game
+    channel and deleted the original; the forward's own content is empty, so the roll
+    was never seen. The snapshot carries the content, the card and the original time,
+    but not the author, so the original is fetched for it; when that fails (deleted,
+    or a channel the bot cannot read) an application-posted snapshot that opens
+    `**Name**:` is the sheet bot's, which names its roller. Anything else has NO
+    author, so its roll is reported unattributed: the forwarder is not the roller -
+    Tadashi's card was forwarded by Shizukanaken's player.
+    The message keeps the FORWARD's id, which is the one a later reply or boost aims at.
+
+    None when the original was already collected by this conversation - a roll
+    forwarded from one watched channel into another is one roll.
+    """
+    found = discord.forwarded(message)
+    if found is None:
+        return message
+    ref, snapshot = found
+    original_id = str(ref.get('message_id') or '')
+    if original_id in conv.consumed:
+        return None
+    # A second forward of the same original (two players, or one player twice) is skipped too.
+    conv.consumed.add(original_id)
+    author: Mapping[str, Any] = {'global_name': UNKNOWN_FORWARDER}
+    try:
+        author = (
+            fetch_original(str(ref.get('channel_id') or ''), original_id).get('author') or author
+        )
+    except discord.DiscordUnavailable:
+        content = str(snapshot.get('content') or '')
+        if int(snapshot.get('type') or 0) in _APP_MESSAGE_TYPES and _BOT_ROLL.match(content):
+            author = {'id': SHEET_BOT_ID}
+    return {
+        **snapshot,
+        'id': message['id'],
+        'timestamp': snapshot.get('timestamp') or message['timestamp'],
+        'author': author,
+        '_channel_id': message.get('_channel_id'),
+    }
 
 
 def settled(page: list[dict[str, Any]], now: datetime) -> list[dict[str, Any]]:

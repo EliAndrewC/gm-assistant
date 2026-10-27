@@ -1,0 +1,42 @@
+{
+  "_note": "Real forward, 2026-10-27 00:28Z, #case-of-the-mondays: Asako Tadashi rolled /etiquette in #general, forwarded it here and deleted the original (GET on it is 404 Unknown Message). Trimmed: author fields and attachment URLs dropped.",
+  "type": 0,
+  "content": "",
+  "attachments": [],
+  "embeds": [],
+  "timestamp": "2026-10-27T00:28:19.374000+00:00",
+  "flags": 16384,
+  "id": "1564435543486632006",
+  "channel_id": "832075590726844436",
+  "author": {
+    "id": "209412082351734785",
+    "username": "iollan",
+    "global_name": "iollan"
+  },
+  "message_reference": {
+    "type": 1,
+    "channel_id": "745421621829042300",
+    "message_id": "1564435450343587915",
+    "guild_id": "745421621829042297"
+  },
+  "message_snapshots": [
+    {
+      "message": {
+        "type": 20,
+        "content": "**Asako Tadashi**: **18** Etiquette@1",
+        "embeds": [],
+        "timestamp": "2026-10-27T00:27:57.167000+00:00",
+        "flags": 0,
+        "attachments": [
+          {
+            "id": "1564435543075463250",
+            "filename": "l7r-roll.png",
+            "content_type": "image/png",
+            "width": 346,
+            "height": 510
+          }
+        ]
+      }
+    }
+  ]
+}

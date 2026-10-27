@@ -198,3 +198,43 @@ def test_the_known_channels() -> None:
     assert discord.CHANNELS['tuesday'] == '832075722516201492'
     # The scratch server, so a test run never touches the players' channels.
     assert discord.CHANNELS['test'] == '1543009572359241840'
+
+
+class TestForwards:
+    def test_a_forward_yields_its_reference_and_snapshot(self) -> None:
+        real = json.loads((FIXTURE.parent / 'forward.json').read_text())
+        found = discord.forwarded(real)
+        assert found is not None
+        ref, snapshot = found
+        assert ref['message_id'] == '1564435450343587915'
+        assert snapshot['content'] == '**Asako Tadashi**: **18** Etiquette@1'
+
+    def test_a_reply_is_not_a_forward(self) -> None:
+        reply = {'message_reference': {'type': 0, 'message_id': '1'}, 'message_snapshots': []}
+        assert discord.forwarded(reply) is None
+        assert discord.forwarded({'content': 'hi'}) is None
+
+    def test_fetch_message_asks_for_one_message(self) -> None:
+        asked: list[str] = []
+
+        def fake(url: str, token: str, timeout: float) -> Any:
+            asked.append(url)
+            return {'id': '9'}
+
+        assert discord.fetch_message('c', '9', token='t', fetch=fake) == {'id': '9'}
+        assert asked == [f'{discord.API}/channels/c/messages/9']
+
+    def test_fetch_message_reads_the_token_when_none_is_given(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        secrets = tmp_path / 's.ini'
+        secrets.write_text('[discord]\nbot_token = abc\n')
+        monkeypatch.setattr(discord, 'SECRETS', secrets)
+        seen: list[str] = []
+
+        def fake(url: str, token: str, timeout: float) -> Any:
+            seen.append(token)
+            return {}
+
+        discord.fetch_message('c', '9', fetch=fake)
+        assert seen == ['abc']

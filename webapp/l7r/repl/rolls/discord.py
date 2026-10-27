@@ -145,6 +145,40 @@ def messages_since(
     return collected
 
 
+def fetch_message(
+    channel_id: str,
+    message_id: str,
+    *,
+    token: str | None = None,
+    fetch: Callable[[str, str, float], Any] = _fetch,
+    timeout: float = 25.0,
+) -> dict[str, Any]:
+    """One message by id. Raises `DiscordUnavailable` - a 404 when it was deleted."""
+    resolved = token if token is not None else bot_token()
+    found: dict[str, Any] = fetch(
+        f'{API}/channels/{channel_id}/messages/{message_id}', resolved, timeout
+    )
+    return found
+
+
+#: The reference type that means a FORWARD (0 is a reply).
+FORWARD_REFERENCE = 1
+
+
+def forwarded(message: Mapping[str, Any]) -> tuple[Mapping[str, Any], Mapping[str, Any]] | None:
+    """A forward's (reference, snapshot of the original), or None for any other message.
+
+    A forward arrives with empty content: what was forwarded is in
+    `message_snapshots[0].message` - content, attachments, timestamp, but NO author
+    (measured 2026-10-27, Asako Tadashi's `/etiquette` card forwarded from #general).
+    """
+    ref: Mapping[str, Any] = message.get('message_reference') or {}
+    snapshots: Sequence[Mapping[str, Any]] = message.get('message_snapshots') or ()
+    if int(ref.get('type') or 0) != FORWARD_REFERENCE or not snapshots:
+        return None
+    return ref, snapshots[0].get('message') or {}
+
+
 def parse_timestamp(raw: str) -> datetime:
     """Discord's ISO-8601 timestamp as a timezone-aware UTC datetime."""
     return datetime.fromisoformat(raw.replace('Z', '+00:00')).astimezone(UTC)

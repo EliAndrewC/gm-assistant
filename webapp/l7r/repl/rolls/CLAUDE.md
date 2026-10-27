@@ -590,6 +590,17 @@ from author `1490400739934212116` with content `**Roll Tester**: **23** Etiquett
 `bot_roll_character` is what reads it. The markdown matters too: `**23**` glued to the number
 stopped the parser matching at all until emphasis was stripped.
 
+**A forwarded roll is read from its snapshot** (2026-10-27). Tadashi rolled `/etiquette` in
+#general, Shizukanaken's player forwarded it into the game channel, and the original was deleted.
+A forward's own content is EMPTY; the roll is in `message_snapshots[0].message` (content, card,
+original time, no author). `conversation.unforward` reads it as if posted in the watched channel,
+keeping the forward's id. The author comes from fetching the original; when that 404s, an
+app-posted snapshot opening `**Name**:` is the sheet bot's (it names its roller), and anything else
+is reported unattributed. **Never credit a forward to the forwarder** - in the very first real case
+the forwarder was not the roller. A forward of a message the conversation already read
+(`Conversation.consumed`) is skipped, so a roll forwarded between two watched channels is one roll.
+Fixture: `tests/fixtures/discord/forward.json` (the real message, trimmed).
+
 **The typed path is primary, not a fallback.** 204 image posts against ~99 typed, split by PLAYER
 rather than by group: two Monday players and one Tuesday player type almost everything. It is the
 path that still PARSES with no endpoint at all - though see below, it cannot attribute without

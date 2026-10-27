@@ -6,6 +6,7 @@ app, or Obsidian Portal.
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -66,13 +67,21 @@ def collect_with(
     rolls: tuple[sheet.RecordedRoll, ...] = (),
     reason: str = '',
     who: dict[str, sheet.SheetCharacter] | None = None,
+    originals: dict[str, dict[str, Any]] | None = None,
 ) -> Any:
     return conv.collect(
         fetch=lambda cid, cursor, **k: messages,
         recorded=lambda *a, **k: sheet.SheetResult(rolls=rolls, reason=reason),
         roster=lambda *a, **k: sheet.SheetResult(characters=who or {}),
         vocabulary=words,
+        fetch_original=lambda cid, mid: _original(originals or {}, mid),
     )
+
+
+def _original(originals: dict[str, dict[str, Any]], mid: str) -> dict[str, Any]:
+    if mid not in originals:
+        raise discord_mod.DiscordUnavailable('404 from Discord: Unknown Message')
+    return originals[mid]
 
 
 PLAYERS = {
@@ -575,3 +584,74 @@ class TestTitledConversation:
         opened = conv.begin_conversation('Otsuki', 'test', characters=lambda: CAST)
         assert opened.title == 'test'
         assert set(opened.channels) == set(discord_mod.CHANNELS.values())
+
+
+FORWARD = Path(__file__).parent / 'fixtures' / 'discord' / 'forward.json'
+
+
+def forward(mid: str, forwarder: str, original_id: str, snapshot: dict[str, Any]) -> dict[str, Any]:
+    """A forward as Discord delivers one: empty itself, the original in a snapshot."""
+    return {
+        **message(mid, forwarder, minute=56),
+        'message_reference': {'type': 1, 'channel_id': 'general', 'message_id': original_id},
+        'message_snapshots': [{'message': snapshot}],
+    }
+
+
+class TestForwardedRolls:
+    """2026-10-26: Tadashi's `/etiquette` card, rolled in #general and forwarded into
+    the game channel, was never seen - the forward's own content is empty."""
+
+    def test_last_nights_forwarded_card_is_recorded(self, words: tuple[str, ...]) -> None:
+        open_one('monday')
+        real = json.loads(FORWARD.read_text())
+        rolled = datetime(2026, 10, 27, 0, 27, 56, tzinfo=UTC)
+        recorded = (
+            sheet.RecordedRoll('Asako Tadashi', 'etiquette', 18, '316306960855072769', rolled, 1),
+        )
+        # The original was deleted after it was forwarded: fetching it is a 404.
+        got = collect_with([real], words, rolls=recorded)
+        assert [(r.character, r.skill, r.total, r.source) for r in got.rolls] == [
+            ('Asako Tadashi', 'etiquette', 18, 'recorded')
+        ]
+        assert got.rolls[0].message_id == real['id']
+        assert got.rolls[0].at == datetime(2026, 10, 27, 0, 27, 57, 167000, tzinfo=UTC)
+
+    def test_a_readable_original_says_who_rolled(self, words: tuple[str, ...]) -> None:
+        open_one()
+        typed = {'id': '50', 'timestamp': '2026-08-12T01:55:00+00:00', 'content': '30 tact'}
+        original = {**typed, 'author': {'id': '2'}}
+        got = collect_with(
+            [forward('60', '1', '50', typed)], words, who=PLAYERS, originals={'50': original}
+        )
+        assert [(r.character, r.skill, r.total) for r in got.rolls] == [('Tetsuro', 'tact', 30)]
+
+    def test_an_unreadable_typed_original_is_not_credited_to_the_forwarder(
+        self, words: tuple[str, ...]
+    ) -> None:
+        open_one()
+        typed = {'id': '50', 'timestamp': '2026-08-12T01:55:00+00:00', 'content': '30 tact'}
+        got = collect_with([forward('60', '1', '50', typed)], words, who=PLAYERS)
+        assert got.rolls == []
+        assert got.unresolved == [
+            f'tact 30 from {conv.UNKNOWN_FORWARDER} - no character known for that Discord account'
+        ]
+
+    def test_a_forward_of_a_message_already_read_is_one_roll(self, words: tuple[str, ...]) -> None:
+        open_one()
+        posted = message('50', '2', '30 tact', minute=55)
+        got = collect_with(
+            [posted, forward('60', '1', '50', {'content': '30 tact'})], words, who=PLAYERS
+        )
+        assert [(r.character, r.total) for r in got.rolls] == [('Tetsuro', 30)]
+
+    def test_two_forwards_of_one_original_are_one_roll(self, words: tuple[str, ...]) -> None:
+        open_one()
+        typed = {'content': '30 tact'}
+        got = collect_with(
+            [forward('60', '1', '50', typed), forward('61', '2', '50', typed)],
+            words,
+            who=PLAYERS,
+            originals={'50': {'author': {'id': '2'}}},
+        )
+        assert [(r.character, r.total) for r in got.rolls] == [('Tetsuro', 30)]
