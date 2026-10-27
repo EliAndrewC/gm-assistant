@@ -746,6 +746,21 @@ class TestEditedRolls:
         collect_with([edited(posted, '41 interrogation@3')], words, who=PLAYERS)
         assert [(r.skill, r.total) for r in got.rolls] == [('interrogation', 41)]
 
+    def test_last_nights_70_lands_once_its_edit_names_the_skill(
+        self, words: tuple[str, ...]
+    ) -> None:
+        """Posted 00:37:30, edited 00:38:16 - two polls saw the first version, which
+        Discord no longer shows. The parser reads the edited text; before edits were
+        followed, a first version naming no skill lost the roll for good. The first
+        version here is a stand-in for the unknown original."""
+        open_one()
+        posted = message('1', '1', '10->9 10->5 10->5 7 9=65+5=70')
+        got = collect_with([posted], words, who=PLAYERS)
+        assert got.rolls == []
+        final = edited(posted, '10->9 10->5 10->5 7 9=65+5=70 Interrogation@3')
+        collect_with([final], words, who=PLAYERS)
+        assert [(r.skill, r.total, r.rank) for r in got.rolls] == [('interrogation', 70, 3)]
+
     def test_a_discarded_roll_still_follows_its_edit(self, words: tuple[str, ...]) -> None:
         open_one()
         posted = message('1', '1', '30 tact')

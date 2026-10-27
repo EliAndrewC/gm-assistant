@@ -43,6 +43,8 @@ class TestObservedForms:
             ('15 etiquette (24, limited by Withdrawn)', [('etiquette', 15, None)]),
             ('10->9 8 +5 Streetwise = 32 Law@2', [('law', 32, 2)]),
             ('10->10->10->4  10->8 5 4=61+5=66 Sincerity@1', [('sincerity', 66, 1)]),
+            # 2026-10-26, Shizukanaken: the 70 the GM thought this format had lost.
+            ('10->9 10->5 10->5 7 9=65+5=70 Interrogation@3', [('interrogation', 70, 3)]),
             ('10->7 10->7 8 8 +15 65@4 Intimidation', [('intimidation', 65, 4)]),
             ('47 Etiquette@3 assuming streetwise counts', [('etiquette', 47, 3)]),
             ('18 Commerce@0', [('commerce', 18, 0)]),
