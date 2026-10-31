@@ -123,6 +123,30 @@ def test_masao_cosmopolitan_lineage_defaults_to_blank_then_capital() -> None:
     assert _Samurai(**MASAO, lineage='masao', base_rank=10).location == 'Shiro Masao'
 
 
+ETSUKO = {'clan': 'crane', 'family': 'daidoji', 'house': 'etsuko'}
+
+
+def test_etsuko_has_exactly_one_dynasty_province() -> None:
+    """The Etsuko domain (a coastal Daidoji vassal house) has one dynasty
+    province: the Kunisaki, Uminari's harbor pilots, hold Uminari province by
+    a monopoly of local competence.  Every other lineage is cosmopolitan.
+    """
+    from chargen import config
+
+    provincial = config['provincial_lineages']['etsuko']
+    assert provincial == {'kunisaki': 'Uminari province'}
+    assert set(provincial) < set(config['house']['etsuko'])
+    assert set(provincial.values()) < set(config['locations']['etsuko']['provinces'])
+    assert sum(config['house']['etsuko'].values()) == 100
+    assert 'etsuko' in config['family']['daidoji']
+
+
+def test_etsuko_lineage_locations() -> None:
+    assert _Samurai(**ETSUKO, lineage='kunisaki', base_rank=4).location == 'Uminari province'
+    assert _Samurai(**ETSUKO, lineage='hirose', base_rank=5).location == ''
+    assert _Samurai(**ETSUKO, lineage='etsuko', base_rank=10).location == 'Shiro Etsuko'
+
+
 def test_reiji_ruling_lineage_is_cosmopolitan() -> None:
     assert _Samurai(**REIJI, lineage='reiji', base_rank=5).location == ''
     assert _Samurai(**REIJI, lineage='reiji', base_rank=10).location == 'Shiro Reiji'
