@@ -140,7 +140,8 @@ from your head:
 cd /gm-assistant/.claude/skills/name && python3 pick_name.py --bank 4 --avoid "[GIVEN_NAME]" > $SCRATCH/synthesize-name-bank.txt 2>&1; cat $SCRATCH/synthesize-name-bank.txt
 ```
 
-`[GIVEN_NAME]` is the last word of `[NAME]`. The bank is vetted against the
+`[GIVEN_NAME]` is the last word of `[NAME]`. **For a Mantis subject add `mantis`** to the
+`pick_name.py` arguments (feature 232), so their invented relatives get Mantis names. The bank is vetted against the
 whole campaign roster (the cache is refreshed first if older than an hour) and
 is mutually distinct, including from the subject - so there is nothing to grep
 for afterwards. Use only bank names for characters with no OP record; `--bank

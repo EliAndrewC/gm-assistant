@@ -320,15 +320,45 @@ class TestPick:
 
 class TestParseOptions:
     def test_defaults(self):
-        assert parse_args([])[3] == {"refresh": None, "avoid": [], "bank": 0}
+        assert parse_args([])[3] == {"refresh": None, "avoid": [], "bank": 0, "mantis": False}
 
     def test_refresh_avoid_bank(self):
         gender, count, peasant, opts = parse_args(
             ["--refresh", "--avoid", "Izumi,Reiji", "--bank", "4", "m2"]
         )
-        assert opts == {"refresh": True, "avoid": ["Izumi", "Reiji"], "bank": 4}
+        assert opts == {"refresh": True, "avoid": ["Izumi", "Reiji"], "bank": 4, "mantis": False}
         assert (gender, count) == ("male", 2)
 
     def test_dangling_flags_are_harmless(self):
         assert parse_args(["--avoid"])[3]["avoid"] == []
         assert parse_args(["--bank"])[3]["bank"] == 0
+
+
+class TestMantis:
+    """Feature 232: the `mantis` token names Mantis Clan characters."""
+
+    def test_parse_mantis(self):
+        assert parse_args(["mantis", "f", "3"])[3]["mantis"] is True
+        assert parse_args(["m"])[3]["mantis"] is False
+
+    def test_mantis_bank_is_distinct_and_labelled(self, capsys, monkeypatch):
+        monkeypatch.setattr(campaign, "used_names", lambda refresh=None: [])
+        pick(None, 1, bank=3, mantis=True)
+        out = capsys.readouterr().out
+        names = [
+            line.split("**")[1] for line in out.splitlines() if line.startswith("**")
+        ]
+        assert len(names) == 6 and "(male)" in out and "(female)" in out
+
+    def test_mantis_exhausted_reports_an_error(self, capsys, monkeypatch):
+        import pick_name
+
+        monkeypatch.setattr(campaign, "used_names", lambda refresh=None: [])
+        monkeypatch.setattr(pick_name, "load_pool", lambda path: [])
+        monkeypatch.setattr(
+            pick_name.mantisnames,
+            "odds",
+            lambda config: {"rokugani": 1, "alias": 0, "rokuganized": 0, "mantis": 0},
+        )
+        pick("male", 1, mantis=True)
+        assert "No valid male names remain" in capsys.readouterr().out

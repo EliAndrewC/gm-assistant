@@ -6,7 +6,7 @@ from typing import Sequence
 
 from chargen import config
 from chargen import constants as c
-from chargen import namepool, opcache
+from chargen import mantisnames, namepool, opcache
 
 
 def rounded(x: int, minval=1, maxval=15) -> int:
@@ -70,6 +70,21 @@ def unused_name(
     return entry.name, entry.explanation
 
 
+def unused_mantis_name(gender: str, avoid: Sequence[str] = ()) -> mantisnames.MantisPick:
+    """Name a Mantis Clan samurai (feature 232): one of the four naming cases
+    at the configured odds, under the same roster and set exclusions as
+    :func:`unused_name`, which also supplies the Rokugani names."""
+    used = c.USED_NAMES | opcache.used_given_names()
+    return mantisnames.pick_mantis(
+        gender,
+        mantisnames.load_mantis_pool(namepool.pool_dir()),
+        lambda: unused_name(gender, avoid, peasant=False),
+        used,
+        avoid,
+        mantisnames.odds(config),
+    )
+
+
 def weighted_choice(d: dict) -> str:
     """
     We have a lot of attributes with weighted options, e.g. when generating a
@@ -110,9 +125,19 @@ class Character:
         # gender: pin it (no re-roll loop needed); None rolls it. avoid: given
         # names of the other members of a set generated together (feature 200).
         self.gender = gender or choice(['male', 'female'])
-        self.personal_name, self.name_meaning = unused_name(
-            self.gender, avoid, peasant=type(self).PEASANT_NAMES
-        )
+        # A Mantis may carry a Mantis name, a Rokugani one, or go by one while
+        # holding the other (feature 232); ``clan`` is set by Samurai before it
+        # calls here, and Monk and Peasant have none.
+        self.mantis_name = ''
+        self.naming_case = ''
+        if getattr(self, 'clan', '') == 'mantis':
+            mantis = unused_mantis_name(self.gender, avoid)
+            self.personal_name, self.name_meaning = mantis.goes_by, mantis.meaning
+            self.mantis_name, self.naming_case = mantis.mantis_name, mantis.case
+        else:
+            self.personal_name, self.name_meaning = unused_name(
+                self.gender, avoid, peasant=type(self).PEASANT_NAMES
+            )
 
         self.xp = self.gen_xp()
         self.age = self.gen_age()

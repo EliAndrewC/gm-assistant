@@ -26,7 +26,11 @@ def roster(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     """A campaign cache holding one live NPC per gender that is ALSO in the pool."""
     p = tmp_path / 'characters.json'
     opcache.save_cache(
-        {'1': {'name': 'Hida no Reiji Masahiro'}, '2': {'name': 'Hida no Reiji Chiyoko'}}, p
+        {
+            '1': {'name': 'Hida no Reiji Masahiro'},
+            '2': {'name': 'Hida no Reiji Chiyoko'},
+        },
+        p,
     )
     monkeypatch.setattr(opcache, '_CACHE_PATH', p)
     monkeypatch.setattr(opcache.used_given_names, '__defaults__', (p, None))
@@ -101,3 +105,36 @@ def test_pregnant_is_rolled_only_at_childbearing_ages(roster: Path) -> None:
     man = _Peasant(gender='male')
     man.age = youngest
     assert 'pregnant' not in man._trait_pool()
+
+
+# --- feature 232: Mantis Clan names -----------------------------------------
+
+
+def test_mantis_samurai_take_the_mantis_path(roster: Path) -> None:
+    from chargen import mantisnames
+
+    pool = {e.name for e in mantisnames.load_mantis_pool(namepool.pool_dir())}
+    forms = pool | {e.rokuganized for e in mantisnames.load_mantis_pool(namepool.pool_dir())}
+    cases: set[str] = set()
+    for _ in range(300):
+        s = _Samurai(base_rank=7, clan='mantis')
+        d = s.to_dict()
+        cases.add(d['naming_case'])
+        assert d['full_name'].endswith(d['personal_name'])
+        if d['naming_case'] in ('mantis', 'rokuganized'):
+            assert d['personal_name'] in forms
+            assert d['mantis_name'] in pool
+        if d['naming_case'] in ('alias', 'rokuganized'):
+            assert d['mantis_name'] in d['name_meaning']
+        if d['naming_case'] == 'rokugani':
+            assert d['mantis_name'] == ''
+    assert cases == {'rokugani', 'alias', 'rokuganized', 'mantis'}
+
+
+def test_non_mantis_characters_never_get_a_mantis_name(roster: Path) -> None:
+    for s in [_Samurai(base_rank=5, clan='crane') for _ in range(50)] + [
+        _Peasant(),
+        _Monk(base_rank=5),
+    ]:
+        assert s.naming_case == ''
+        assert s.mantis_name == ''

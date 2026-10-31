@@ -189,6 +189,13 @@ PY
 
 **Read** `$SCRATCH/chargen-formatted.txt` and go straight on to Step 3.
 
+**Mantis names** (feature 232): a Mantis Clan samurai's sheet carries `d["naming_case"]` -
+`mantis` (a Mantis name, heard by Rokugani as gaijin), `rokuganized` (goes by the Rokugani form of
+their Mantis name), `alias` (holds a Mantis name, goes by an unrelated Rokugani one to blend in) or
+`rokugani` (simply a Rokugani name) - and `d["mantis_name"]`, the real Mantis name where there is
+one. The backstory must agree with it: an alias-case Mantis is known by the Rokugani name and the
+prose can say what their Mantis name is and why they use the other.
+
 **Do NOT stop here to have the roll approved** (GM 2026-08-17). Report the rolled
 sheet (name, clan/family, rank, age, honor, traits, and the tags - including the
 location tag(s) you added) in your final message along with everything else, not
@@ -240,7 +247,9 @@ prose invents (a parent, a sensei, a rival, a superior) who has no OP record:
 cd /gm-assistant/.claude/skills/name && python3 pick_name.py --bank 4 --avoid "[GIVEN_NAME]" > [SCRATCH]/chargen-name-bank.txt 2>&1; cat [SCRATCH]/chargen-name-bank.txt
 ```
 
-`[GIVEN_NAME]` is `d["personal_name"]`. The bank is already vetted against the
+`[GIVEN_NAME]` is `d["personal_name"]`. **For a Mantis subject add `mantis`** to the
+`pick_name.py` arguments (feature 232), so their invented relatives get Mantis names at the same
+odds as the engine. The bank is already vetted against the
 campaign roster and mutually distinct (and distinct from the new character), so
 you never invent a name by hand and never grep for a collision afterwards. Use
 as many or as few as the prose needs; `--bank 6` if you need more.

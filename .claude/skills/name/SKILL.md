@@ -23,11 +23,21 @@ The pool is the SINGLE source of given names in this project (feature 200, 2026-
 
 2. **Display the script's output directly** - no parsing or reformatting needed.
 
-3. **Flags** (before or among the shorthand): `--refresh` forces a campaign-cache refresh from Obsidian Portal first (use when the GM says they just added someone on the website); `--avoid A,B` makes every pick set-distinct from those names (a `/synthesize` subject, names already chosen); `--bank N` returns N male + N female names as ONE mutually distinct set, gender-labeled - the name bank a backstory's invented supporting cast is drawn from.
+3. **Mantis Clan names** (feature 232): the full word `mantis` among the arguments names Mantis
+   characters from `pool-mantis.jsonl` - Indonesian-derived names (with some Polynesian ones), which
+   Rokugani hear as gaijin. Each pick rolls the GM's four cases (`[mantis_names]` in
+   `webapp/development-defaults.ini`: a plain Rokugani name 20%, a Mantis name but going by an
+   unrelated Rokugani name 10%, going by the Rokuganized form 10%, a plain Mantis name 60%); the
+   explanation says which. The list's `gm: true` entries are the GM's own examples - keep their
+   glosses verbatim. Every `rokuganized` form must be spelled in Rokugani syllables
+   (`chargen.mantisnames.is_rokugani`, tested over the whole list). Logic lives in
+   `webapp/chargen/mantisnames.py`, shared with the chargen engine.
 
-4. **If the script prints a WARNING on stderr** (no campaign cache, an empty roster, or a stale cache it could not refresh), pass it on to the GM verbatim: the names were picked against an incomplete roster.
+4. **Flags** (before or among the shorthand): `--refresh` forces a campaign-cache refresh from Obsidian Portal first (use when the GM says they just added someone on the website); `--avoid A,B` makes every pick set-distinct from those names (a `/synthesize` subject, names already chosen); `--bank N` returns N male + N female names as ONE mutually distinct set, gender-labeled - the name bank a backstory's invented supporting cast is drawn from.
 
-5. **If the pool is empty**, fall back to generating a name directly (see "How to Generate Directly" below) and warn the user to refill.
+5. **If the script prints a WARNING on stderr** (no campaign cache, an empty roster, or a stale cache it could not refresh), pass it on to the GM verbatim: the names were picked against an incomplete roster.
+
+6. **If the pool is empty**, fall back to generating a name directly (see "How to Generate Directly" below) and warn the user to refill.
 
 ## The Pool Is Never Depleted by Use (GM 2026-08-26)
 

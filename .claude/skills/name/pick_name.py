@@ -8,6 +8,8 @@ Usage:
     Args can be separate tokens or concatenated shorthand:
       Gender:  male, female, m, f
       Caste:   peasant, p
+      Clan:    mantis (full word only; the single letter m means male) - a
+               Mantis Clan name at the four-case odds of feature 232
       Count:   any number, or x<N> (e.g. x3)
 
     Concatenated forms work: pf3, 3mp, fm, x5p, etc.
@@ -27,9 +29,12 @@ import json
 import os
 import random
 import sys
+from pathlib import Path
 
 import campaign
-from similarity import is_too_similar, set_conflict
+from similarity import is_too_similar, set_conflict  # also puts webapp/ on sys.path
+
+from chargen import config, mantisnames
 
 SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
 MALE_POOL = os.path.join(SKILL_DIR, "pool-male.jsonl")
@@ -43,7 +48,54 @@ def load_pool(path):
         return [json.loads(line) for line in f if line.strip()]
 
 
-def pick(gender, count, peasant=False, avoid=(), refresh=None, bank=0, label_gender=False):
+def _rokugani_choices(g, peasant, campaign_names, picked_names):
+    """Rokugani pool entries of gender ``g`` passing the roster and set rules."""
+    pool = load_pool(MALE_POOL if g == "male" else FEMALE_POOL)
+    if peasant:
+        pool = [e for e in pool if e.get("peasant", False)]
+    return [
+        entry
+        for entry in pool
+        if not is_too_similar(entry["name"], campaign_names)
+        and not any(set_conflict(entry["name"], p) for p in picked_names)
+    ]
+
+
+def pick_mantis(g, peasant, campaign_names, picked_names):
+    """One Mantis Clan name (feature 232) as a result dict, or None when no
+    Rokugani name is left for the rokugani/alias cases or the fallback."""
+
+    def rokugani():
+        valid = _rokugani_choices(g, peasant, campaign_names, picked_names)
+        if not valid:
+            raise LookupError(g)
+        chosen = random.choice(valid)
+        return chosen["name"], chosen["explanation"]
+
+    try:
+        result = mantisnames.pick_mantis(
+            g,
+            mantisnames.load_mantis_pool(Path(SKILL_DIR)),
+            rokugani,
+            campaign_names,
+            picked_names,
+            mantisnames.odds(config),
+        )
+    except LookupError:
+        return None
+    return {"name": result.goes_by, "gender": g, "explanation": result.meaning}
+
+
+def pick(
+    gender,
+    count,
+    peasant=False,
+    avoid=(),
+    refresh=None,
+    bank=0,
+    label_gender=False,
+    mantis=False,
+):
     campaign_names = campaign.used_names(refresh)
 
     # A bank is N of each gender in one set; otherwise `count` of `gender`.
@@ -52,6 +104,22 @@ def pick(gender, count, peasant=False, avoid=(), refresh=None, bank=0, label_gen
     for g in slots:
         if g is None:
             g = random.choice(["male", "female"])
+
+        if mantis:
+            chosen = pick_mantis(
+                g, peasant, campaign_names, list(avoid) + [r["name"] for r in results]
+            )
+            if chosen is None:
+                print(
+                    json.dumps(
+                        {
+                            "error": f"No valid {g} names remain after similarity filtering."
+                        }
+                    )
+                )
+            else:
+                results.append(chosen)
+            continue
 
         pool_path = MALE_POOL if g == "male" else FEMALE_POOL
         pool = load_pool(pool_path)
@@ -114,7 +182,7 @@ def parse_args(argv):
     gender = None
     count = 1
     peasant = False
-    options = {"refresh": None, "avoid": [], "bank": 0}
+    options = {"refresh": None, "avoid": [], "bank": 0, "mantis": False}
 
     it = iter(argv)
     for arg in it:
@@ -134,6 +202,9 @@ def parse_args(argv):
             continue
         if arg == "peasant":
             peasant = True
+            continue
+        if arg == "mantis":
+            options["mantis"] = True
             continue
 
         # Strip optional x prefix for count (e.g. x3)
@@ -192,4 +263,5 @@ if __name__ == "__main__":
         avoid=options["avoid"],
         refresh=options["refresh"],
         bank=options["bank"],
+        mantis=options["mantis"],
     )

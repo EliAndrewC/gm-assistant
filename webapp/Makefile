@@ -1,4 +1,4 @@
-.PHONY: lint format types test cov done clean serve prepare-deploy deploy \
+.PHONY: lint format types test cov done clean serve prepare-deploy deploy skill-tests \
         screenshots dom-audit ui-verify guard hooks-test
 
 # The Principle X "done" checklist. A change is not done until `make done` passes.
@@ -10,7 +10,7 @@
 # short-circuits the rest. Exit is non-zero if any phase failed: exactly as strict as before.
 done:
 	@fail=""; \
-	for phase in lint format-check types hooks-test test cov; do \
+	for phase in lint format-check types hooks-test skill-tests test cov; do \
 	  printf '\n\033[1m== %s ==\033[0m\n' "$$phase"; \
 	  $(MAKE) --no-print-directory $$phase || fail="$$fail $$phase"; \
 	done; \
@@ -54,7 +54,13 @@ hooks-test:
 	if [ -n "$$fail" ]; then printf '\n\033[1mhooks-test FAILED:%s\033[0m\n\n' "$$fail"; exit 1; fi; \
 	printf 'hooks-test: %s guard suites green\n' "$$n"
 
-lint format format-check types test cov clean screenshots dom-audit ui-verify prepare-deploy deploy: | guard
+# The /name skill's own suite (pick_name.py, the pool validators) lives outside webapp/, so the
+# test phase never collected it and it rotted unseen: by 2026-10-31 seven tests failed against the
+# grown roster and the file took 4.5 minutes, refreshing Obsidian Portal per test (feature 232).
+skill-tests:
+	@cd ../.claude/skills/name && python3 -m pytest -q -p no:cacheprovider
+
+lint format format-check types skill-tests test cov clean screenshots dom-audit ui-verify prepare-deploy deploy: | guard
 
 lint:
 	ruff check .
@@ -76,7 +82,7 @@ test:
 
 cov:
 	@if [ -d l7r ]; then \
-		pytest --cov=l7r --cov=chargen.brief --cov=chargen.opcache --cov=chargen.opsynth --cov=chargen.similarity --cov=chargen.namepool --cov=chargen.sheetroster --cov=chargen.placeuse --cov-report=term-missing --cov-fail-under=100; ec=$$?; \
+		pytest --cov=l7r --cov=chargen.brief --cov=chargen.opcache --cov=chargen.opsynth --cov=chargen.similarity --cov=chargen.namepool --cov=chargen.mantisnames --cov=chargen.sheetroster --cov=chargen.placeuse --cov-report=term-missing --cov-fail-under=100; ec=$$?; \
 		if [ $$ec -ne 0 ]; then python3 ../scripts/uncovered-in-diff.py || true; fi; exit $$ec; \
 	else \
 		echo "[done] No l7r/ package yet - coverage check skipped"; \
@@ -110,7 +116,7 @@ prepare-deploy:
 	@rm -rf skills
 	@mkdir -p skills/relic skills/name skills/place-names skills/dream
 	@cp -r ../.claude/skills/relic/pool skills/relic/pool
-	@cp ../.claude/skills/name/pool-male.jsonl ../.claude/skills/name/pool-female.jsonl skills/name/
+	@cp ../.claude/skills/name/pool-male.jsonl ../.claude/skills/name/pool-female.jsonl ../.claude/skills/name/pool-mantis.jsonl skills/name/
 	@# GUARD_EDIT_OK: adding a new file to the deploy bundle. used-names-extra.txt lists names in
 	@# use that OP cannot report (a PC with no record); the deployed engine must exclude them too.
 	@cp ../.claude/skills/name/used-names-extra.txt skills/name/
