@@ -103,3 +103,11 @@ The GM's sixteen example names (ten male, six female, one of them, Amar, gender 
 - The record (Obsidian Portal) name is the name the character goes by, since that is how the PCs know them; the real name is recorded per FR-006.
 - Renaming the three Mantis NPCs generated earlier this session is a follow-up action on existing records, not part of the engine feature; it is done after the feature lands.
 - The webapp `/names` browsing page and `/api/names` (whose requests carry no clan) are out of scope.
+
+## Review history
+
+- **Round 1 (spec-fidelity): CHANGES REQUIRED.** (1) FR-006 invented a GM-only secret for the alias
+  case - the GM described a nickname to blend in; (2) the `/name` skill was put out of scope, though
+  `/synthesize` and `/chargen` name a Mantis's relatives through it; (3) Assumptions narrowed "all
+  Mantis characters" to engine samurai. All three revised (FR-006, FR-010, FR-011, Assumptions).
+- **Round 2 (spec-fidelity): FAITHFUL.**
