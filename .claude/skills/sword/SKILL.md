@@ -139,6 +139,10 @@ With this work complete, Maiko came to Toshi Ranbo last winter on a warrior's pi
 
 <!-- END SOURCE -->
 
+## Kenku swords
+
+A Kenku sword is an ordinary sword that a Kenku (the sun-blessed bird people) picked up and purified in sunlight, never one a Kenku made: they have no smiths. They are the sharpest blades in the mortal realm, very expensive to obtain (a noble scatters dozens or hundreds of swords in a migration's path and tracks the flock to recover the one purified before it rusts back), and the Kenku cannot be bargained with or held to a promise. The GM's full account is in `l7r.md` under "Kenku" (The Setting). Kurobane, the Kenku sword at the center of the Shosuro no Seri Go bounty, is one; its story is in Seri Go's OP record.
+
 ## Generation Preferences
 
 (To be developed through iteration with the GM. This section will capture what the GM likes and dislikes about generated swords, and why.)
