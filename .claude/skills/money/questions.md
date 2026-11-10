@@ -131,6 +131,15 @@ attention.
 **Recipe** (cloth and clothing): fiber -> cloth by the *tan* -> dyeing -> sewing. Silk is several times cotton; hemp
 below cotton. **Rules**: a kimono >= its cloth (the GM's example); silk >= cotton; sheets >= their silk.
 
+**Which cotton** (GM 2026-11-09): Rokugan's cotton is the Asian kind only (*Gossypium arboreum* and *G. herbaceum*), not
+the American species (*G. hirsutum*, upland, and *G. barbadense*). These are different species, and only the American
+ones came with the Columbian exchange, so cotton is not treated like tomatoes or potatoes, whose place in Rokugan follows
+how far East Asia adopted them. Asian cotton was grown in India by about 2500 BCE, was common in the lower Yangzi by
+1285 and was grown in Japan by about 1500 ([diagram 0321](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0321-which-cottons-grew-in-asia-before-1492-and-when-did-the-american-kinds-come.html)).
+The cotton prices above are already Asian cotton: Ako 1781-90 and Osaka in the 1840s, before Japan's ports opened in
+1859, with no American cotton recorded as planted in Japan in the period. They assume cotton is a settled local crop; a
+cold region that buys it in pays more, or wears more hemp and used clothes ([diagram 0318](https://github.com/EliAndrewC/diagram/blob/main/research/questions/0318-when-did-cotton-become-ordinary-clothing-in-japan.html)).
+
 ## Drink
 
 **Q10. Sake.** Ordinary sake from a brewer or shop: **1-3 sen a cup** (one *go*, 180 ml; diagram 0262: Kazusa 1842,
