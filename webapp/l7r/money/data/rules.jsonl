@@ -47,3 +47,5 @@
 {"rule": "a smith's gross takings are at least his net income", "row": "smith-village-gross", "at_least": [["smith-village-net", 1]], "why": "costs only subtract"}
 {"rule": "a hand-copied leaf costs at least a sheet of paper", "row": "book-copy-leaf", "at_least": [["paper-large-sheet", 0.5]], "why": "half a large sheet makes a leaf; the writing adds"}
 {"rule": "a county troupe's year is at least 50 market days at the low end", "row": "troupe-county-year", "at_least": [["troupe-market-day", 25]], "why": "market days are half its year at least"}
+{"rule": "an empty charcoal bale costs at least a tenth of a laborer-day", "row": "charcoal-bale-empty", "at_least": [["wage-unskilled-day", 0.1]], "why": "weaving the mat, caps and ropes"}
+{"rule": "a full bale of black charcoal costs at least its empty bale", "row": "charcoal-bale", "at_least": [["charcoal-bale-empty", 1]], "why": "charcoal is sold in its bale"}

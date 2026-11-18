@@ -242,6 +242,10 @@ tariff per border and a merchant's margin, so at Ryoko Owari (~205 ri overland) 
 everywhere; only a temple's few bales travel that far (GM 2026-10-22; E0167-E0168, asked in diagram#12).
 A household brazier burns about a small bag a day or two; a bale lasts it two to four weeks of winter.
 A cartload of white charcoal is paid in gold by a merchant or a great shrine (the Fox Road footpads took one).
+**The bale itself** (GM 2026-11-17; E0219): charcoal is sold in its woven straw or grass bale, so every bale and
+cartload price above already includes it. Bought empty, to repack or to bale loose charcoal: **2-4 sen a bale**
+(estimated: 0.1-0.2 laborer-days of winter straw-work, the straw, a margin); a cartload takes ~33, ~0.7-1.3 bu.
+**Rules**: an empty bale >= a tenth of a laborer-day; a full black bale >= its empty bale.
 **Canon**: shrine-grade white charcoal is a Fox Clan specialty from sacred oak under the Fox Ministry of Rites (ordinary
 charcoal under Revenue), odorless and nearly smokeless, at a premium throughout the Empire and worth counterfeiting
 (l7r.md, "The Fox Clan's economy"; the Kitsune Denhei bounty). Near Fox kilns, less; far away, add carriage.
