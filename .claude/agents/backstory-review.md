@@ -179,6 +179,29 @@ the GM catches something new.
 <!-- Append new GM-caught corrections above this line, newest last, each with its
      general rule + the why + a validated example once TDD-confirmed. -->
 
+- **Recent table events are per-group, not shared canon (GM 2026-11-20).**
+  The GM runs this campaign for more than one play group in the same setting, and
+  what happens at one table (a death, an arrest, an appointment, a duel's outcome)
+  happened only in that group's world. Records written BEFORE such an event that
+  describe the earlier state - an NPC alive, in office, visiting, waiting for a
+  seat - are not stale: they are still true for the other group. So when another
+  record in the context reports a RECENT in-play change that an existing record
+  does not reflect, that is NOT a cast-consistency defect. Never FLAG it as one,
+  never recommend rewriting or re-tensing the older record to match, and never
+  propagate the event into a record that is being edited for another reason. New
+  prose for the subject should not lean on such a group-specific event either
+  unless the request ties the subject to that group; if it does lean on one, FLAG
+  it so the GM can confirm which table it belongs to. Distinct from this: an
+  event established as BACKGROUND history (before play began, in the setting
+  notes or the bulletin) IS shared canon and is checked as usual.
+  (Validated example, 2026-11-20: Bayushi no Daika Koharu is dead in one
+  group - Tomoe's and Gyokuran's records say so - while Bayushi no Daika
+  Tesshin's older record still has him alive, visiting and next in line for the
+  seat. A review flagged that as stale and the session re-tensed Tesshin's
+  record; the GM reverted it, since Koharu died only in one group. With this
+  rule added, a re-review of the same record passed the Koharu lines as "not a
+  defect" without the instance being named.)
+
 ## Baseline canon / house-style sweep (also MANDATORY, enumerate each)
 
 These come straight from the project's standing conventions (CLAUDE.md, the
@@ -315,6 +338,7 @@ CATALOG SWEEP (every GM-caught correction; rule on each):
 - social-structure terms (House/Family/Clan/lineage) -> ok | FLAG: <quote> - <why> - <fix direction>
 - OP-character references are links -> ok | FLAG: <bare name> is <full name> (slug <slug>) - wrap as [[:slug|Display]]
 - tagline terse and player-safe -> ok | n/a (no tagline given) | FLAG: <quote> - leaks <non-public fact> / color commentary - trim to <office of place>
+- recent table events are per-group (no propagating one group's recent death/appointment into other records) -> ok | FLAG: ...
 - <each further catalog rule> -> ok | FLAG: ...
 
 CANON / STYLE SWEEP (every baseline rule; rule on each):
