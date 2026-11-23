@@ -231,14 +231,15 @@ running 1.68x high (n=4, typical miss 1.89x): the sickle had been priced like a 
 | ordinary black | 1-2 sen | 5-8 sen | 1.5-2 zeni (1.1-1.6 laborer-days) | 4.5-7 bu |
 | Fox white, near the kilns | 2-5 sen | 1.1-2 zeni | 3.5-6 zeni | 1.1-1.9 koku |
 | Fox white, neighboring clans (Kakita, Etsuko) | 5 sen-1 zeni | 2-4 zeni | 6 zeni-1.1 bu | 2-3.5 koku |
-| Fox white, Ryoko Owari (~205 ri overland) | 1-3 zeni | 4 zeni-1.2 bu | 1.1-3.2 bu (6-18x black) | not carried |
+| Fox white, Ryoko Owari (~205 ri overland) | 1-2 zeni | 4-8 zeni | 1-2.1 bu (5-14x black) | not carried |
 
 Black rests on Edo's 1842 bale prices (342-466 mon by grade) and Beijing's 1736 official list, which agree on a bale at
 1.1-1.6 laborer-days. Shrine-grade is 2-3x black: generic white ran ~2x black (Beijing), a famous white (Kumano, 1716)
 2.2-2.5x a local white; no Japanese black-against-white price survives. First guesses ran high (white 3-4x).
 Fox white is the Kumano of Rokugan (a famous white from a special oak, sold far away): in neighboring clans ~4-6x
-local black, as Kumano in Edo; carriage is ~0.15-0.3 sen a bale a ri by pack horse (Transport, freight), plus a 15%
-tariff per border and a merchant's margin, so at Ryoko Owari (~205 ri overland) a bale is 1.1-3.2 bu, 3-5x the kiln price. Ordinary charcoal is burned locally
+local black, as Kumano in Edo; carriage is ~0.15-0.3 sen a bale a ri by pack horse (Transport, freight), plus one 15%
+tariff at the city of sale (tariffs are point-of-sale, never per border crossed; charcoal is no exception, GM
+2026-11-23) and a merchant's margin, so at Ryoko Owari (~205 ri overland) a bale is 1-2.1 bu, 3-3.5x the kiln price. Ordinary charcoal is burned locally
 everywhere; only a temple's few bales travel that far (GM 2026-10-22; E0167-E0168, asked in diagram#12).
 A household brazier burns about a small bag a day or two; a bale lasts it two to four weeks of winter.
 A cartload of white charcoal is paid in gold by a merchant or a great shrine (the Fox Road footpads took one).
@@ -260,6 +261,9 @@ black 1.3-1.6x high except the cartload, 0.76x).
 Adjusted 2026-10-22: long-haul carriage cut from 0.5-1 to 0.15-0.3 sen a bale a ri and the Ryoko Owari tier from 2.5-6
 bu to 1.1-3.2 bu a bale, because diagram 0280-0283 (feature 411) gave freight rates (tax rice 24 mon a horse-load a ri,
 Qing mule ~2 sen) a third to a sixth of the post-station fares the guess used; E0167-E0168 themselves are SILENT.
+Adjusted 2026-11-23: the Ryoko Owari tier from 1.1-3.2 bu to 1-2.1 bu a bale (bag 1-2 zeni, 10 lb 4-8 zeni), because it
+charged a 15% tariff at every border crossed (two to four) where canon charges one, at the city of sale (GM: "charcoal is
+no exception to the general rule").
 
 ## Household work (time, not money)
 

@@ -140,8 +140,9 @@ picks them up for a sea route with no code change.
 ### Edge Cases
 
 - A route crosses several domains: tariff is charged only at the city of sale (canon: *"Tariffs are point-of-sale, not
-  point-of-transit"*), not per border crossed. The charcoal rows' "15% per border" wording differs; that difference is
-  recorded under FR-012, and whether to change the charcoal rows is the GM's call, separate from this feature.
+  point-of-transit"*), not per border crossed. The charcoal rows charged "15% per border" until 2026-11-23, when the GM
+  ruled *"charcoal is no exception to the general rule, so that should be fixed"*; they now charge one tariff at the
+  city of sale, so FR-012 reproduces them with no recorded difference for the tariff.
 - The origin price and the destination price are both researched and disagree with the cost model: both are shown,
   and the gap is reported, not hidden.
 - A good has no producing-place row at all: the command says so and names what would fix it, rather than guessing.
