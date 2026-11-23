@@ -91,10 +91,15 @@ and `check` passes; a row without a place still behaves exactly as today.
 The carriage command applies the gate tariff the way the setting defines it, not a flat 15%, and lets the asker say
 whose goods they are and at whose gate they are sold.
 
-**Why this priority**: the smuggling questions that prompted this feature turn on the gap between rates; a flat 15%
-hides exactly what the GM was asking about.
+**Why this priority**: the questions that prompted this feature turn on the gap between rates; a flat 15% hides
+exactly what the GM was asking about. The GM, 2026-11-23, on the bulletin's "many-colored Yasuki" smuggler: *"The
+Crane hate the Yasuki and let's say they stubbornly impose the maximum tarriff on Yasuki goods. And let's say that a
+desire for Scorpion silk and Phoenix iron and Mantis sugarcane has led them to impose the lowest possible tarriff on
+those goods. What is the % difference"*; and later: *"while a local House daimyo cannot waive the Family or Clan
+tarriff rates, the family and clan itself can negotiate those rates, and so that means that it is plausible that the
+only rate on Phoenix Iron, for example, would be the Imperial rate, correct?"*
 
-**Independent Test**: price one cargo at one gate under three origins (full rate, typical rate, treaty rate) and read
+**Independent Test**: price one cargo at one gate under three origins (full rate, typical rate, negotiated rate) and read
 back three tariffs that match the rules below.
 
 **Acceptance Scenarios**:
@@ -102,9 +107,12 @@ back three tariffs that match the rules below.
 1. **Given** no origin arrangement is named, **When** the command prices a sale, **Then** it uses the typical
    effective rate (*"about 15% of declared sales value"*, `setting/l7r.md`, Ministry of Revenue) and says so.
 2. **Given** an origin with no preferential arrangement, **When** priced, **Then** the rate is the 20% legal maximum.
-3. **Given** an origin whose Family and Clan have waived their layers by treaty, **When** priced, **Then** only the
-   Imperial 5% applies; the Imperial layer is never waived.
-4. **Given** goods declared in transit, **When** priced at a transit city, **Then** no tariff is charged there (canon:
+3. **Given** the Family and Clan above the gate of sale have negotiated their layers to zero for this origin, and the
+   local daimyo charges no portion, **When** priced, **Then** only the Imperial 5% applies; the Imperial layer is
+   never negotiated away.
+4. **Given** the Family and Clan above the gate have negotiated their layers part of the way down (say to 1% and 1%),
+   **When** priced, **Then** the rate is those layers plus the Imperial 5% plus the local daimyo's portion.
+5. **Given** goods declared in transit, **When** priced at a transit city, **Then** no tariff is charged there (canon:
    tariffs are point-of-sale, not point-of-transit).
 
 ---
@@ -126,11 +134,14 @@ picks them up for a sea route with no code change.
    the river or pack-horse rate, and names it.
 2. **Given** no margin row exists for a kind of trader, **When** the command runs, **Then** it uses the skill's stated
    default margin, labels it estimated, and says which row would replace it.
+3. **Given** rows for coastal ships (burthen, crew, crew pay, build cost, working life, charter), **When** `check`
+   runs, **Then** they are accepted; the carriage command is not required to read them.
 
 ### Edge Cases
 
-- A route crosses several domains: tariff is charged only at the city of sale (point-of-sale), not per border crossed;
-  the charcoal rows' "15% per border" wording is corrected to match canon or recorded as a deliberate simplification.
+- A route crosses several domains: tariff is charged only at the city of sale (canon: *"Tariffs are point-of-sale, not
+  point-of-transit"*), not per border crossed. The charcoal rows' "15% per border" wording differs; that difference is
+  recorded under FR-012, and whether to change the charcoal rows is the GM's call, separate from this feature.
 - The origin price and the destination price are both researched and disagree with the cost model: both are shown,
   and the gap is reported, not hidden.
 - A good has no producing-place row at all: the command says so and names what would fix it, rather than guessing.
@@ -152,10 +163,10 @@ picks them up for a sea route with no code change.
 - **FR-006**: Freight MUST be chosen by mode of carriage (sea, river, land) from ledger rows, scaled by distance.
 - **FR-007**: The tariff MUST be charged once, at the city of sale, at a rate set by the canon rate structure: a 20%
   maximum of declared sales value; a 10% kick-up layer (2% Family, 3% Clan, 5% Imperial) the local daimyo cannot waive;
-  a Family or Clan daimyo MAY waive its own layer by treaty (GM 2026-11-23); the Imperial 5% is never waived; goods in
-  transit pay nothing.
-- **FR-008**: The asker MUST be able to name the seller's origin arrangement (full rate, typical, a named discount, a
-  treaty waiver) and get the matching rate; with none named, the typical ~15% applies and is stated.
+  the Family and Clan above the gate's daimyo MAY negotiate their own 2% and 3% layers down, to as low as zero, for a
+  given origin (GM 2026-11-23); the Imperial 5% is never negotiated away; goods in transit pay nothing.
+- **FR-008**: The asker MUST be able to name the seller's origin arrangement (full rate, typical, a named discount of
+  the local daimyo's portion, a negotiated Family/Clan rate) and get the matching rate; with none named, the typical ~15% applies and is stated.
 - **FR-009**: Where a researched producer-to-market ratio exists for the good, the command MUST print it beside the
   derived ratio.
 - **FR-010**: Missing inputs MUST produce a message naming the missing row and how to add it, not a silent default;
@@ -164,6 +175,8 @@ picks them up for a sea route with no code change.
   in a topic file that opens with "Load this file when:".
 - **FR-012**: The existing charcoal far-market rows MUST be reproducible by the new command from their own inputs, or
   the difference MUST be recorded with its reason.
+- **FR-013**: Ledger rows for coastal ships (burthen, crew, crew pay, build cost, working life, charter) MUST be
+  accepted and pass `check`; the carriage command need not read them.
 
 ### Key Entities
 
@@ -178,12 +191,15 @@ picks them up for a sea route with no code change.
 
 ### Measurable Outcomes
 
-- **SC-001**: The GM's tea sentence can be produced for tea, sugar, raw silk and iron between a producing place and
-  Kyuden Kakita in one command each, with every number's basis printed.
+- **SC-001**: Given producing-place rows for a good (from diagram#24, or entered from the logged estimates), the GM's
+  tea sentence comes out of one command for that good between its producing place and Kyuden Kakita, with every
+  number's basis printed. Entering those rows is not part of this feature.
 - **SC-002**: All 276 existing ledger rows pass `check` unchanged, and every existing command's output is unchanged
   for them.
-- **SC-003**: The three tariff cases the GM worked through (Yasuki at 20%, a favored house at the 10% floor, Phoenix
-  under a treaty waiver at 5%) each come out of the command at the stated rate.
+- **SC-003**: The three tariff cases from the GM's questions (User Story 3) each come out of the command at the stated
+  rate: Yasuki goods at the 20% maximum; a favored house at the 10% floor (the local daimyo's portion at zero); and
+  Phoenix goods at 5% when the Family and Clan above the gate have negotiated their layers to zero and the local
+  daimyo charges no portion.
 - **SC-004**: When diagram#24's answer is taken in, no code change is needed for the command to use the new rows.
 - **SC-005**: The charcoal far-market prices are reproduced within their stated ranges, or each difference is recorded.
 
@@ -195,10 +211,21 @@ picks them up for a sea route with no code change.
   location is an error, not a guess.
 - **Distances between Rokugani places are not in canon** for most pairs; the command takes a distance from the asker
   when no recorded one exists, and prints that it was supplied.
-- **The treaty-waiver rule** (a Family or Clan daimyo may waive its own layer; the Imperial 5% never is) is the GM's
-  ruling of 2026-11-23 in conversation; it is not yet written into `setting/l7r.md`. Implementation applies it; writing
+- **The negotiated-layer rule** (the Family and Clan above a gate may negotiate their own layers down, to zero; the
+  Imperial 5% never is) is the GM's ruling of 2026-11-23 in conversation; it is not yet written into `setting/l7r.md`. Implementation applies it; writing
   it into the canon is the GM's call, separate from this feature.
 - **Research first, where it is cheap**: implementing before diagram#24 answers is fine (the command works on
   estimates and labels them); the GM will decide when to work the feature.
 - **The rows diagram#24 returns** enter through the existing take-in path in `research.md`; this feature adds no new
   intake process.
+
+## Review history
+
+- **Round 1 (spec-fidelity): CHANGES REQUIRED.** Six changes, all applied: ship rows got FR-013 and a User Story 4
+  scenario (item 3 asked for "room" for them); "waive" became "negotiate", to as low as zero, per the GM's own word;
+  the layers belong to the Family and Clan above the gate of sale, and the 5% case states that the local daimyo
+  charges no portion; SC-001 no longer requires entering four goods' price rows; the charcoal "per border" difference
+  is recorded under FR-012 and changing the charcoal rows is left to the GM; the tariff cases and the smuggling
+  context now quote the GM's words.
+- **Round 2 (spec-fidelity): FAITHFUL.** One wording tidy applied ("treaty rate" -> "negotiated rate" in User Story 3's
+  independent test).
