@@ -102,6 +102,12 @@ SHEETS = (
         'Cotton and silk by the length, a kimono made up, bedding and bags.',
         ('clothing', 'cloth'),
     ),
+    Sheet(
+        'pottery',
+        'Pottery',
+        'What a household buys from the kiln and breaks, from a plain local teapot to a fine one.',
+        ('household', 'pottery'),
+    ),
     Sheet('offerings', 'Offerings', 'Small things given at a shrine.', ('religious', 'offering')),
     Sheet(
         'paper',
