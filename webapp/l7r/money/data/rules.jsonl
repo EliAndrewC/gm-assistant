@@ -49,3 +49,8 @@
 {"rule": "a county troupe's year is at least 50 market days at the low end", "row": "troupe-county-year", "at_least": [["troupe-market-day", 25]], "why": "market days are half its year at least"}
 {"rule": "an empty charcoal bale costs at least a tenth of a laborer-day", "row": "charcoal-bale-empty", "at_least": [["wage-unskilled-day", 0.1]], "why": "weaving the mat, caps and ropes"}
 {"rule": "a full bale of black charcoal costs at least its empty bale", "row": "charcoal-bale", "at_least": [["charcoal-bale-empty", 1]], "why": "charcoal is sold in its bale"}
+{"rule": "a plain teapot costs at least a twentieth of a skilled day", "row": "teapot-plain", "at_least": [["wage-skilled-day", 0.05]], "why": "a potter throws at most about twenty small lidded pieces a day"}
+{"rule": "a moderately good teapot costs at least a plain one", "row": "teapot-moderate", "at_least": [["teapot-plain", 1]], "why": "better clay, a hotter firing, carriage and a shop"}
+{"rule": "a moderately good teapot costs at least a third of a skilled day", "row": "teapot-moderate", "at_least": [["wage-skilled-day", 0.33]], "why": "throwing, trimming and fitting the spout, lid and handle"}
+{"rule": "a fine teapot costs at least a moderately good one", "row": "teapot-fine", "at_least": [["teapot-moderate", 1]], "why": "finer work and a workshop's name"}
+{"rule": "a fine teapot costs at least two skilled days", "row": "teapot-fine", "at_least": [["wage-skilled-day", 2]], "why": "several days of a skilled potter's work on one piece"}

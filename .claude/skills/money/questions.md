@@ -222,6 +222,19 @@ is about a quarter of its price (a Beijing sickle 0.07 tael, ~10 sen, against 0.
 0306), and in the itinerant smith's trade the farmer brought the charcoal. Because calibration showed tools guesses
 running 1.68x high (n=4, typical miss 1.89x): the sickle had been priced like a knife, 15-35 sen against ~10.
 
+## Pottery
+
+**Q. What does a teapot cost?** (GM 2026-11-24, after an omen about a teapot breaking at the Ubame kiln works.)
+All three grades are **estimated** (E0239-E0241), with research filed. A plain earthenware pot bought at a county kiln
+works: **2-6 sen**, under half a laborer-day. A moderately good stoneware pot from a known kiln district, bought in a
+town shop: **8-25 sen**, about a laborer's day. A fine pot from a noted workshop: **1-5 bu**, 8-40 laborer-days, the
+scale of a samurai's *consideration* gift. A famous master's or an heirloom piece is open-ended above that, because
+collectors set the price, not the potter. A county works like Ubame's fires coarse ware and tile, so it makes the
+plain grade only; finer stoneware comes from a kiln district.
+**Recipe**: pieces thrown per skilled day, plus clay, glaze and a share of the firing, then carriage and a shop's
+margin; a workshop's name multiplies the labor. **Rules**: plain >= 1/20 skilled day; moderate >= plain and >= 1/3
+skilled day; fine >= moderate and >= two skilled days.
+
 ## Fuel
 
 **Q14. Charcoal, ordinary and shrine-grade** (GM 2026-10-21; estimates E0159-E0166; diagram 0279, feature 410).

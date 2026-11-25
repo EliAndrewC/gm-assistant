@@ -81,6 +81,7 @@ what is still open.
 | [EliAndrewC/diagram#22](https://github.com/EliAndrewC/diagram/issues/22) | when cotton became ordinary clothing in Japan and China, cotton's species and India and Korea, the spread of tomatoes, potatoes and tobacco, what set the speed of a crop's spread (`requests/0021-cotton-and-crop-diffusion.md`; no estimates: every figure is a date) | answered 2026-11-09 by 0318-0321 and 0323-0329 (0322 unused): cotton was Old World in Asia, commoners in cotton by the 1400s in China and the 1600s-1700s in Japan (labeled guesses); no ledger row moved; how common cotton is in Rokugan is with the GM; closed |
 | [EliAndrewC/diagram#23](https://github.com/EliAndrewC/diagram/issues/23) | empty charcoal bales (tawara) bought on their own: price, who made them, labor, share of a full bale (`requests/0022-empty-charcoal-bales.md`; E0219) | open |
 | [EliAndrewC/diagram#24](https://github.com/EliAndrewC/diagram/issues/24) | what distance did to price: producer-to-market price ratios (tea, sugar, raw silk, iron), coastal sea freight, wholesalers' and shipowner-traders' margins, coastal ships' size, crew and cost (`requests/0023-producer-to-market-price-spread.md`; E0220-E0238) | open |
+| [EliAndrewC/diagram#25](https://github.com/EliAndrewC/diagram/issues/25) | teapots at three grades: plain earthenware, moderately good stoneware, fine (`requests/0024-teapots.md`; E0239-E0241) | open |
 
 ## Next candidates (not yet asked)
 
